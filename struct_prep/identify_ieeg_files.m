@@ -78,14 +78,14 @@ for p =1:length(pt)
         end
         
         if finished == 1
-            if exist('session') ~= 0
+            if exist('session','var') ~= 0
                 session.delete;
             end
             break
         end
         
         dcount = dcount + 1;
-        if exist('session') ~= 0
+        if exist('session','var') ~= 0
             session.delete;
         end
     end
