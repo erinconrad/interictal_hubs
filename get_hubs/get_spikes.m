@@ -16,7 +16,7 @@ test.ch = [];
 locations = interictal_hub_locations;
 data_folder = [locations.main_folder,'data/'];
 results_folder = [locations.main_folder,'results/'];
-scripts_folder = [locations.main_folder,'scripts/'];
+scripts_folder = locations.script_folder;
 addpath(genpath(scripts_folder));
 ieeg_folder = locations.ieeg_folder;
 addpath(genpath(ieeg_folder));
