@@ -1,17 +1,20 @@
-function show_eeg_and_spikes(values,which_chs,chLabels,gdf,dur,start_time,name,fs)
+function show_eeg_and_spikes(values,chLabels,gdf,dur,start_time,name,fs,bad,skip)
 
 figure
 set(gcf,'position',[62 104 1145 701])
-
-values = values(:,which_chs);
-chLabels = chLabels(which_chs);
 
 offset = 0;
 ch_offsets = zeros(size(values,2),1);
 ch_bl = zeros(size(values,2),1);
 
 for ich = 1:size(values,2)
-    plot(linspace(0,dur,size(values,1)),values(:,ich)-offset,'k');
+    if ismember(ich,bad)
+        plot(linspace(0,dur,size(values,1)),values(:,ich)-offset,'r');
+    elseif ismember(ich,skip)
+        plot(linspace(0,dur,size(values,1)),values(:,ich)-offset,'c');
+    else
+        plot(linspace(0,dur,size(values,1)),values(:,ich)-offset,'k');
+    end
     ch_offsets(ich) = offset;
     ch_bl(ich) = -offset + nanmedian(values(:,ich));
     hold on

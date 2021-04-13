@@ -16,6 +16,9 @@ whichPts = 1:length(pt);
 for i = 1:length(whichPts)
     p = whichPts(i);
     name = pt(p).name;
+    fprintf('\nDoing %s\n',name);
+    
+    szs = pt(p).seizure_info.sz;
     
     if isempty(pt(p).ieeg), continue; end
     
@@ -38,11 +41,20 @@ for i = 1:length(whichPts)
             pt(p).ieeg.file(f).block(b).spikes = [];
             
             % pick a random minute in the hour long block
-            s = randi([0 block-mini_block]);
-            start_time = min(bs(b) + s,be(b) - mini_block);
-            end_time = start_time + mini_block;
-            
-            run = [start_time,end_time];
+            while 1
+                s = randi([0 block-mini_block]);
+
+                start_time = min(bs(b) + s,be(b) - mini_block);
+                end_time = start_time + mini_block;
+
+                run = [start_time,end_time];
+                
+                % check if it intersects any of the seizure times
+                int = intersect_sz_time(run,szs);
+                if int == 0
+                    break
+                end
+            end
             if run(1) < bs(b) || run(2) > be(b)
                 if b == nblocks % may not have enough time to do the last bit
                     run = [];

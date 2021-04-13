@@ -10,8 +10,8 @@ fr     = 40; % low pass filter for spikey component
 lfr    = 7;  % low pass filter for slow wave component
 aftdur = 70;
 aftdur   = aftdur*fs/1000;   % convert to points;
-spikedur = 5; % minimum spike duration in points
-fn_fr  = 10; % high pass filter for spikey component
+spikedur = 10; % minimum spike duration in points
+fn_fr  = 7; % high pass filter for spikey component
 
 
 % Initialize things
@@ -38,6 +38,11 @@ for j = 1:length(which_chs)
     fndata   = eegfilt(data, fn_fr, 'hp',fs); % high pass filter
     HFdata    = eegfilt(fndata, fr, 'lp',fs); % low pass filter
 
+    if 0
+        plot(data)
+        hold on
+        plot(HFdata)
+    end
 
     lthresh = mean(abs(HFdata));  % this is the smallest the initial part of the spike can be
     thresh  = lthresh*tmul;     % this is the final threshold we want to impose
