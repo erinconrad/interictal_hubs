@@ -1,14 +1,17 @@
-function bad = reject_bad_chs(values,which_chs,chLabels,fs)
+function [bad,details] = reject_bad_chs(values,which_chs,chLabels,fs)
 
 bad = [];
+nan_ch = [];
+high_var_ch = [];
+noisy_ch = [];
 
 %% Parameters to reject super high variance
-tile = 95;
+tile = 98;
 mult = 10;
 num_above = 5;
 
 %% Parameter to reject high 60 Hz
-percent_60_hz = 0.5;
+percent_60_hz = 0.7;
 
 for i = 1:length(which_chs)
     
@@ -21,6 +24,7 @@ for i = 1:length(which_chs)
     %% Remove channels with any nans
     if sum(isnan(eeg)) > 0
         bad = [bad;ich];
+        nan_ch = [nan_ch;ich];
         continue;
     end
     
@@ -50,6 +54,7 @@ for i = 1:length(which_chs)
     
     if bad_ch == 1
         bad = [bad;ich];
+        high_var_ch = [high_var_ch;ich];
         continue;
     end
     
@@ -79,9 +84,14 @@ for i = 1:length(which_chs)
     
     if bad_ch == 1
         bad = [bad;ich];
+        noisy_ch = [noisy_ch;ich];
         continue;
     end
     
 end
+
+details.noisy = noisy_ch;
+details.nans = nan_ch;
+details.var = high_var_ch;
 
 end

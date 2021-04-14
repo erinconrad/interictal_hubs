@@ -131,7 +131,7 @@ for i = 1:length(whichPts)
             end
             
             %% Reject bad channels
-            bad = reject_bad_chs(values,which_chs,chLabels,fs);
+            [bad,bad_details] = reject_bad_chs(values,which_chs,chLabels,fs);
             
             %% Spike detector
             run_chs = which_chs;
@@ -167,6 +167,7 @@ for i = 1:length(whichPts)
             spikes.file(f).hour(h).chLabels = chLabels;
             spikes.file(f).hour(h).bipolar_labels = bipolar_labels;
             spikes.file(f).hour(h).bad = bad;
+            spikes.file(f).hour(h).bad_details = bad_details;
             spikes.file(f).hour(h).skip = skip;
             spikes.file(f).hour(h).run_chs = run_chs;
             
