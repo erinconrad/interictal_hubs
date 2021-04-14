@@ -32,6 +32,9 @@ end
 pt = load([data_folder,'pt.mat']);
 pt = pt.pt;
 
+%% Load parameter file
+param_table = readtable([data_folder,'detector_parameters.xlsx']);
+
 %% Load localization structure
 loc = load([data_folder,'patient_localization.mat']);
 loc = loc.patient_localization;
@@ -88,7 +91,7 @@ for i = 1:length(whichPts)
     clean_loc_labs = clean_labels_2(loc(loc_p).labels);
     
     %% Pull spike detector parameters
-    params = pull_detector_params(name);
+    params = pull_detector_params(name,param_table);
     
     
     % Loop over ieeg files
