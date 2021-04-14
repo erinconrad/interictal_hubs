@@ -31,8 +31,11 @@ for i = 1:length(listing)
         end
     end
     
+    nbad = mean(nbad);
+    nskip = mean(nskip);
+    
     fprintf(['\nFor %s, using tmul %d and absthresh %d\n'...
-        'in %d hours, %d spikes detected, (%d contacts skipped and %d rejected as artifact)\n'],...
+        'in %d hours, %d spikes detected, (mean %d contacts skipped and %d rejected as artifact)\n'],...
         name,tmul1,absthresh1,nhours,nspikes,nskip,nbad);
     
 end
