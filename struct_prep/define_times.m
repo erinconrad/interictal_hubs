@@ -1,6 +1,6 @@
 %% Parameters
 block = 3600; % check every hour
-mini_block = 60;
+mini_block = 60*5; % 5 minute block every hour;
 
 %% Get file locs
 locations = interictal_hub_locations;
