@@ -14,9 +14,9 @@ test.ch = [];
 
 %% Get file locs
 locations = interictal_hub_locations;
-data_folder = [locations.main_folder,'data/'];
 results_folder = [locations.main_folder,'results/'];
 scripts_folder = locations.script_folder;
+data_folder = [scripts_folder,'data/'];
 addpath(genpath(scripts_folder));
 ieeg_folder = locations.ieeg_folder;
 addpath(genpath(ieeg_folder));
