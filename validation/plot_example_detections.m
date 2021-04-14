@@ -85,7 +85,7 @@ for p = whichPts
         %% Get the EEG data
         session = IEEGSession(fname, login_name, pwfile);
         run_times = [sp_time - surround,sp_time+surround];
-        run_idx = run_times(1)*fs:run+times(2)*fs;
+        run_idx = run_times(1)*fs:run_times(2)*fs;
         values = session.data.getvalues(run_idx,':');
         sp_index = surround*fs;
         
