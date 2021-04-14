@@ -19,8 +19,8 @@ for i = 1:length(listing)
     nspikes = 0;
     nhours = 0;
     name = spikes.name;
-    tmul1 = spikes.file.hour(1).params.tmul;
-    absthresh1 = spikes.file.hour(1).params.absthresh;
+    tmul1 = spikes.file(1).hour(1).params.tmul;
+    absthresh1 = spikes.file(1).hour(1).params.absthresh;
     
     for f = 1:length(spikes.file)
         for h = 1:length(spikes.file(f).hour)
