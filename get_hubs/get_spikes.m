@@ -6,11 +6,14 @@ test.do_test = 0;
 do_plot = 0;
 
 %% Test parameters
-test.time = 1605.05; %193231.80;% - ok except RA4;  %1605.05 - super high variance LAF1; 5617.68 - flat; 28583.69 - RA4 bad
-test.dur = 60;
-test.pt = 1;
+test.pt = 10;
+test.time = 909836.48; %193231.80;% - ok except RA4;  %1605.05 - super high variance LAF1; 5617.68 - flat; 28583.69 - RA4 bad
+test.dur = 15;
 test.file = 1;
 test.ch = [];
+
+test.tmul = 17;
+test.absthresh = 50;
 
 %% Get file locs
 locations = interictal_hub_locations;
@@ -93,6 +96,10 @@ for i = 1:length(whichPts)
     %% Pull spike detector parameters
     params = pull_detector_params(name,param_table);
     
+    if test.do_test == 1
+        params.tmul = test.tmul;
+        params.absthresh = test.absthresh;
+    end
     
     % Loop over ieeg files
     if isempty(pt(p).ieeg)
@@ -206,7 +213,7 @@ for i = 1:length(whichPts)
             
             %% Example plot              
             if do_plot
-                show_eeg_and_spikes(values,bipolar_labels,gdf,dur,run_times(1),name,fs,bad,skip);
+                show_eeg_and_spikes(values,bipolar_labels,gdf,dur,run_times(1),name,fs,bad,skip,params);
             end
             
             %% Re-align gdf time

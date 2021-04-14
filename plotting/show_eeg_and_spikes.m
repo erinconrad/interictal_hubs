@@ -1,4 +1,4 @@
-function show_eeg_and_spikes(values,chLabels,gdf,dur,start_time,name,fs,bad,skip)
+function show_eeg_and_spikes(values,chLabels,gdf,dur,start_time,name,fs,bad,skip,params)
 
 figure
 set(gcf,'position',[62 104 1145 701])
@@ -43,7 +43,7 @@ for s = 1:size(gdf,1)
     
 end
 
-title(sprintf('%s %1.1f',name,start_time(1)))
+title(sprintf('%s %1.1f tmul %d absthresh %d',name,start_time(1),params.tmul,params.absthresh))
 
 pause
 close(gcf)
