@@ -52,7 +52,8 @@ for p = whichPts
     all_spikes = [];
     for f = 1:length(spikes.file)
         for h = 1:length(spikes.file(f).hour)
-            all_spikes = [all_spikes;spikes.file(f).hour(h).gdf,f];
+            all_spikes = [all_spikes;spikes.file(f).hour(h).gdf,...
+                repmat(f,size(spikes.file(f).hour(h).gdf,1),1)];
         end
     end
     
