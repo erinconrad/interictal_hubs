@@ -87,6 +87,7 @@ for p = whichPts
         run_times = [sp_time - surround,sp_time+surround];
         run_idx = run_times(1)*fs:run_times(2)*fs;
         values = session.data.getvalues(run_idx,':');
+        session.delete;
         sp_index = surround*fs;
         
         %% Plot data
