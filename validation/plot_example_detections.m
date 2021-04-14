@@ -31,7 +31,7 @@ if isempty(whichPts)
         for j = 1:length(pt)
             pt_name = pt(j).name;
             if strcmp(temp_name,pt_name)
-                all_p = [all_p,j];
+                whichPts = [whichPts,j];
                 break
             end
         end
