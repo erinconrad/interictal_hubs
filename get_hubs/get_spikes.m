@@ -76,7 +76,11 @@ for i = 1:length(whichPts)
     
     
     % Loop over ieeg files
-    n_files = length(pt(p).ieeg.file);
+    if isempty(pt(p).ieeg)
+        n_files = 0;
+    else
+        n_files = length(pt(p).ieeg.file);
+    end
     for f = next_file:n_files
         
         if test.do_test == 1
