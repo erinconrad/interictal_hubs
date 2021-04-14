@@ -29,7 +29,7 @@ for j = 1:length(which_chs)
     if sum(isnan(data)) > 0, continue; end
     
     %% re-adjust the mean of the data to be zero (if there is a weird dc shift)
-    data = data - mean(data);
+    data = data - nanmean(data);
         
     %% Run the spike detector
     spikes   = [];
@@ -132,7 +132,7 @@ for j = 1:length(which_chs)
         end
     end
 
-    %{
+    %
     if ~isempty(out)
        
          %% Re-align spikes to peak of the spikey component

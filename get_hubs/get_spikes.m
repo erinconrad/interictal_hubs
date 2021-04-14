@@ -6,7 +6,7 @@ test.do_test = 0;
 do_plot = 0;
 
 %% Test parameters
-test.time = 20550; %193231.80;% - ok except RA4;  %1605.05 - super high variance LAF1; 5617.68 - flat; 28583.69 - RA4 bad
+test.time = 1605.05; %193231.80;% - ok except RA4;  %1605.05 - super high variance LAF1; 5617.68 - flat; 28583.69 - RA4 bad
 test.dur = 60;
 test.pt = 1;
 test.file = 1;
@@ -121,6 +121,7 @@ for i = 1:length(whichPts)
         
         %% Designate which electrodes to skip
         [which_chs,skip] = designate_chs(chLabels,clean_labs,clean_loc_labs,loc(loc_p));
+        non_skip = which_chs;
         
         % filename
         fname = pt(p).ieeg.file(f).name;
@@ -139,6 +140,7 @@ for i = 1:length(whichPts)
             
             end
             run_idx = run_times(1)*fs:run_times(2)*fs;
+            dur = diff(run_times);
             
             
             %% Get the eeg data
@@ -165,28 +167,44 @@ for i = 1:length(whichPts)
             %% Reject bad channels
             [bad,bad_details] = reject_bad_chs(values,which_chs,chLabels,fs);
             
-            %% Spike detector
-            run_chs = which_chs;
-            run_chs(ismember(run_chs,bad)) = [];
-            if ~isempty(run_chs)
-                gdf = detector(values,fs,run_chs,params);
-            else
+            %% Skip the chunk entirely if enough channels are bad (suggests period of disconnection)
+            if length(bad) >= 0.5*length(which_chs)
+                fprintf('\nSkipping this run because %d of %d chs marked bad\n',length(bad),length(which_chs));
                 gdf = [];
+                run_chs = [];
+            else
+            
+                %% Spike detector
+                run_chs = which_chs;
+                run_chs(ismember(run_chs,bad)) = [];
+                if ~isempty(run_chs)
+                    gdf = detector(values,fs,run_chs,params);
+                else
+                    gdf = [];
+                end
+
+                %% Multi-channel requirements
+                if ~isempty(gdf)
+                    gdf =  multi_channel_requirements(gdf,length(run_chs),fs);
+                end
+
+                
+
+                
             end
             
-            %% Multi-channel requirements
-            if ~isempty(gdf)
-                gdf =  multi_channel_requirements(gdf,length(which_chs),fs);
-            end
-            
-            %% Example plot
-            dur = diff(run_times);
+            %% Run details
             t = toc;
             fprintf('\nTook %1.1f s and detected %d spikes\n',t,size(gdf,1));
+            fprintf('Of %d non-skipped chs, rejected %d for nans, %d for variance,\n%d for noise, %d for std.\n',...
+                length(non_skip),length(bad_details.nans),length(bad_details.var),...
+                length(bad_details.noisy),length(bad_details.higher_std));
+            
+            %% Example plot              
             if do_plot
                 show_eeg_and_spikes(values,bipolar_labels,gdf,dur,run_times(1),name,fs,bad,skip);
             end
-          
+            
             %% Re-align gdf time
             if ~isempty(gdf)
                 gdf(:,2) = (gdf(:,2)+run_idx(1)-1)/fs;

@@ -1,17 +1,22 @@
 function [bad,details] = reject_bad_chs(values,which_chs,chLabels,fs)
 
+%% Parameters to reject super high variance
+tile = 99;
+mult = 10;
+num_above = 1;
+
+%% Parameter to reject high 60 Hz
+percent_60_hz = 0.5;
+
+%% Parameter to reject electrodes with much higher std than most electrodes
+mult_std = 10;
+
 bad = [];
 nan_ch = [];
 high_var_ch = [];
 noisy_ch = [];
+all_std = nan(length(which_chs),1);
 
-%% Parameters to reject super high variance
-tile = 98;
-mult = 10;
-num_above = 5;
-
-%% Parameter to reject high 60 Hz
-percent_60_hz = 0.7;
 
 for i = 1:length(which_chs)
     
@@ -19,10 +24,13 @@ for i = 1:length(which_chs)
     
     ich = which_chs(i);
     eeg = values(:,ich);
-    bl = median(eeg);
+    bl = nanmedian(eeg);
     
-    %% Remove channels with any nans
-    if sum(isnan(eeg)) > 0
+    %% Get channel standard deviation
+    all_std(i) = nanstd(eeg);
+    
+    %% Remove channels with nans in more than half
+    if sum(isnan(eeg)) > 0.5*length(eeg)
         bad = [bad;ich];
         nan_ch = [nan_ch;ich];
         continue;
@@ -34,7 +42,7 @@ for i = 1:length(which_chs)
     pct = prctile(eeg,[100-tile tile]);
     thresh = [bl - mult*(bl-pct(1)), bl + mult*(pct(2)-bl)];
     sum_outside = sum(eeg > thresh(2) | eeg < thresh(1));
-    if sum_outside > num_above
+    if sum_outside >= num_above
         bad_ch = 1;
     end
     
@@ -50,6 +58,8 @@ for i = 1:length(which_chs)
         plot(xlim,[thresh(1) thresh(1)]);
         plot(xlim,[thresh(2) thresh(2)]);
         title(sprintf('Sum outside: %d',sum_outside));
+        pause
+        hold off
     end
     
     if bad_ch == 1
@@ -61,7 +71,9 @@ for i = 1:length(which_chs)
     %% Remove channels with a lot of 60 Hz noise, suggesting poor impedance
     
     % Calculate fft
-    Y = fft(eeg-mean(eeg));
+    %orig_eeg = orig_values(:,ich);
+    %Y = fft(orig_eeg-mean(orig_eeg));
+    Y = fft(eeg-nanmean(eeg));
     
     % Get power
     P = abs(Y).^2;
@@ -78,8 +90,15 @@ for i = 1:length(which_chs)
     end
     
     if 0
-        spectrogram(eeg,[],[],[],fs);
-        title(sprintf('Percent 60 Hz power %1.1f',P_60Hz*100))
+        figure
+        subplot(2,1,1)
+        plot(orig_eeg)
+        
+        subplot(2,1,2)
+        spectrogram(orig_eeg,[],[],[],fs);
+        title(sprintf('%s Percent 60 Hz power %1.1f',chLabels{ich},P_60Hz*100))
+        pause
+        close(gcf)
     end
     
     if bad_ch == 1
@@ -88,10 +107,20 @@ for i = 1:length(which_chs)
         continue;
     end
     
+    
+    
 end
+
+%% Remove channels for whom the std is much larger than the baseline
+median_std = nanmedian(all_std);
+higher_std = which_chs(all_std > mult_std * median_std);
+bad_std = higher_std;
+bad_std(ismember(bad_std,bad)) = [];
+bad = ([bad;bad_std]);
 
 details.noisy = noisy_ch;
 details.nans = nan_ch;
 details.var = high_var_ch;
+details.higher_std = bad_std;
 
 end
