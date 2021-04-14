@@ -83,11 +83,13 @@ for p = whichPts
         f = all_spikes(sp,3);
         sp_time = all_spikes(sp,2);
         sp_ch = all_spikes(sp,1);
-        sp_label = spikes.file(f).hour(1).chLabels{sp_ch};
         tmul = spikes.file(f).hour(1).params.tmul;
         absthresh = spikes.file(f).hour(1).params.absthresh;
         fs = spikes.file(f).hour(1).fs;
         fname = pt(p).ieeg.file(f).name;
+        chLabels = spikes.file(f).hour(1).chLabels;
+        
+        
         
         %% Get the EEG data
         session = IEEGSession(fname, login_name, pwfile);
@@ -97,13 +99,16 @@ for p = whichPts
         session.delete;
         sp_index = surround*fs;
         
+        clean_labs = clean_labels_2(chLabels);
+        [values,bipolar_labels] = pre_process(values,clean_labs);
+        
         %% Plot data
         axes(ha(b))
         plot(linspace(0,surround*2,size(values,1)),values(:,sp_ch),'linewidth',2);
         hold on
         plot(surround,values(round(sp_index),sp_ch),'o','markersize',10)
         title(sprintf('Spike %d %1.1f s %s file %d, tmul %d absthresh %d',...
-            sp,sp_time,sp_label,f,tmul,absthresh),'fontsize',10)
+            sp,sp_time,bipolar_labels{sp_ch},f,tmul,absthresh),'fontsize',10)
         if b ~= n_per_fig
             xticklabels([])
         end
