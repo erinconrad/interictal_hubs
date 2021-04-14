@@ -1,4 +1,4 @@
-function plot_example_detections(whichPts)
+function plot_example_detections(whichPts,overwrite)
 
 %% General parameters
 n_sp = 50;
@@ -41,7 +41,14 @@ end
 for p = whichPts
     pt_name = pt(p).name;
     out_folder = [results_folder,'validation/',pt_name,'/'];
-    if exist(out_folder,'dir') == 0, mkdir(out_folder); end
+    
+    if exist(out_folder,'dir') ~= 0
+        if overwrite == 0
+            fprintf('\nSkipping %s\n',pt_name);
+        end
+    else
+        mkdir(out_folder);
+    end
 
     %% Load spike file
     spikes = load([spike_folder,sprintf('%s_spikes.mat',pt_name)]);
