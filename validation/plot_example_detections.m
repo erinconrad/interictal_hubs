@@ -80,6 +80,7 @@ for p = whichPts
         tmul = spikes.file(f).hour(1).params.tmul;
         absthresh = spikes.file(f).hour(1).params.absthresh;
         fs = spikes.file(f).hour(1).fs;
+        fname = pt(p).ieeg.file(f).name;
         
         %% Get the EEG data
         session = IEEGSession(fname, login_name, pwfile);
