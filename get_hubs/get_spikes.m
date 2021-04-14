@@ -3,7 +3,7 @@ function get_spikes(whichPts)
 %% Parameters
 overwrite = 0;
 test.do_test = 0;
-do_plot = 1;
+do_plot = 0;
 
 %% Test parameters
 test.time = 20550; %193231.80;% - ok except RA4;  %1605.05 - super high variance LAF1; 5617.68 - flat; 28583.69 - RA4 bad
