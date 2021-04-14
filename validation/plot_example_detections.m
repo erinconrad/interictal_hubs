@@ -11,7 +11,7 @@ data_folder = [locations.main_folder,'data/'];
 results_folder = [locations.main_folder,'results/'];
 ieeg_folder = locations.ieeg_folder;
 addpath(genpath(ieeg_folder));
-pwfile = locations.pwfile;
+pwfile = locations.ieeg_pw_file;
 login_name = locations.ieeg_login;
 addpath(genpath(locations.script_folder));
 addpath(genpath(locations.ieeg_folder));
