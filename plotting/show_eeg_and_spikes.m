@@ -10,7 +10,7 @@ ch_bl = zeros(size(values,2),1);
 for ich = 1:size(values,2)
     if ismember(ich,bad)
         plot(linspace(0,dur,size(values,1)),values(:,ich)-offset,'r');
-    elseif ismember(ich,skip)
+    elseif ismember(ich,skip.all)
         plot(linspace(0,dur,size(values,1)),values(:,ich)-offset,'c');
     else
         plot(linspace(0,dur,size(values,1)),values(:,ich)-offset,'k');

@@ -3,7 +3,7 @@ function get_spikes(whichPts)
 %% Parameters
 overwrite = 0;
 test.do_test = 0;
-do_plot = 0;
+do_plot = 1;
 
 %% Test parameters
 test.time = 20550; %193231.80;% - ok except RA4;  %1605.05 - super high variance LAF1; 5617.68 - flat; 28583.69 - RA4 bad
@@ -24,9 +24,17 @@ pwfile = locations.ieeg_pw_file;
 login_name = locations.ieeg_login;
 sp_folder = [results_folder,'spikes/'];
 
+if exist(sp_folder,'dir') == 0
+    mkdir(sp_folder);
+end
+
 %% Load pt struct
 pt = load([data_folder,'pt.mat']);
 pt = pt.pt;
+
+%% Load localization structure
+loc = load([data_folder,'patient_localization.mat']);
+loc = loc.patient_localization;
 
 %% Get which patients to run
 if isempty(whichPts)
@@ -69,7 +77,15 @@ for i = 1:length(whichPts)
         end
     end
     
+    %% identify the correct index of the localization structure
+    for loc_p = 1:length(loc)
+        if strcmp(loc(loc_p).patient,name) == 1
+            break
+        end
+    end
     
+    % Get clean loc labels
+    clean_loc_labs = clean_labels_2(loc(loc_p).labels);
     
     %% Pull spike detector parameters
     params = pull_detector_params(name);
@@ -92,6 +108,19 @@ for i = 1:length(whichPts)
         
         % electrodes
         chLabels = pt(p).ieeg.file(f).chLabels(:,1);
+        
+        %% Get cleaned labels
+        clean_labs = clean_labels_2(chLabels);
+        
+        %% Reconcile cleaned labels with cleaned loc labels
+        % For the purpose of knowing which electrodes to skip
+        if ~isequal(clean_labs,clean_loc_labs)
+            fprint('\nWarning, localization labels do not match ieeg labels\n');
+        end
+        
+        
+        %% Designate which electrodes to skip
+        [which_chs,skip] = designate_chs(chLabels,clean_labs,clean_loc_labs,loc(loc_p));
         
         % filename
         fname = pt(p).ieeg.file(f).name;
@@ -117,7 +146,7 @@ for i = 1:length(whichPts)
             values = session.data.getvalues(run_idx,':');
                        
             %% Do pre-processing
-            [values,bipolar_labels] = pre_process(values,chLabels);
+            [values,bipolar_labels] = pre_process(values,clean_labs);
             
             %% Designate electrodes over which to run spike detector
             if test.do_test == 1 && ~isempty(test.ch)
@@ -127,7 +156,9 @@ for i = 1:length(whichPts)
                     which_chs = test.ch;
                 end
             else
-                [which_chs,skip] = designate_chs(chLabels);
+                
+                % I have already designated channels to run about at the
+                % file level
             end
             
             %% Reject bad channels
