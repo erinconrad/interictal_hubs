@@ -6,7 +6,7 @@ n_per_fig = 10;
 surround = 5;
 
 %% Locations
-locations = implant_files;
+locations = interictal_hub_locations;
 data_folder = [locations.main_folder,'data/'];
 results_folder = [locations.main_folder,'results/'];
 ieeg_folder = locations.ieeg_folder;
