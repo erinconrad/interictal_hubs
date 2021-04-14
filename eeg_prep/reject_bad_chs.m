@@ -13,6 +13,7 @@ mult_std = 10;
 
 bad = [];
 nan_ch = [];
+zero_ch = [];
 high_var_ch = [];
 noisy_ch = [];
 all_std = nan(length(which_chs),1);
@@ -36,6 +37,12 @@ for i = 1:length(which_chs)
         continue;
     end
     
+    %% Remove channels with zeros in more than half
+    if sum(eeg == 0) > 0.5 * length(eeg)
+        bad = [bad;ich];
+        zero_ch = [zero_ch;ich];
+        continue;
+    end
     
     
     %% Remove channels if there are rare cases of super high variance above baseline (disconnection, moving, popping)
@@ -120,6 +127,7 @@ bad = ([bad;bad_std]);
 
 details.noisy = noisy_ch;
 details.nans = nan_ch;
+details.zeros = zero_ch;
 details.var = high_var_ch;
 details.higher_std = bad_std;
 

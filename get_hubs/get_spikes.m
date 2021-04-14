@@ -3,7 +3,7 @@ function get_spikes(whichPts)
 %% Parameters
 overwrite = 0;
 test.do_test = 0;
-do_plot = 0;
+do_plot = 1;
 
 %% Test parameters
 test.time = 1605.05; %193231.80;% - ok except RA4;  %1605.05 - super high variance LAF1; 5617.68 - flat; 28583.69 - RA4 bad
@@ -172,8 +172,9 @@ for i = 1:length(whichPts)
                 fprintf('\nSkipping this run because %d of %d chs marked bad\n',length(bad),length(which_chs));
                 gdf = [];
                 run_chs = [];
+                run_skip = 1;
             else
-            
+                run_skip = 0;
                 %% Spike detector
                 run_chs = which_chs;
                 run_chs(ismember(run_chs,bad)) = [];
@@ -196,8 +197,8 @@ for i = 1:length(whichPts)
             %% Run details
             t = toc;
             fprintf('\nTook %1.1f s and detected %d spikes\n',t,size(gdf,1));
-            fprintf('Of %d non-skipped chs, rejected %d for nans, %d for variance,\n%d for noise, %d for std.\n',...
-                length(non_skip),length(bad_details.nans),length(bad_details.var),...
+            fprintf('Of %d non-skipped chs, rejected %d for nans, %d for zeros,\n%d for variance, %d for noise, %d for std.\n',...
+                length(non_skip),length(bad_details.nans),length(bad_details.zeros),length(bad_details.var),...
                 length(bad_details.noisy),length(bad_details.higher_std));
             
             %% Example plot              
@@ -218,6 +219,7 @@ for i = 1:length(whichPts)
             spikes.file(f).hour(h).chLabels = chLabels;
             spikes.file(f).hour(h).bipolar_labels = bipolar_labels;
             spikes.file(f).hour(h).bad = bad;
+            spikes.file(f).hour(h).run_skip = run_skip;
             spikes.file(f).hour(h).bad_details = bad_details;
             spikes.file(f).hour(h).skip = skip;
             spikes.file(f).hour(h).run_chs = run_chs;
