@@ -113,7 +113,7 @@ for p = whichPts
         if b == n_per_fig
             xlabel('Time (s)')
             which_plot = which_plot + 1;
-            print([out_folder,sprintf('spikes_%d',which_plot)],'-dpng');
+            print([out_folder,sprintf('spikes_%d',which_plot)],'-djpeg');
             close(gcf)
         end
         
