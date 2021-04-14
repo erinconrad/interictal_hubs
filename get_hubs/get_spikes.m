@@ -193,6 +193,7 @@ for i = 1:length(whichPts)
             
             %% Add spikes to structure
             spikes.file(f).hour(h).run_times = run_times;
+            spikes.file(f).hour(h).fs = fs;
             spikes.file(f).hour(h).params = params;
             spikes.file(f).hour(h).gdf = gdf;
             spikes.file(f).hour(h).chLabels = chLabels;

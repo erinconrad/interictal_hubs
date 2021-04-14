@@ -25,7 +25,7 @@ for i = 1:length(listing)
     for f = 1:length(spikes.file)
         for h = 1:length(spikes.file(f).hour)
             nbad = [nbad;length(spikes.file(f).hour(h).bad)];
-            nskip = [nskip;length(spikes.file(f).hour(h).skip)];
+            nskip = [nskip;length(spikes.file(f).hour(h).skip.all)];
             nspikes = nspikes + size(spikes.file(f).hour(h).gdf,1);
             nhours = nhours + 1;
         end
