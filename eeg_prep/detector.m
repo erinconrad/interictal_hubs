@@ -132,7 +132,11 @@ for j = 1:length(which_chs)
         end
     end
 
-    %
+    %{
+    if dd == 79
+        error('look');
+    end
+    %}
     if ~isempty(out)
        
          %% Re-align spikes to peak of the spikey component
@@ -144,7 +148,7 @@ for j = 1:length(which_chs)
                     min(round(currIdx+idxToPeak(2)),length(HFdata));  
             snapshot = HFdata(idxToLook); % Look at the high frequency data (where the mean is substracted already)
             [~,I] = max(abs(snapshot)); % The peak is the maximum absolute value of this
-            out(i,1) = out(i,1) + idxToPeak(1) + I;
+            out(i,1) = idxToLook(1) + I;
          end
     end
     %}
