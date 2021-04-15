@@ -6,8 +6,8 @@ test.do_test = 0;
 do_plot = 0;
 
 %% Test parameters
-test.pt = 10;
-test.time = 909836.48; %193231.80;% - ok except RA4;  %1605.05 - super high variance LAF1; 5617.68 - flat; 28583.69 - RA4 bad
+test.pt = 16;
+test.time = 154462.89; %193231.80;% - ok except RA4;  %1605.05 - super high variance LAF1; 5617.68 - flat; 28583.69 - RA4 bad
 test.dur = 15;
 test.file = 1;
 test.ch = [];
@@ -125,7 +125,7 @@ for i = 1:length(whichPts)
         %% Reconcile cleaned labels with cleaned loc labels
         % For the purpose of knowing which electrodes to skip
         if ~isequal(clean_labs,clean_loc_labs)
-            fprint('\nWarning, localization labels do not match ieeg labels\n');
+            fprintf('\nWarning, localization labels do not match ieeg labels\n');
         end
         
         
