@@ -45,6 +45,7 @@ for p = whichPts
     if exist(out_folder,'dir') ~= 0
         if overwrite == 0
             fprintf('\nSkipping %s\n',pt_name);
+            continue
         end
     else
         mkdir(out_folder);
