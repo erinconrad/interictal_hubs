@@ -48,6 +48,7 @@ for p = whichPts
             continue
         end
     else
+        fprintf('\nDoing %s\n',pt_name);
         mkdir(out_folder);
     end
 

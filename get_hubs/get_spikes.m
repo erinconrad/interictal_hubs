@@ -76,6 +76,7 @@ for i = 1:length(whichPts)
             end
         else
             % initialize it
+            clear spikes % I must clear this 
             next_file = 1;
             next_hour = 1;
             spikes.name = name;
