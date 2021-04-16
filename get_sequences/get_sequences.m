@@ -1,4 +1,4 @@
-function [mean_rl,nseq] = get_sequences(gdf,nchs)
+function [median_rl,nseq] = get_sequences(gdf,nchs)
 
 t2 = 15*1e-3; % max time from preceding spike (15 ms in paper)
 minSeqLength = 5; 
@@ -6,6 +6,7 @@ nspikes = size(gdf,1);
 
 if nspikes == 0
     mean_rl = nan(nchs,1);
+    median_rl = nan(nchs,1);
     nseq = 0;
     return
 end
@@ -96,5 +97,19 @@ for s = 1:nseq
 end
 
 mean_rl = nanmean(rl,2);
+median_rl = nanmedian(rl,2);
+meancorr = nan(nseq,1);
+mediancorr = nan(nseq,1);
+
+if 0
+    for s = 1:nseq
+        meancorr(s) = corr(mean_rl,rl(:,s),'Type','Spearman','rows','pairwise');
+        mediancorr(s) = corr(median_rl,rl(:,s),'Type','Spearman','rows','pairwise');
+    end
+    
+    plot(meancorr,'o')
+    hold on
+    plot(mediancorr,'x')
+end
 
 end

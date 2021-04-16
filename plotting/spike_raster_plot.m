@@ -55,6 +55,7 @@ for p = whichPts
         nseq = nan(nhours,1);
         all_chs = 1:nchs;
         skip_chs = spikes.file(f).hour(1).skip.all;
+        rate_rl_corr = nan(nhours,1);
         for h = 1:nhours
             
             if spikes.file(f).hour(h).run_skip == 1
@@ -79,6 +80,11 @@ for p = whichPts
                 if isempty(gdf), continue; end
                 raster(ich,h) = sum(gdf(:,1)==ich);
             end
+            
+            %% Correlate spike frequency with rl
+            rate_rl_corr(h) = corr(raster(:,h),rl(:,h),...
+                'Type','Spearman','rows','pairwise');
+            
         end
         
         %% Get sequence reliability
@@ -89,14 +95,17 @@ for p = whichPts
         
         %% Re-order channels basedon this (for display purposes)
         [~,I] = sort(median_rl);
-        rl = rl(I,:);
         
+        
+        
+        
+        %% Plot recruitment latency
         if 1
             figure
             set(gcf,'position',[440 1 835 797])
             ha = tight_subplot(2,1,[0 0.01],[0.06 0.04],[0.07 0.01]);
             axes(ha(1))
-            turn_nans_white(rl(~ismember(all_chs,skip_chs),:));
+            turn_nans_white(rl(I,:));
             yticklabels([])
             ylabel('Electrode')
             xlim([1 nhours])
@@ -111,29 +120,35 @@ for p = whichPts
             xlim([1 nhours])
             xlabel('Hour')
             set(gca,'fontsize',15)
-
-            pause
-            close(gcf)
-            
-            
+ 
+        end
+        
+        %% Correlate recruitment latency with spike rate
+        if 1
+            figure
+            plot(rate_rl_corr,'o')
+            ylim([-1 1])
             
         end
         
-        if 0
+        %% Show spike rate
+        if 1
             figure
             set(gcf,'position',[440 1 835 797])
-            turn_nans_white(raster);
+            turn_nans_white(raster(I,:));
             yticks(1:nchs)
-            yticklabels(chLabels)
+            yticklabels(chLabels(I))
             ylabel('Electrode')
             xlabel('Hour')
 
             title(sprintf('%s file %d',name,f))
 
 
-            pause
-            close(gcf)
+            
         end
+        
+        pause
+        close all
         
     end
     
