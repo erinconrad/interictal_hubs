@@ -228,6 +228,7 @@ for i = 1:length(whichPts)
                 gdf = [];
                 bad = [];
                 run_skip = 1;
+                bipolar_labels = [];
                 bad_details =  [];
                 skip = [];
                 run_chs = [];
