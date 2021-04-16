@@ -150,76 +150,87 @@ for i = 1:length(whichPts)
                 run_times = pt(p).ieeg.file(f).block(h).run; 
             
             end
-            run_idx = run_times(1)*fs:run_times(2)*fs;
-            dur = diff(run_times);
-            
-            
-            %% Get the eeg data
-            session = IEEGSession(fname, login_name, pwfile);
-            values = session.data.getvalues(run_idx,':');
-            session.delete;
-                       
-            %% Do pre-processing
-            [values,bipolar_labels] = pre_process(values,clean_labs);
-            
-            %% Designate electrodes over which to run spike detector
-            if test.do_test == 1 && ~isempty(test.ch)
-                if iscell(test.ch)
-                    which_chs = (cellfun(@(x) find(strcmp(chLabels,x)),test.ch));
+            if ~isempty(run_times)
+             
+                run_idx = run_times(1)*fs:run_times(2)*fs;
+                dur = diff(run_times);
+
+
+                %% Get the eeg data
+                session = IEEGSession(fname, login_name, pwfile);
+                values = session.data.getvalues(run_idx,':');
+                session.delete;
+
+                %% Do pre-processing
+                [values,bipolar_labels] = pre_process(values,clean_labs);
+
+                %% Designate electrodes over which to run spike detector
+                if test.do_test == 1 && ~isempty(test.ch)
+                    if iscell(test.ch)
+                        which_chs = (cellfun(@(x) find(strcmp(chLabels,x)),test.ch));
+                    else
+                        which_chs = test.ch;
+                    end
                 else
-                    which_chs = test.ch;
+
+                    % I have already designated channels to run about at the
+                    % file level
                 end
-            else
-                
-                % I have already designated channels to run about at the
-                % file level
-            end
-            
-            %% Reject bad channels
-            [bad,bad_details] = reject_bad_chs(values,which_chs,chLabels,fs);
-            
-            %% Skip the chunk entirely if enough channels are bad (suggests period of disconnection)
-            if length(bad) >= 0.5*length(which_chs)
-                fprintf('\nSkipping this run because %d of %d chs marked bad\n',length(bad),length(which_chs));
-                gdf = [];
-                run_chs = [];
-                run_skip = 1;
-            else
-                run_skip = 0;
-                %% Spike detector
-                run_chs = which_chs;
-                run_chs(ismember(run_chs,bad)) = [];
-                if ~isempty(run_chs)
-                    gdf = detector(values,fs,run_chs,params);
-                else
+
+                %% Reject bad channels
+                [bad,bad_details] = reject_bad_chs(values,which_chs,chLabels,fs);
+
+                %% Skip the chunk entirely if enough channels are bad (suggests period of disconnection)
+                if length(bad) >= 0.5*length(which_chs)
+                    fprintf('\nSkipping this run because %d of %d chs marked bad\n',length(bad),length(which_chs));
                     gdf = [];
+                    run_chs = [];
+                    run_skip = 1;
+                else
+                    run_skip = 0;
+                    %% Spike detector
+                    run_chs = which_chs;
+                    run_chs(ismember(run_chs,bad)) = [];
+                    if ~isempty(run_chs)
+                        gdf = detector(values,fs,run_chs,params);
+                    else
+                        gdf = [];
+                    end
+
+                    %% Multi-channel requirements
+                    if ~isempty(gdf)
+                        gdf =  multi_channel_requirements(gdf,length(run_chs),fs);
+                    end
+
+
+
+
                 end
 
-                %% Multi-channel requirements
+                %% Run details
+                t = toc;
+                fprintf('\nTook %1.1f s and detected %d spikes\n',t,size(gdf,1));
+                fprintf('Of %d non-skipped chs, rejected %d for nans, %d for zeros,\n%d for variance, %d for noise, %d for std.\n',...
+                    length(non_skip),length(bad_details.nans),length(bad_details.zeros),length(bad_details.var),...
+                    length(bad_details.noisy),length(bad_details.higher_std));
+
+                %% Example plot              
+                if do_plot
+                    show_eeg_and_spikes(values,bipolar_labels,gdf,dur,run_times(1),name,fs,bad,skip,params);
+                end
+
+                %% Re-align gdf time
                 if ~isempty(gdf)
-                    gdf =  multi_channel_requirements(gdf,length(run_chs),fs);
+                    gdf(:,2) = (gdf(:,2)+run_idx(1)-1)/fs;
                 end
-
                 
-
-                
-            end
-            
-            %% Run details
-            t = toc;
-            fprintf('\nTook %1.1f s and detected %d spikes\n',t,size(gdf,1));
-            fprintf('Of %d non-skipped chs, rejected %d for nans, %d for zeros,\n%d for variance, %d for noise, %d for std.\n',...
-                length(non_skip),length(bad_details.nans),length(bad_details.zeros),length(bad_details.var),...
-                length(bad_details.noisy),length(bad_details.higher_std));
-            
-            %% Example plot              
-            if do_plot
-                show_eeg_and_spikes(values,bipolar_labels,gdf,dur,run_times(1),name,fs,bad,skip,params);
-            end
-            
-            %% Re-align gdf time
-            if ~isempty(gdf)
-                gdf(:,2) = (gdf(:,2)+run_idx(1)-1)/fs;
+            else
+                gdf = [];
+                bad = [];
+                run_skip = 1;
+                bad_details =  [];
+                skip = [];
+                run_chs = [];
             end
             
             %% Add spikes to structure
