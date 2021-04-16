@@ -6,8 +6,8 @@ test.do_test = 0;
 do_plot = 0;
 
 %% Test parameters
-test.pt = 27;
-test.time = 510464.75; %193231.80;% - ok except RA4;  %1605.05 - super high variance LAF1; 5617.68 - flat; 28583.69 - RA4 bad
+test.pt = 28;
+test.time = 107791.53; %193231.80;% - ok except RA4;  %1605.05 - super high variance LAF1; 5617.68 - flat; 28583.69 - RA4 bad
 test.dur = 15;
 test.file = 1;
 test.ch = [];
