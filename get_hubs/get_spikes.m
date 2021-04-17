@@ -157,9 +157,7 @@ for i = 1:length(whichPts)
 
 
                 %% Get the eeg data
-                session = IEEGSession(fname, login_name, pwfile);
-                values = session.data.getvalues(run_idx,':');
-                session.delete;
+                values = pull_ieeg_data(fname, login_name, pwfile, run_idx);
 
                 %% Do pre-processing
                 [values,bipolar_labels] = pre_process(values,clean_labs);
