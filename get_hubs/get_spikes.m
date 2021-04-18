@@ -190,6 +190,7 @@ for i = 1:length(whichPts)
                     gdf = [];
                     run_chs = [];
                     run_skip = 1;
+                    details = [];
                 else
                     run_skip = 0;
                     %% Spike detector
