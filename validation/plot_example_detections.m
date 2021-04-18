@@ -49,6 +49,8 @@ for p = whichPts
                 fprintf('\nSkipping %s\n',pt_name);
                 continue
             end
+        else
+            fprintf('\nDoing %s\n',pt_name);
         end
     else
         fprintf('\nDoing %s\n',pt_name);
