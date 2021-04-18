@@ -43,9 +43,12 @@ for p = whichPts
     out_folder = [results_folder,'validation/',pt_name,'/'];
     
     if exist(out_folder,'dir') ~= 0
-        if overwrite == 0
-            fprintf('\nSkipping %s\n',pt_name);
-            continue
+        listing = dir([out_folder,'*.jpg']);
+        if length(listing) == 5
+            if overwrite == 0
+                fprintf('\nSkipping %s\n',pt_name);
+                continue
+            end
         end
     else
         fprintf('\nDoing %s\n',pt_name);
@@ -94,11 +97,12 @@ for p = whichPts
         
         
         %% Get the EEG data
-        session = IEEGSession(fname, login_name, pwfile);
+        %session = IEEGSession(fname, login_name, pwfile);
         run_times = [sp_time - surround,sp_time+surround];
         run_idx = run_times(1)*fs:run_times(2)*fs;
-        values = session.data.getvalues(run_idx,':');
-        session.delete;
+        %values = session.data.getvalues(run_idx,':');
+        %session.delete;
+        values = pull_ieeg_data(fname, login_name, pwfile, run_idx);
         sp_index = surround*fs;
         
         clean_labs = clean_labels_2(chLabels);
