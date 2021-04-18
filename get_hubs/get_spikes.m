@@ -8,7 +8,9 @@ Figure out how to get spike sequences
 overwrite = 0;
 test.do_test = 0;
 do_plot = 0;
+plot_spikes = 0;
 expand_gdf_with_details = 0;
+do_machine_ref = 0;
 
 %% Test parameters
 test.pt = 28;
@@ -231,7 +233,16 @@ for i = 1:length(whichPts)
 
                 %% Example plot              
                 if do_plot
-                    show_eeg_and_spikes(values,bipolar_labels,gdf,dur,run_times(1),name,fs,bad,skip,params);
+                    if do_machine_ref
+                        show_eeg_and_spikes(orig_values,clean_labs,details.gdf,dur,run_times(1),name,fs,bad,skip,params);
+                    else
+                        show_eeg_and_spikes(values,bipolar_labels,gdf,dur,run_times(1),name,fs,bad,skip,params);
+                    end
+                end
+                
+                if plot_spikes
+                    show_spike_details(orig_values,clean_labs,details,fs,dur) 
+                    
                 end
 
                 %% Re-align gdf time

@@ -13,6 +13,7 @@ ns = size(gdf,1);
 %% Initialize structures of useful info
 details.peak_amp = nan(ns,1);
 details.peak_idx = nan(ns,1);
+details.ch = nan(ns,1);
 details.first_rise_idx = nan(ns,1);
 details.last_fall_idx = nan(ns,1);
 details.mid_rise_idx = nan(ns,1);
@@ -25,6 +26,7 @@ for s = 1:size(gdf,1)
     
     ch = gdf(s,1);
     t = gdf(s,2);
+    orig_s_index = gdf(s,3);
     
     data = values(:,ch);
     fndata   = eegfilt(data, fn_fr, 'hp',fs); % high pass filter
@@ -51,6 +53,11 @@ for s = 1:size(gdf,1)
     peak_dev = HFdata(abs_ind); % this is signed
     thresh_dev = tmul * std(HFdata);
     
+    %% Fill peak amp and peak time
+    details.peak_amp(s) = abs(HFdata(abs_ind));
+    details.peak_idx(s) = abs_ind;
+    details.ch(s) = ch;
+    
     %% Find initial rise and mid-rise time
 
     % Look before the peak and find the first point at which all subsequent
@@ -63,14 +70,13 @@ for s = 1:size(gdf,1)
     all_enough_rise = find(num_rise > min_rise_idx);
     
     if isempty(all_enough_rise)
-        details.peak_amp(s) = nan;
-        details.peak_idx(s) = nan;
+        
         details.first_rise_idx(s) = nan;
         details.last_fall_idx(s) = nan;
         details.mid_rise_idx(s) = nan;
         details.mid_fall_idx(s) = nan;
         details_fwhm_ins(s) =  nan;
-        return
+        continue
     end
     
     first_rise = all_enough_rise(1) - min_rise_idx + idx_to_peak(1) - 1;
@@ -95,14 +101,13 @@ for s = 1:size(gdf,1)
     all_enough_rise = find(num_rise > min_rise_idx);
     
     if isempty(all_enough_rise)
-        details.peak_amp(s) = nan;
-        details.peak_idx(s) = nan;
+        
         details.first_rise_idx(s) = nan;
         details.last_fall_idx(s) = nan;
         details.mid_rise_idx(s) = nan;
         details.mid_fall_idx(s) = nan;
         details_fwhm_ins(s) =  nan;
-        return
+        continue
         
         
     end
@@ -124,7 +129,7 @@ for s = 1:size(gdf,1)
     end
 
 
-    if 1
+    if 0
         figure
         plot(idx_to_peak(1):idx_after_peak(end),data(idx_to_peak(1):idx_after_peak(end)));
         hold on
@@ -161,8 +166,7 @@ for s = 1:size(gdf,1)
         close(gcf)
     end
 
-    details.peak_amp(s) = HFdata(abs_ind);
-    details.peak_idx(s) = abs_ind;
+   
     details.first_rise_idx(s) = first_rise;
     details.last_fall_idx(s) = last_rise;
     details.mid_rise_idx(s) = mid_rise_time;
@@ -170,6 +174,33 @@ for s = 1:size(gdf,1)
     details_fwhm_ins(s) = (mid_fall_time - mid_rise_time)/fs;
     
 end
+
+%% Now loop over pairs of spikes in the gdf and remove whichever one has the lowest amplitude
+
+% Loop over gdf, 2 at a time
+keep = ones(ns,1);
+for s = 1:2:ns-1
+    amp1 = details.peak_amp(s);
+    amp2 = details.peak_amp(s);
+    
+    if amp1 >= amp2
+        keep(s+1) = 0;
+    else
+        keep(s) = 0;
+    end
+end
+
+details.peak_amp(keep==0) = [];
+details.ch(keep==0) = [];
+details.peak_idx(keep==0) = [];
+details.first_rise_idx(keep==0) = [];
+details.last_fall_idx(keep==0) = [];
+details.mid_rise_idx(keep==0) = [];
+details.mid_fall_idx(keep==0) = [];
+details.fwhm_ins(keep==0) = [];
+details.exp_gdf = details.gdf;
+details.gdf(keep==0,:) = [];
+details.gdf(:,3) = [];
 
 
 
