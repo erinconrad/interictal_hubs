@@ -1,9 +1,14 @@
 function get_spikes(whichPts)
 
+%{
+Figure out how to get spike sequences
+%}
+
 %% Parameters
 overwrite = 0;
 test.do_test = 0;
 do_plot = 0;
+expand_gdf_with_details = 0;
 
 %% Test parameters
 test.pt = 28;
@@ -160,7 +165,8 @@ for i = 1:length(whichPts)
                 values = pull_ieeg_data(fname, login_name, pwfile, run_idx);
 
                 %% Do pre-processing
-                [values,bipolar_labels] = pre_process(values,clean_labs);
+                orig_values = values;
+                [values,bipolar_labels,chs_in_bipolar] = pre_process(values,clean_labs);
 
                 %% Designate electrodes over which to run spike detector
                 if test.do_test == 1 && ~isempty(test.ch)
@@ -200,7 +206,17 @@ for i = 1:length(whichPts)
                         gdf =  multi_channel_requirements(gdf,length(run_chs),fs);
                     end
 
+                    if expand_gdf_with_details
+                        %% Expand gdf to machine reference channels
+                        if ~isempty(gdf)
+                            gdf_for_deets = expand_gdf(gdf,chs_in_bipolar);
+                        end
 
+                        %% Get spike details
+                        details = get_spike_details(gdf_for_deets,orig_values,fs);
+                    else
+                        details = [];
+                    end
 
 
                 end
@@ -230,6 +246,7 @@ for i = 1:length(whichPts)
                 bad_details =  [];
                 skip = [];
                 run_chs = [];
+                details = [];
             end
             
             %% Add spikes to structure
@@ -237,6 +254,7 @@ for i = 1:length(whichPts)
             spikes.file(f).hour(h).fs = fs;
             spikes.file(f).hour(h).params = params;
             spikes.file(f).hour(h).gdf = gdf;
+            spikes.file(f).hour(h).details = details;
             spikes.file(f).hour(h).chLabels = chLabels;
             spikes.file(f).hour(h).bipolar_labels = bipolar_labels;
             spikes.file(f).hour(h).bad = bad;

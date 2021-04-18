@@ -1,7 +1,8 @@
-function [values,out_labels] = pre_process(values,chLabels)
+function [values,out_labels,chs_in_bipolar] = pre_process(values,chLabels)
 
 nchs = size(values,2);
 out_labels = chLabels;
+chs_in_bipolar = nan(nchs,2);
 
 %% Bipolar montage
 for ch = 1:nchs
@@ -26,6 +27,7 @@ for ch = 1:nchs
         higher_ch = find(strcmp(chLabels(:,1),higher_label));
         out = values(:,ch)-values(:,higher_ch);
         bipolar_label = [label,'-',higher_label];
+        chs_in_bipolar(ch,:) = [ch,higher_ch];
     else
         % allow it to remain nans
         bipolar_label = '-';

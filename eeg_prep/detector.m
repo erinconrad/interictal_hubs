@@ -139,6 +139,8 @@ for j = 1:length(which_chs)
     %}
     if ~isempty(out)
        
+        %get_spike_details(out,data,fndata,HFdata,fs)
+        %{
          %% Re-align spikes to peak of the spikey component
          timeToPeak = [-.1,.15]; %Only look 100 ms before and 150 ms after the currently defined peak
          idxToPeak = timeToPeak*fs;
@@ -150,6 +152,7 @@ for j = 1:length(which_chs)
             [~,I] = max(abs(snapshot)); % The peak is the maximum absolute value of this
             out(i,1) = idxToLook(1) + I;
          end
+        %}
     end
     %}
 
