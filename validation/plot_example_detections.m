@@ -65,9 +65,9 @@ for p = whichPts
     % Include an extra column for the file index
     all_spikes = [];
     for f = 1:length(spikes.file)
-        for h = 1:length(spikes.file(f).hour)
-            all_spikes = [all_spikes;spikes.file(f).hour(h).gdf,...
-                repmat(f,size(spikes.file(f).hour(h).gdf,1),1)];
+        for h = 1:length(spikes.file(f).block)
+            all_spikes = [all_spikes;spikes.file(f).block(h).gdf,...
+                repmat(f,size(spikes.file(f).block(h).gdf,1),1)];
         end
     end
     
@@ -90,11 +90,11 @@ for p = whichPts
         f = all_spikes(sp,3);
         sp_time = all_spikes(sp,2);
         sp_ch = all_spikes(sp,1);
-        tmul = spikes.file(f).hour(1).params.tmul;
-        absthresh = spikes.file(f).hour(1).params.absthresh;
-        fs = spikes.file(f).hour(1).fs;
+        tmul = spikes.file(f).block(1).params.tmul;
+        absthresh = spikes.file(f).block(1).params.absthresh;
+        fs = spikes.file(f).block(1).fs;
         fname = pt(p).ieeg.file(f).name;
-        chLabels = spikes.file(f).hour(1).chLabels;
+        chLabels = spikes.file(f).block(1).chLabels;
         
         
         

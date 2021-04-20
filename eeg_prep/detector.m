@@ -1,9 +1,10 @@
-function gdf = detector(values,fs,which_chs,params)
+function [gdf,hf_values] = detector(values,fs,which_chs,params)
 
 tmul = params.tmul;
 absthresh = params.absthresh;
 
 % Initialize parameters
+too_high_num = 50; % tmul above which I reject it as artifact
 spkdur = 220;                % spike duration must be less than this in ms
 spkdur = spkdur*fs/1000;   % convert to points;
 fr     = 40; % low pass filter for spikey component
@@ -13,6 +14,7 @@ aftdur   = aftdur*fs/1000;   % convert to points;
 spikedur = 10; % minimum spike duration in points
 fn_fr  = 7; % high pass filter for spikey component
 
+hf_values = nan(size(values,1),size(values,2));
 
 % Initialize things
 all_spikes  = [];
@@ -37,6 +39,7 @@ for j = 1:length(which_chs)
     % first look at the high frequency data for the 'spike' component
     fndata   = eegfilt(data, fn_fr, 'hp',fs); % high pass filter
     HFdata    = eegfilt(fndata, fr, 'lp',fs); % low pass filter
+    hf_values(:,dd) = HFdata;
 
     if 0
         plot(data)
@@ -47,7 +50,7 @@ for j = 1:length(which_chs)
     lthresh = mean(abs(HFdata));  % this is the smallest the initial part of the spike can be
     thresh  = lthresh*tmul;     % this is the final threshold we want to impose
     sthresh = lthresh*tmul/3;   % this is the first run threshold
-
+    too_high_thresh = lthresh * too_high_num; % check for artifact
 
     [spp,spv] = FindPeaks(HFdata);
 
@@ -77,8 +80,9 @@ for j = 1:length(which_chs)
     dellist = [];
 
 
-
+    
     LFdata = eegfilt(fndata, lfr, 'lp',fs);
+
     [hyperp,hyperv] = FindPeaks(LFdata);   % use to find the afterhyper wave
     olda = 0;  % this is for checking for repetitive spike markings for the same afterhyperpolarization
     for i = 1:size(spikes,1)
@@ -118,18 +122,27 @@ for j = 1:length(which_chs)
     tooshort = [];
     toosmall = [];
     toosharp = [];
+    toobig = [];
 
     % now have all the info we need to decide if this thing is a spike or not.
     for i = 1:size(spikes, 1)  % for each spike
         if sum(spikes(i,[3 5])) > thresh && sum(spikes(i,[3 5])) > absthresh            % both parts together are bigger than thresh: so have some flexibility in relative sizes
             if spikes(i,2) > spikedur     % spike wave cannot be too sharp: then it is either too small or noise
-                out(end+1,1) = spikes(i,1);         % add timestamp of spike to output list
+                if sum(spikes(i,[3 5])) < too_high_thresh
+                    out(end+1,1) = spikes(i,1);         % add timestamp of spike to output list
+                else
+                    toobig(end+1) = spikes(i,1);
+                end
+                
+                
             else
                 toosharp(end+1) = spikes(i,1);
             end
         else
             toosmall(end+1) = spikes(i,1);
         end
+        
+        
     end
 
     %{
@@ -140,7 +153,7 @@ for j = 1:length(which_chs)
     if ~isempty(out)
        
         %get_spike_details(out,data,fndata,HFdata,fs)
-        %{
+        %
          %% Re-align spikes to peak of the spikey component
          timeToPeak = [-.1,.15]; %Only look 100 ms before and 150 ms after the currently defined peak
          idxToPeak = timeToPeak*fs;
@@ -148,9 +161,9 @@ for j = 1:length(which_chs)
             currIdx = out(i,1);
             idxToLook = max(1,round(currIdx+idxToPeak(1))):...
                     min(round(currIdx+idxToPeak(2)),length(HFdata));  
-            snapshot = HFdata(idxToLook); % Look at the high frequency data (where the mean is substracted already)
+            snapshot = data(idxToLook); % Look at the high frequency data (where the mean is substracted already)
             [~,I] = max(abs(snapshot)); % The peak is the maximum absolute value of this
-            out(i,1) = idxToLook(1) + I;
+            out(i,1) = idxToLook(1) + I - 1;
          end
         %}
     end

@@ -39,6 +39,10 @@ for p = whichPts
 
 
     %% Load spike file
+    if exist([spike_folder,sprintf('%s_spikes.mat',pt_name)],'file') == 0
+        continue;
+    end
+      
     spikes = load([spike_folder,sprintf('%s_spikes.mat',pt_name)]);
     spikes = spikes.spikes;
     name = spikes.name;
@@ -46,38 +50,37 @@ for p = whichPts
     
    
     for f = 1:nfiles
-        chLabels = spikes.file(f).hour(1).chLabels;
+        chLabels = spikes.file(f).block(1).chLabels;
         nchs = length(chLabels);
-        nhours = length(spikes.file(f).hour);
-        hours = 1:nhours;
-        raster = zeros(nchs,nhours);
-        rl = nan(nchs,nhours);
-        nseq = nan(nhours,1);
+        nblocks = length(spikes.file(f).block);
+        blocks = 1:nblocks;
+        raster = zeros(nchs,nblocks);
+        rl = nan(nchs,nblocks);
+        nseq = nan(nblocks,1);
         all_chs = 1:nchs;
-        skip_chs = spikes.file(f).hour(1).skip.all;
-        rate_rl_corr = nan(nhours,1);
-        for h = 1:nhours
+        skip_chs = spikes.file(f).block(1).skip.all;
+        rate_rl_corr = nan(nblocks,1);
+        for h = 1:nblocks
             
-            if spikes.file(f).hour(h).run_skip == 1
+            if spikes.file(f).block(h).run_skip == 1
                 raster(:,h) = nan;
             end
             
             
-            gdf = spikes.file(f).hour(h).gdf;
-            
+            gdf = spikes.file(f).block(h).gdf;
+            if isempty(gdf), continue; end
             
             [rl(:,h),nseq(h)] = get_sequences(gdf,nchs);
-            
             for ich = 1:nchs
                 
-                if ismember(ich,spikes.file(f).hour(h).bad) ||...
-                        ismember(ich,spikes.file(f).hour(h).skip.all)
+                if ismember(ich,spikes.file(f).block(h).bad) ||...
+                        ismember(ich,spikes.file(f).block(h).skip.all)
                     raster(ich,h) = nan;
                     continue
                 end
                 
                 
-                if isempty(gdf), continue; end
+                
                 raster(ich,h) = sum(gdf(:,1)==ich);
             end
             
@@ -90,7 +93,7 @@ for p = whichPts
         %% Get sequence reliability
         sr = rl_stability(rl,nseq);
         
-        %% Take the median RL across all hours
+        %% Take the median RL across all blocks
         median_rl = nanmedian(rl,2);
         
         %% Re-order channels basedon this (for display purposes)
@@ -102,29 +105,29 @@ for p = whichPts
         %% Plot recruitment latency
         if 1
             figure
-            set(gcf,'position',[440 1 835 797])
+            set(gcf,'position',[1 8 651 797])
             ha = tight_subplot(2,1,[0 0.01],[0.06 0.04],[0.07 0.01]);
             axes(ha(1))
             turn_nans_white(rl(I,:));
             yticklabels([])
             ylabel('Electrode')
-            xlim([1 nhours])
+            xlim([1 nblocks])
             title(sprintf('%s file %d',name,f))
             set(gca,'fontsize',15)
             
             axes(ha(2))
-            plot(hours(nseq>=median(nseq)),sr(nseq>=median(nseq)),'o','linewidth',2)
+            plot(blocks(nseq>=median(nseq)),sr(nseq>=median(nseq)),'o','linewidth',2)
             hold on
-            plot(hours(nseq<median(nseq)),sr(nseq<median(nseq)),'x','linewidth',2)
+            plot(blocks(nseq<median(nseq)),sr(nseq<median(nseq)),'x','linewidth',2)
             ylim([-1 1])
-            xlim([1 nhours])
-            xlabel('Hour')
+            xlim([1 nblocks])
+            xlabel('block')
             set(gca,'fontsize',15)
  
         end
         
         %% Correlate recruitment latency with spike rate
-        if 1
+        if 0
             figure
             plot(rate_rl_corr,'o')
             ylim([-1 1])
@@ -134,12 +137,12 @@ for p = whichPts
         %% Show spike rate
         if 1
             figure
-            set(gcf,'position',[440 1 835 797])
+            set(gcf,'position',[721 4 720 797])
             turn_nans_white(raster(I,:));
             yticks(1:nchs)
             yticklabels(chLabels(I))
             ylabel('Electrode')
-            xlabel('Hour')
+            xlabel('block')
 
             title(sprintf('%s file %d',name,f))
 

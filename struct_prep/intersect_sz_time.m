@@ -1,6 +1,7 @@
-function int = intersect_sz_time(run_times,szs)
+function [int,all_inside] = intersect_sz_time(run_times,szs)
 
 int = 0;
+all_inside = 0;
 
 for s = 1:length(szs)
     eec = szs(s).EEC;
@@ -14,6 +15,7 @@ for s = 1:length(szs)
     % is the run contained in the seizure
     if run_times(1) >= eec && run_times(2) <= end_time
         int = 1;
+        all_inside = 1;
     % does the run start during the seizure
     elseif run_times(1) >= eec && run_times(1) <= end_time
         int = 1;

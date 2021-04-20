@@ -2,22 +2,25 @@ function get_spikes(whichPts)
 
 %{
 Figure out how to get spike sequences
+
+investigate the funny deal with afterpol
 %}
 
 %% Parameters
-overwrite = 0;
-test.do_test = 0;
-do_plot = 0;
-plot_spikes = 0;
-expand_gdf_with_details = 0;
+overwrite = 1;
+test.do_test = 1;
+do_plot = 1;
+plot_spikes = 1;
+expand_gdf_with_details = 1;
 do_machine_ref = 0;
+do_save = 0;
 
 %% Test parameters
 test.pt = 28;
-test.time = 107791.53; %193231.80;% - ok except RA4;  %1605.05 - super high variance LAF1; 5617.68 - flat; 28583.69 - RA4 bad
+test.time = 107791.53;%620570.00; %193231.80;% - ok except RA4;  %1605.05 - super high variance LAF1; 5617.68 - flat; 28583.69 - RA4 bad
 test.dur = 15;
 test.file = 1;
-test.ch = [];
+test.ch =[];
 
 test.tmul = 17;
 test.absthresh = 50;
@@ -61,7 +64,7 @@ for i = 1:length(whichPts)
         p = test.pt;
         name = pt(p).name;
         next_file = 1;
-        next_hour = 1;
+        next_block = 1;
     else
         p = whichPts(i);
         name = pt(p).name;
@@ -73,9 +76,9 @@ for i = 1:length(whichPts)
             spikes = load([sp_folder,out_file]);
             spikes = spikes.spikes;
 
-            % find the last hour we have finished
+            % find the last block we have finished
             next_file = spikes.next_file;
-            next_hour = spikes.next_hour;
+            next_block = spikes.next_block;
 
             if isnan(next_file)
                 fprintf('\nAlready finished %s, skipping...\n',name);
@@ -85,7 +88,7 @@ for i = 1:length(whichPts)
             % initialize it
             clear spikes % I must clear this 
             next_file = 1;
-            next_hour = 1;
+            next_block = 1;
             spikes.name = name;
 
         end
@@ -144,11 +147,11 @@ for i = 1:length(whichPts)
         % filename
         fname = pt(p).ieeg.file(f).name;
         
-        % Loop over hours
-        n_hours = length(pt(p).ieeg.file(f).block);
-        for h = next_hour:n_hours
+        % Loop over blocks
+        n_blocks = length(pt(p).ieeg.file(f).block);
+        for h = next_block:n_blocks
             tic;
-            fprintf('\nDoing %s file %d hour %d\n',name,f,h);
+            fprintf('\nDoing %s file %d block %d\n',name,f,h);
             
             % get the run time (already randomly assigned minute)
             if test.do_test == 1
@@ -172,8 +175,11 @@ for i = 1:length(whichPts)
 
                 %% Designate electrodes over which to run spike detector
                 if test.do_test == 1 && ~isempty(test.ch)
+                    if ischar(test.ch)
+                        test.ch = {test.ch};
+                    end
                     if iscell(test.ch)
-                        which_chs = (cellfun(@(x) find(strcmp(chLabels,x)),test.ch));
+                        which_chs = (cellfun(@(x) find(strcmp(clean_labs,x)),test.ch));
                     else
                         which_chs = test.ch;
                     end
@@ -185,7 +191,7 @@ for i = 1:length(whichPts)
 
                 %% Reject bad channels
                 [bad,bad_details] = reject_bad_chs(values,which_chs,chLabels,fs);
-
+                
                 %% Skip the chunk entirely if enough channels are bad (suggests period of disconnection)
                 if length(bad) >= 0.5*length(which_chs)
                     fprintf('\nSkipping this run because %d of %d chs marked bad\n',length(bad),length(which_chs));
@@ -199,7 +205,7 @@ for i = 1:length(whichPts)
                     run_chs = which_chs;
                     run_chs(ismember(run_chs,bad)) = [];
                     if ~isempty(run_chs)
-                        gdf = detector(values,fs,run_chs,params);
+                        [gdf,hf_values] = detector(values,fs,run_chs,params);
                     else
                         gdf = [];
                     end
@@ -213,10 +219,14 @@ for i = 1:length(whichPts)
                         %% Expand gdf to machine reference channels
                         if ~isempty(gdf)
                             gdf_for_deets = expand_gdf(gdf,chs_in_bipolar);
+                            
+                             %% Get spike details
+                            details = new_get_spike_details(gdf_for_deets,orig_values,hf_values,fs);
+                        else
+                            details = [];
                         end
 
-                        %% Get spike details
-                        details = get_spike_details(gdf_for_deets,orig_values,fs);
+                       
                     else
                         details = [];
                     end
@@ -240,8 +250,8 @@ for i = 1:length(whichPts)
                     end
                 end
                 
-                if plot_spikes
-                    show_spike_details(orig_values,clean_labs,details,fs,dur) 
+                if plot_spikes &&  ~isempty(details) && ~isempty(details.gdf)
+                    show_spike_details(orig_values,hf_values,clean_labs,details,fs,dur) 
                     
                 end
 
@@ -262,34 +272,34 @@ for i = 1:length(whichPts)
             end
             
             %% Add spikes to structure
-            spikes.file(f).hour(h).run_times = run_times;
-            spikes.file(f).hour(h).fs = fs;
-            spikes.file(f).hour(h).params = params;
-            spikes.file(f).hour(h).gdf = gdf;
-            spikes.file(f).hour(h).details = details;
-            spikes.file(f).hour(h).chLabels = chLabels;
-            spikes.file(f).hour(h).bipolar_labels = bipolar_labels;
-            spikes.file(f).hour(h).bad = bad;
-            spikes.file(f).hour(h).run_skip = run_skip;
-            spikes.file(f).hour(h).bad_details = bad_details;
-            spikes.file(f).hour(h).skip = skip;
-            spikes.file(f).hour(h).run_chs = run_chs;
+            spikes.file(f).block(h).run_times = run_times;
+            spikes.file(f).block(h).fs = fs;
+            spikes.file(f).block(h).params = params;
+            spikes.file(f).block(h).gdf = gdf;
+            spikes.file(f).block(h).details = details;
+            spikes.file(f).block(h).chLabels = chLabels;
+            spikes.file(f).block(h).bipolar_labels = bipolar_labels;
+            spikes.file(f).block(h).bad = bad;
+            spikes.file(f).block(h).run_skip = run_skip;
+            spikes.file(f).block(h).bad_details = bad_details;
+            spikes.file(f).block(h).skip = skip;
+            spikes.file(f).block(h).run_chs = run_chs;
             
-            %% Mark the next hour
-            if h == n_hours
-                next_hour = 1;
+            %% Mark the next block
+            if h == n_blocks
+                next_block = 1;
                 next_file = f + 1;
                 if f == n_files
                     next_file = nan;
                 end
             else
-                next_hour = h + 1;     
+                next_block = h + 1;     
             end
             spikes.next_file = next_file;
-            spikes.next_hour = next_hour;
+            spikes.next_block = next_block;
             
             %% Save structure
-            if test.do_test == 0
+            if test.do_test == 0 && do_save == 1
                 save([sp_folder,out_file],'spikes');
             end
            

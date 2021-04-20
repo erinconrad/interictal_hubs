@@ -1,10 +1,10 @@
 %% Parameters
-block = 3600; % check every hour
-mini_block = 60*5; % 5 minute block every hour;
+block = 600; % check every 10 minutes
+mini_block = 60*1; % 1 minute block every ten minutes;
 
 %% Get file locs
 locations = interictal_hub_locations;
-data_folder = [locations.main_folder,'data/'];
+data_folder = [locations.script_folder,'data/'];
 
 %% Load pt struct
 pt = load([data_folder,'pt.mat']);
@@ -40,26 +40,35 @@ for i = 1:length(whichPts)
             pt(p).ieeg.file(f).block(b).end = be(b);
             pt(p).ieeg.file(f).block(b).spikes = [];
             
-            % pick a random minute in the hour long block
-            while 1
-                s = randi([0 block-mini_block]);
+            % See if the entire block is included in a seizure time, in
+            % which case we need to skip the block!
+            all_inside = 0;
+            [~,all_inside] = intersect_sz_time([bs(b) be(b)],szs);
+            if all_inside == 1
+                run = [];
+            else
+            
+                % pick a random minute in the ten-minute long block
+                while 1
+                    s = randi([0 block-mini_block]);
 
-                start_time = min(bs(b) + s,be(b) - mini_block);
-                end_time = start_time + mini_block;
+                    start_time = min(bs(b) + s,be(b) - mini_block);
+                    end_time = start_time + mini_block;
 
-                run = [start_time,end_time];
-                
-                % check if it intersects any of the seizure times
-                int = intersect_sz_time(run,szs);
-                if int == 0
-                    break
+                    run = [start_time,end_time];
+
+                    % check if it intersects any of the seizure times
+                    int = intersect_sz_time(run,szs);
+                    if int == 0
+                        break
+                    end
                 end
-            end
-            if run(1) < bs(b) || run(2) > be(b)
-                if b == nblocks % may not have enough time to do the last bit
-                    run = [];
-                else
-                    error('what');
+                if run(1) < bs(b) || run(2) > be(b)
+                    if b == nblocks % may not have enough time to do the last bit
+                        run = [];
+                    else
+                        error('what');
+                    end
                 end
             end
             pt(p).ieeg.file(f).block(b).run = run;

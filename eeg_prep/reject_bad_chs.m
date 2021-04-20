@@ -4,6 +4,7 @@ function [bad,details] = reject_bad_chs(values,which_chs,chLabels,fs)
 tile = 99;
 mult = 10;
 num_above = 1;
+abs_thresh = 1e4;
 
 %% Parameter to reject high 60 Hz
 percent_60_hz = 0.5;
@@ -12,6 +13,7 @@ percent_60_hz = 0.5;
 mult_std = 10;
 
 bad = [];
+high_ch = [];
 nan_ch = [];
 zero_ch = [];
 high_var_ch = [];
@@ -41,6 +43,33 @@ for i = 1:length(which_chs)
     if sum(eeg == 0) > 0.5 * length(eeg)
         bad = [bad;ich];
         zero_ch = [zero_ch;ich];
+        continue;
+    end
+    
+    %% Remove channels with too many above absolute thresh
+    
+    if sum(abs(eeg - bl) > abs_thresh) > 0.01 * length(eeg)
+        bad = [bad;ich];
+        bad_ch = 1;
+        high_ch = [high_ch;ich];
+    end
+    
+    if 1
+    figure
+    if bad_ch == 1
+        plot(eeg,'r')
+    else
+        plot(eeg,'k')
+    end
+    hold on
+    plot(xlim,[bl + abs_thresh bl+abs_thresh])
+    plot(xlim,[bl - abs_thresh bl-abs_thresh])
+    title(sprintf('Percent above threshold: %1.1f%%',100*sum(abs(eeg - bl) > abs_thresh)/length(eeg)));
+    pause
+    close(gcf)
+    end
+    
+    if bad_ch == 1
         continue;
     end
     
@@ -99,10 +128,10 @@ for i = 1:length(which_chs)
     if 0
         figure
         subplot(2,1,1)
-        plot(orig_eeg)
+        plot(eeg)
         
         subplot(2,1,2)
-        spectrogram(orig_eeg,[],[],[],fs);
+        spectrogram(eeg,[],[],[],fs);
         title(sprintf('%s Percent 60 Hz power %1.1f',chLabels{ich},P_60Hz*100))
         pause
         close(gcf)
@@ -130,5 +159,6 @@ details.nans = nan_ch;
 details.zeros = zero_ch;
 details.var = high_var_ch;
 details.higher_std = bad_std;
+details.high_voltage = high_ch;
 
 end

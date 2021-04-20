@@ -16,21 +16,21 @@ for i = 1:length(listing)
     nbad = [];
     nskip = [];
     nspikes = 0;
-    nhours = 0;
+    nblocks = 0;
     name = spikes.name;
-    tmul1 = spikes.file(1).hour(1).params.tmul;
-    absthresh1 = spikes.file(1).hour(1).params.absthresh;
+    tmul1 = spikes.file(1).block(1).params.tmul;
+    absthresh1 = spikes.file(1).block(1).params.absthresh;
     
     for f = 1:length(spikes.file)
-        for h = 1:length(spikes.file(f).hour)
-            nbad = [nbad;length(spikes.file(f).hour(h).bad)];
-            if isempty(spikes.file(f).hour(h).skip)
+        for h = 1:length(spikes.file(f).block)
+            nbad = [nbad;length(spikes.file(f).block(h).bad)];
+            if isempty(spikes.file(f).block(h).skip)
                 nskip = [nskip;0];
             else
-                nskip = [nskip;length(spikes.file(f).hour(h).skip.all)];
+                nskip = [nskip;length(spikes.file(f).block(h).skip.all)];
             end
-            nspikes = nspikes + size(spikes.file(f).hour(h).gdf,1);
-            nhours = nhours + 1;
+            nspikes = nspikes + size(spikes.file(f).block(h).gdf,1);
+            nblocks = nblocks + 1;
         end
     end
     
@@ -38,8 +38,8 @@ for i = 1:length(listing)
     nskip = mean(nskip);
     
     fprintf(['\nFor %s, using tmul %d and absthresh %d\n'...
-        'in %d hours, %d spikes detected, (mean %1.1f contacts skipped and %1.1f rejected as artifact)\n'],...
-        name,tmul1,absthresh1,nhours,nspikes,nskip,nbad);
+        'in %d blocks, %d spikes detected, (mean %1.1f contacts skipped and %1.1f rejected as artifact)\n'],...
+        name,tmul1,absthresh1,nblocks,nspikes,nskip,nbad);
     
 end
 
