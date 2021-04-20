@@ -7,17 +7,15 @@ investigate the funny deal with afterpol
 %}
 
 %% Parameters
-overwrite = 1;
-test.do_test = 1;
-do_plot = 1;
-plot_spikes = 1;
-expand_gdf_with_details = 1;
-do_machine_ref = 0;
+overwrite = 0;
+test.do_test = 0;
+do_plot = 0;
+plot_spikes = 0;
 do_save = 0;
 
 %% Test parameters
-test.pt = 28;
-test.time = 107791.53;%620570.00; %193231.80;% - ok except RA4;  %1605.05 - super high variance LAF1; 5617.68 - flat; 28583.69 - RA4 bad
+test.pt = 15;
+test.time = 293327.18;%620570.00; %193231.80;% - ok except RA4;  %1605.05 - super high variance LAF1; 5617.68 - flat; 28583.69 - RA4 bad
 test.dur = 15;
 test.file = 1;
 test.ch =[];
@@ -151,7 +149,7 @@ for i = 1:length(whichPts)
         n_blocks = length(pt(p).ieeg.file(f).block);
         for h = next_block:n_blocks
             tic;
-            fprintf('\nDoing %s file %d block %d\n',name,f,h);
+            fprintf('\nDoing %s file %d block %d of %d\n',name,f,h,n_blocks);
             
             % get the run time (already randomly assigned minute)
             if test.do_test == 1
@@ -215,6 +213,7 @@ for i = 1:length(whichPts)
                         gdf =  multi_channel_requirements(gdf,length(run_chs),fs);
                     end
 
+                    expand_gdf_with_details = 1;
                     if expand_gdf_with_details
                         %% Expand gdf to machine reference channels
                         if ~isempty(gdf)
@@ -243,6 +242,7 @@ for i = 1:length(whichPts)
 
                 %% Example plot              
                 if do_plot
+                    do_machine_ref = 0;
                     if do_machine_ref
                         show_eeg_and_spikes(orig_values,clean_labs,details.gdf,dur,run_times(1),name,fs,bad,skip,params);
                     else

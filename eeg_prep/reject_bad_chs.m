@@ -54,7 +54,7 @@ for i = 1:length(which_chs)
         high_ch = [high_ch;ich];
     end
     
-    if 1
+    if 0
     figure
     if bad_ch == 1
         plot(eeg,'r')
