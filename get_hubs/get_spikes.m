@@ -11,7 +11,7 @@ overwrite = 0;
 test.do_test = 0;
 do_plot = 0;
 plot_spikes = 0;
-do_save = 0;
+do_save = 1;
 
 %% Test parameters
 test.pt = 15;
