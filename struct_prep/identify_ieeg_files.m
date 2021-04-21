@@ -15,7 +15,17 @@ pt = pt.pt;
 for p =1:length(pt)
     
     name = pt(p).name;
-    fprintf('\nDoing %s\n',name);
+    
+    if ~isempty(pt(p).ieeg)
+        
+        fprintf('\nAlready did %s\n',name);
+        continue;
+        
+    else
+    
+        fprintf('\nDoing %s\n',name);
+        
+    end
     
     if strcmp(name,'HUP060')
         base_ieeg_name = [name,'_phaseIV'];

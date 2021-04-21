@@ -1,4 +1,7 @@
-function spike_raster_plot(whichPts)
+function new_raster_plot(whichPts)
+
+%% Parameters
+cluster_time = 60*30;
 
 %% Locations
 locations = interictal_hub_locations;
@@ -10,7 +13,7 @@ login_name = locations.ieeg_login;
 addpath(genpath(locations.script_folder));
 data_folder = [locations.script_folder,'data/'];
 addpath(genpath(locations.ieeg_folder));
-spike_folder = [results_folder,'old_april19/spikes_april19/'];
+spike_folder = [results_folder,'spikes/'];
 
 %% Load pt file
 pt = load([data_folder,'pt.mat']);
@@ -18,7 +21,7 @@ pt = pt.pt;
 
 %% Load file with info about which patients are good
 T = readtable([data_folder,'detector_parameters.xlsx']);
-goodness = T.num_real_outOf50__1; % CHANGE AS NEEDED
+goodness = T.num_real_outOf50_; % CHANGE AS NEEDED
 names = T.Patient;
 
 if isempty(whichPts)
@@ -36,18 +39,18 @@ if isempty(whichPts)
         end
     end
     
+    
     %% Only do good ones
-skip = zeros(length(whichPts),1);
-for i = 1:length(whichPts)
-    name = pt(i).name;
-    tb_idx = find(strcmp(names,name));
-    if goodness(tb_idx) <= 30
-        skip(i) = 1;
+    skip = zeros(length(whichPts),1);
+    for i = 1:length(whichPts)
+        name = pt(i).name;
+        tb_idx = find(strcmp(names,name));
+        if goodness(tb_idx) <= 30
+            skip(i) = 1;
+        end
     end
+    whichPts(logical(skip)) = [];
 end
-whichPts(logical(skip)) = [];
-end
-
 
 
 
@@ -71,8 +74,10 @@ for p = whichPts
         nchs = length(chLabels);
         nblocks = length(spikes.file(f).block);
         blocks = 1:nblocks;
-        raster = zeros(nchs,nblocks);
+        rate_raster = zeros(nchs,nblocks);
         rl = nan(nchs,nblocks);
+        all_rl = [];
+        seconds = [];
         nseq = nan(nblocks,1);
         all_chs = 1:nchs;
         skip_chs = spikes.file(f).block(1).skip.all;
@@ -80,47 +85,70 @@ for p = whichPts
         for h = 1:nblocks
             
             if spikes.file(f).block(h).run_skip == 1
-                raster(:,h) = nan;
+                rate_raster(:,h) = nan;
             end
             
             
-            gdf = spikes.file(f).block(h).gdf;
+            %% Get spike details as a table
+            T = convert_details_to_table(spikes,f,h);
+
+            %% Get sequences
+            times = T.peak_idx./T.fs + T.run_start;
+            [times,I] = sort(times);
+            T = T(I,:);
+            chs = T.ch;
+            gdf = [chs,times];
             if isempty(gdf), continue; end
-            
-            [rl(:,h),nseq(h)] = get_sequences(gdf,nchs);
+            [seq,rl_ind] = new_get_sequences(gdf,nchs);
+            all_rl = [all_rl,rl_ind];
+            seconds = [seconds,...
+                repmat(spikes.file.block(h).run_times(1),...
+                1,size(rl_ind,2))];
+        
             for ich = 1:nchs
                 
                 if ismember(ich,spikes.file(f).block(h).bad) ||...
                         ismember(ich,spikes.file(f).block(h).skip.all)
-                    raster(ich,h) = nan;
+                    rate_raster(ich,h) = nan;
                     continue
                 end
                 
                 
                 
-                raster(ich,h) = sum(gdf(:,1)==ich);
+                rate_raster(ich,h) = sum(gdf(:,1)==ich);
+                
+                if isempty(seq), continue; end
+                
+                if size(rl_ind,2) == 1
+                    rl(ich,h) = rl_ind(ich);
+                else
+                    rl(ich,h) = nanmean(rl_ind(ich,2));
+                end
             end
-            
-            %% Correlate spike frequency with rl
-            rate_rl_corr(h) = corr(raster(:,h),rl(:,h),...
-                'Type','Spearman','rows','pairwise');
-            
+  
         end
         
-        %% Get sequence reliability
-        sr = rl_stability(rl,nseq);
+        %% Cluster rl by time
+        %clusters = cluster_by_time(all_rl,seconds,cluster_time);
         
         %% Take the median RL across all blocks
-        median_rl = nanmedian(rl,2);
+        mean_rl = nanmean(rl,2);
         
         %% Re-order channels basedon this (for display purposes)
-        [~,I] = sort(median_rl);
+        [~,I] = sort(mean_rl);
         
+        %% Get sequence reliability
+        sr = nan(size(rl,2),1);
+        for s = 1:size(rl,2)
+            r = corr(mean_rl,rl(:,s),'Type','Spearman','Rows','pairwise');
+            sr(s) = r;
+        end
         
+        %}
         
         
         %% Plot recruitment latency
-        if 0
+        if 1
             figure
             set(gcf,'position',[1 8 651 797])
             ha = tight_subplot(2,1,[0 0.01],[0.06 0.04],[0.07 0.01]);
@@ -152,10 +180,10 @@ for p = whichPts
         end
         
         %% Show spike rate
-        if 1
+        if 0
             figure
             set(gcf,'position',[721 4 720 797])
-            turn_nans_white(raster);
+            turn_nans_white(rate_raster);
             yticks(1:nchs)
             yticklabels(chLabels)
             ylabel('Electrode')
