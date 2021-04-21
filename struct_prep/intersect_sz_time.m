@@ -7,6 +7,14 @@ for s = 1:length(szs)
     eec = szs(s).EEC;
     end_time = szs(s).End;
     
+    if strcmp(eec,'missing')
+        eec = szs(s).UEO;
+    end
+    
+    if strcmp(eec,'missing')
+        continue;
+    end
+    
     % fix for silliness
     if isempty(end_time) || end_time < eec
         end_time = eec+100;

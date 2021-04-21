@@ -1,4 +1,5 @@
 %% Parameters
+overwrite = 0; % overwrite if already exists?
 block = 600; % check every 10 minutes
 mini_block = 60*1; % 1 minute block every ten minutes;
 
@@ -16,7 +17,13 @@ whichPts = 1:length(pt);
 for i = 1:length(whichPts)
     p = whichPts(i);
     name = pt(p).name;
-    fprintf('\nDoing %s\n',name);
+    
+    if isempty(pt(p).ieeg) || (isfield(pt(p).ieeg.file(1),'block') && overwrite == 0)
+        fprintf('\nSkipping %s\n',name);
+        continue;
+    else
+        fprintf('\nDoing %s\n',name);
+    end
     
     szs = pt(p).seizure_info.sz;
     
