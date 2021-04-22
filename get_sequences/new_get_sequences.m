@@ -1,11 +1,11 @@
-function [seq,rl] = new_get_sequences(gdf,nchs)
+function [seq,rl,coa] = new_get_sequences(gdf,nchs,fs)
     
 t2 = 15*1e-3; % max time from preceding spike (15 ms in paper)
 minSeqLength = 5; 
-
+t2 = t2*fs;
 
 ns = size(gdf,1);
-spike = 1:ns;
+coa = zeros(nchs,nchs);
 
 %% Sort by time
 times = gdf(:,2);
@@ -70,14 +70,19 @@ end
 
 nseq = length(seq);
 
-%% Now that I have my sequences, get some info
+
 rl = nan(nchs,nseq);
 
+% Loop over sequences
 for s = 1:nseq
     curr = seq{s};
+    
+    
+    
     for ich = 1:nchs
         
         
+        %% Get recruitment latency of every channel in each sequence
         if ismember(ich,curr(:,1))
             
             ich_index = find(curr(:,1) == ich);
@@ -87,9 +92,39 @@ for s = 1:nseq
             rl(ich,s) = curr(ich_index,2) - curr(1,2);
             
         end
+        
+        %{
+        %% Get spike co-activation matrix
+        % the co-activation for this segment between electrode i and j is the
+        % number of sequences in which they co-occur
+        for jch = 1:nchs
+            % if i and j are in the sequence
+            if ismember(ich,curr(:,1)) && ismember(jch,curr(:,1))
+                coa(ich,jch) = coa(ich,jch) + 1; % increase coa for i,j and j,i by 1
+                coa(jch,ich) = coa(jch,ich) + 1;
+            end
+        end
+        %}
+
+        
     end
+    
+    %
+    %% Get spike coactivation matrix
+    chs = curr(:,1);
+    for i = 1:length(chs)
+        for j = 1:i-1
+            ich = chs(i);
+            jch = chs(j);
+            coa(ich,jch) = coa(ich,jch) + 1;
+            coa(jch,ich) = coa(jch,ich) + 1;
+        end
+    end
+    %}
 end
 
+rl = nanmean(rl,2);
 
 
 end
+

@@ -6,13 +6,11 @@ min_look = [-100e-3 100e-3];
 ns = size(gdf,1);
 
 %% Initialize structures
-details.orig_gdf = gdf;
+%details.orig_gdf = gdf;
 for f = 1:2
     details.filter(f).peak = nan(ns,1);
     details.filter(f).amp = nan(ns,1);
     details.filter(f).rise = nan(ns,1);
-    details.filter(f).mid_rise = nan(ns,1);
-    details.filter(f).mid_fall = nan(ns,1);
     details.filter(f).fall = nan(ns,1);
     details.filter(f).gdf = gdf;
 end
@@ -71,7 +69,6 @@ for s = 1:size(gdf,1)
         
         % Add to struct
         details.filter(f).rise(s) = first_rise;
-        details.filter(f).mid_rise(s) = mid_rise_time;
         
         %% Find fall
         idx_after_peak = abs_ind:min(round(abs_ind+min_look(2)*fs),length(data));
@@ -87,7 +84,6 @@ for s = 1:size(gdf,1)
         
         % Add to struct
         details.filter(f).fall(s) = last_rise;
-        details.filter(f).mid_fall(s) = mid_fall_time;
         
         %% Plot
         if 0
@@ -131,8 +127,6 @@ for f = 1:2
     details.filter(f).amp(keep==0) = [];
     details.filter(f).peak(keep==0) = [];
     details.filter(f).rise(keep==0) = [];
-    details.filter(f).mid_rise(keep==0) = [];
-    details.filter(f).mid_fall(keep==0) = [];
     details.filter(f).fall(keep==0) = [];
     details.filter(f).gdf(keep==0,:) = [];
     details.filter(f).gdf(:,3) = [];
