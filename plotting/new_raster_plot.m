@@ -1,7 +1,7 @@
 function new_raster_plot(whichPts)
 
 %% Parameters
-cluster_time = 60*30;
+cluster_time = 60*60;
 
 %% Locations
 locations = interictal_hub_locations;
@@ -98,8 +98,12 @@ for p = whichPts
             T = T(I,:);
             chs = T.ch;
             gdf = [chs,times];
-            if isempty(gdf), continue; end
+            if isempty(gdf)
+                nseq(h) = 0;
+                continue; 
+            end
             [seq,rl_ind] = new_get_sequences(gdf,nchs);
+            nseq(h) = length(seq);
             all_rl = [all_rl,rl_ind];
             seconds = [seconds,...
                 repmat(spikes.file.block(h).run_times(1),...
@@ -129,7 +133,7 @@ for p = whichPts
         end
         
         %% Cluster rl by time
-        %clusters = cluster_by_time(all_rl,seconds,cluster_time);
+        clusters = cluster_by_time(all_rl,seconds,cluster_time);
         
         %% Take the median RL across all blocks
         mean_rl = nanmean(rl,2);
@@ -138,15 +142,22 @@ for p = whichPts
         [~,I] = sort(mean_rl);
         
         %% Get sequence reliability
-        sr = nan(size(rl,2),1);
-        for s = 1:size(rl,2)
-            r = corr(mean_rl,rl(:,s),'Type','Spearman','Rows','pairwise');
-            sr(s) = r;
+        if 0
+            sr = nan(size(clusters,2),1);
+            for s = 1:size(clusters,2)
+                r = corr(mean_rl,clusters(:,s),'Type','Spearman','Rows','pairwise');
+                sr(s) = r;
+            end
+        else
+            sr = nan(size(rl,2),1);
+            for s = 1:size(rl,2)
+                r = corr(mean_rl,rl(:,s),'Type','Spearman','Rows','pairwise');
+                sr(s) = r;
+            end
         end
         
         %}
-        
-        
+
         %% Plot recruitment latency
         if 1
             figure

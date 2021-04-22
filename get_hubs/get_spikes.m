@@ -14,8 +14,8 @@ plot_spikes = 0;
 do_save = 1;
 
 %% Test parameters
-test.pt = 15;
-test.time = 293327.18;%620570.00; %193231.80;% - ok except RA4;  %1605.05 - super high variance LAF1; 5617.68 - flat; 28583.69 - RA4 bad
+test.pt = 8;
+test.time = 309128.9;%620570.00; %193231.80;% - ok except RA4;  %1605.05 - super high variance LAF1; 5617.68 - flat; 28583.69 - RA4 bad
 test.dur = 15;
 test.file = 1;
 test.ch =[];
@@ -217,10 +217,11 @@ for i = 1:length(whichPts)
                     if expand_gdf_with_details
                         %% Expand gdf to machine reference channels
                         if ~isempty(gdf)
+                            %gdf_for_deets = gdf;
                             gdf_for_deets = expand_gdf(gdf,chs_in_bipolar);
                             
                              %% Get spike details
-                            details = new_get_spike_details(gdf_for_deets,orig_values,hf_values,fs);
+                            details = new_spike_details(gdf_for_deets,orig_values,hf_values,fs);
                         else
                             details = [];
                         end
@@ -242,16 +243,17 @@ for i = 1:length(whichPts)
 
                 %% Example plot              
                 if do_plot
-                    do_machine_ref = 0;
+                    do_machine_ref = 1;
                     if do_machine_ref
-                        show_eeg_and_spikes(orig_values,clean_labs,details.gdf,dur,run_times(1),name,fs,bad,skip,params);
+                        show_eeg_and_spikes(orig_values,clean_labs,gdf,dur,run_times(1),name,fs,bad,skip,params);
                     else
                         show_eeg_and_spikes(values,bipolar_labels,gdf,dur,run_times(1),name,fs,bad,skip,params);
                     end
                 end
                 
-                if plot_spikes &&  ~isempty(details) && ~isempty(details.gdf)
-                    show_spike_details(orig_values,hf_values,clean_labs,details,fs,dur) 
+                if plot_spikes &&  ~isempty(details) && ~isempty(details.orig_gdf)
+                    filter = 2; % 1 =  no filter, 2 = high filter
+                    show_spike_details(orig_values,hf_values,clean_labs,details,fs,dur,filter) 
                     
                 end
 

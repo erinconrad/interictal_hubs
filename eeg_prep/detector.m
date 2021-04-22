@@ -161,7 +161,7 @@ for j = 1:length(which_chs)
             currIdx = out(i,1);
             idxToLook = max(1,round(currIdx+idxToPeak(1))):...
                     min(round(currIdx+idxToPeak(2)),length(HFdata));  
-            snapshot = data(idxToLook); % Look at the high frequency data (where the mean is substracted already)
+            snapshot = HFdata(idxToLook); % Look at the high frequency data (where the mean is substracted already)
             [~,I] = max(abs(snapshot)); % The peak is the maximum absolute value of this
             out(i,1) = idxToLook(1) + I - 1;
          end

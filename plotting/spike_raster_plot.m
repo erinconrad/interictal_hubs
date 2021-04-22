@@ -85,7 +85,10 @@ for p = whichPts
             
             
             gdf = spikes.file(f).block(h).gdf;
-            if isempty(gdf), continue; end
+            if isempty(gdf)
+                nseq(h) = 0;
+                continue; 
+            end
             
             [rl(:,h),nseq(h)] = get_sequences(gdf,nchs);
             for ich = 1:nchs
@@ -120,7 +123,7 @@ for p = whichPts
         
         
         %% Plot recruitment latency
-        if 0
+        if 1
             figure
             set(gcf,'position',[1 8 651 797])
             ha = tight_subplot(2,1,[0 0.01],[0.06 0.04],[0.07 0.01]);
