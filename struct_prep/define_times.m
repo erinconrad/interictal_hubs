@@ -1,7 +1,7 @@
 %% Parameters
-overwrite = 0; % overwrite if already exists?
-block = 600; % check every 10 minutes
-mini_block = 60*1; % 1 minute block every ten minutes;
+overwrite = 1; % overwrite if already exists?
+block = 60*30; % check every 30 minutes
+mini_block = 60*5; % 5 minute block every thirty minutes;
 
 %% Get file locs
 locations = interictal_hub_locations;
