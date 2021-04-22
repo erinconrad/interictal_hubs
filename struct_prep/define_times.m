@@ -40,7 +40,7 @@ for i = 1:length(whichPts)
         bs = (0:block:floor(dur/1e6))';
         be = bs + block;
         be(end) = dur/1e6;
-
+        pt(p).ieeg.file(f).block = [];
         pt(p).ieeg.file(f).block_times = [bs,be];
         for b = 1:nblocks
             pt(p).ieeg.file(f).block(b).start = bs(b);
