@@ -5,6 +5,11 @@ out_labels = chLabels;
 for ich = 1:length(chLabels)
     label = chLabels{ich};
 
+    %% if it's a string, convert it to a char
+    if strcmp(class(label),'string')
+        label = convertStringsToChars(label);
+    end
+    
     %% Remove leading zero
     % get the non numerical portion
     label_num_idx = regexp(label,'\d');
@@ -41,6 +46,9 @@ for ich = 1:length(chLabels)
         space_pos = regexp(label,' ');
         label(space_pos) = [];
     end
+    
+    %% Remove '-'
+    label = strrep(label,'-','');
     
     out_labels{ich} = label;
 end

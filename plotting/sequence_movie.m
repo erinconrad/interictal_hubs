@@ -1,8 +1,8 @@
 function sequence_movie(whichPts)
 
 %% Parameters
-filt = 1;
-timing = 'mid_rise';
+filt = 2;
+timing = 'peak';
 
 %% Locations
 locations = interictal_hub_locations;
@@ -15,6 +15,8 @@ addpath(genpath(locations.script_folder));
 data_folder = [locations.script_folder,'data/'];
 addpath(genpath(locations.ieeg_folder));
 spike_folder = [results_folder,'spikes/'];
+bct_folder = locations.bct;
+addpath(genpath(bct_folder));
 
 %% Load pt file
 pt = load([data_folder,'pt.mat']);
@@ -73,6 +75,10 @@ for p = whichPts
         chLabels = spikes.file(f).block(1).chLabels;
         nchs = length(chLabels);
         nblocks = length(spikes.file(f).block);
+        locs = pt(p).ieeg.file(f).locs;
+        resected = pt(p).electrode_info.resected;
+        res = resected_ch_nums(resected,chLabels);
+
         
         rate = nan(nchs,nblocks);
         rl = nan(nchs,nblocks);
@@ -123,7 +129,7 @@ for p = whichPts
         end
         
         %% Raster plot of rl
-        if 1
+        if 0
         [~,I] = sort(nanmean(rl,2));
         r = corr(rl,nanmean(rl,2),'type','pearson','rows','pairwise');
         figure
@@ -140,9 +146,19 @@ for p = whichPts
         end
         end
         
-        %% Details of coa matrix
+        %% GE/NS of coa matrix
         ns = squeeze(sum(coa,1));
-        
+        ge = nan(nblocks,1);
+        for h = 1:nblocks
+            ge(h) = efficiency_wei(coa(:,:,h));
+        end
+        if 0
+        figure
+        subplot(2,1,1)
+        plot(mean(ns,1));
+        subplot(2,1,2)
+        plot(ge)
+        end
         
         %% Raster plot of ns
         if 0
@@ -152,10 +168,22 @@ for p = whichPts
         title(sprintf('Node strength reliability: %1.1f',nanmean(r)))
         end
         
+        %% Gif of spike rate
+        fig = figure;
+        for h = 1:nblocks
+            scatter3(locs(:,1),locs(:,2),locs(:,3),100,ns(:,h),'filled');
+            hold on
+            scatter3(locs(:,1),locs(:,2),locs(:,3),100,'k');
+            scatter3(locs(res,1),locs(res,2),locs(res,3),100,'rp');
+            pause(0.2)
+            hold off
+        end
+        
         
     end
 
 end
+
 end
 
 
