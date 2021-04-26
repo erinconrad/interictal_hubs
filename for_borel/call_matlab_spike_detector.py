@@ -9,7 +9,7 @@ def run_matlab(whichPts):
         raise
 
 
-    txt = "'matlab','-nodisplay','-nodesktop','-r','fprintf(''Hello\n'')'"
+   # txt = "'matlab','-nodisplay','-nodesktop','-r','fprintf(''Hello\n'')'"
     
     """
     txt = '"matlab","-nodisplay","-nodesktop","-r",\
@@ -17,7 +17,7 @@ def run_matlab(whichPts):
     'cd ../get_hubs;get_spikes([{} {}]);exit"'.format(whichPts[0],whichPts[1])
 """
     print('stuff')
-    subprocess.call([txt])
+    subprocess.call(['matlab','-nodisplay','-nodesktop','-r','fprintf(''Hello\n'')'])
 
 if __name__ == '__main__':
     whichPts = [sys.argv[1],sys.argv[2]]
