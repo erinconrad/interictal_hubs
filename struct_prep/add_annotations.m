@@ -21,7 +21,12 @@ whichPts = 1:length(pt);
 
 for p = 1:length(pt)
 
+    if isempty(pt(p).ieeg)
+        continue
+    end
+    
 for f = 1:length(pt(p).ieeg.file)
+    
     
     if overwrite == 0
         if isfield(pt(p).ieeg.file(f),'ann') && ~isempty(pt(p).ieeg.file(f).ann)
