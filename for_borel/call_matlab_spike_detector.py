@@ -2,7 +2,8 @@ import subprocess
 import sys
 
 def run_matlab(whichPts):
-
+    print(whichPts)
+    print(type(whichPts))
     if len(whichPts) != 2:
         print("Need two patients exactly")
         raise
