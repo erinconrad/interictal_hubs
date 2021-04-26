@@ -93,8 +93,13 @@ for p = whichPts
             end
             
             %% Get spike channels and times (whatever time you want)
-            chs = block.details.filter(filt).gdf(:,1);
-            times = block.details.filter(filt).(timing);
+            if isempty(block.details)
+                chs = [];
+                times = [];
+            else
+                chs = block.details.filter(filt).gdf(:,1);
+                times = block.details.filter(filt).(timing);
+            end
             fs = block.fs;
             
             %% Get sorted spike indices and chs
@@ -105,23 +110,29 @@ for p = whichPts
             gdf = [chs,times];
             
             %% Spike rate
-            for ich = 1:nchs
-                if ismember(ich,block.bad) ||...
-                        ismember(ich,block.skip.all)
-                    rate(ich,h) = nan;
-                    continue
+            if ~isempty(gdf)
+                for ich = 1:nchs
+                    if ismember(ich,block.bad) ||...
+                            ismember(ich,block.skip.all)
+                        rate(ich,h) = nan;
+                        continue
+                    end
+                    rate(ich,h) = sum(gdf(:,1)==ich);
                 end
-                rate(ich,h) = sum(gdf(:,1)==ich);
+                
+                 %% Get sequences, rl, coa
+                [~,rl(:,h),coa(:,:,h)] = new_get_sequences(gdf,nchs,fs);
+            else
+                rate(:,h) = 0;
             end
             
-            %% Get sequences, rl, coa
-            [~,rl(:,h),coa(:,:,h)] = new_get_sequences(gdf,nchs,fs);
+           
             
             
         end
         
         %% Raster plot of rate
-        if 0
+        if 1
         r = corr(rate,nanmean(rate,2),'type','pearson','rows','pairwise');   
         figure
         turn_nans_white(rate)
@@ -129,7 +140,7 @@ for p = whichPts
         end
         
         %% Raster plot of rl
-        if 0
+        if 1
         [~,I] = sort(nanmean(rl,2));
         r = corr(rl,nanmean(rl,2),'type','pearson','rows','pairwise');
         figure
@@ -161,7 +172,7 @@ for p = whichPts
         end
         
         %% Raster plot of ns
-        if 0
+        if 1
         r = corr(ns,nanmean(ns,2),'type','pearson','rows','pairwise');   
         figure
         turn_nans_white(ns)
@@ -169,6 +180,7 @@ for p = whichPts
         end
         
         %% Gif of spike rate
+        if 0 
         fig = figure;
         for h = 1:nblocks
             scatter3(locs(:,1),locs(:,2),locs(:,3),100,ns(:,h),'filled');
@@ -177,6 +189,7 @@ for p = whichPts
             scatter3(locs(res,1),locs(res,2),locs(res,3),100,'rp');
             pause(0.2)
             hold off
+        end
         end
         
         
