@@ -9,8 +9,8 @@ def run_matlab(whichPts):
         raise
 
     txt = '"matlab","-nodisplay","-nodesktop","-r",\
-                             "addpath(genpath(''/mnt/local/gdrive/public/USERS/erinconr/projects/interictal_hubs/tools/''));'\
-    'cd ../get_hubs;dbstop if error;get_spikes([{} {}]);exit"'.format(whichPts[0],whichPts[1])
+                             "dbstop if error;addpath(genpath(''/mnt/local/gdrive/public/USERS/erinconr/projects/interictal_hubs/tools/''));'\
+    'cd ../get_hubs;get_spikes([{} {}]);exit"'.format(whichPts[0],whichPts[1])
     
     subprocess.call([txt])
 
