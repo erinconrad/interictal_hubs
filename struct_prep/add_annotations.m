@@ -9,6 +9,7 @@ data_folder = [locations.script_folder,'data/'];
 ieeg_folder = locations.ieeg_folder;
 pwfile = locations.ieeg_pw_file;
 login_name = locations.ieeg_login;
+addpath(genpath(ieeg_folder))
 
 %% Load pt struct
 pt = load([data_folder,'pt.mat']);
