@@ -6,6 +6,9 @@ overwrite = 1; % overwrite if already exists?
 %% Get file locs
 locations = interictal_hub_locations;
 data_folder = [locations.script_folder,'data/'];
+ieeg_folder = locations.ieeg_folder;
+pwfile = locations.ieeg_pw_file;
+login_name = locations.ieeg_login;
 
 %% Load pt struct
 pt = load([data_folder,'pt.mat']);
@@ -19,11 +22,17 @@ for p = 1:length(pt)
 
 for f = 1:length(pt(p).ieeg.file)
     
+    if overwrite == 0
+        if isfield(pt(p).ieeg.file(f),'ann') && ~isempty(pt(p).ieeg.file(f).ann)
+            fprintf('\nSkipping %s file %d\n',pt(p).name,f);
+            continue
+        end
+    end
+            
     clear event
     
      %% Download data
-    loginname = 'erinconr';
-    session = IEEGSession(pt(p).ieeg_names{f}, loginname, pwname);    
+    session = IEEGSession(pt(p).ieeg.file(f).name, login_name, pwfile);    
     
     %if f == 4, error('look\n'); end
     
@@ -40,7 +49,7 @@ for f = 1:length(pt(p).ieeg.file)
         end
         ann.event = event;
         ann.name = session.data.annLayer(ai).name;
-        pt(p).filename(f).ann(ai) = ann;
+        pt(p).ieeg.file(f).ann(ai) = ann;
     end
     
     session.delete;
