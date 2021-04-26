@@ -1,7 +1,7 @@
 function add_annotations
 
 %% Parameters
-overwrite = 1; % overwrite if already exists?
+overwrite = 0; % overwrite if already exists?
 
 %% Get file locs
 locations = interictal_hub_locations;
