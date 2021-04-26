@@ -9,7 +9,7 @@ def run_matlab(whichPts):
         raise
 
 
-    txt = '"matlab","-nodisplay","-nodesktop","-r","fprintf(''Hello\n'')"'
+    txt = "'matlab','-nodisplay','-nodesktop','-r','fprintf(''Hello\n'')'"
     
     """
     txt = '"matlab","-nodisplay","-nodesktop","-r",\
