@@ -16,7 +16,7 @@ def run_matlab(whichPts):
                              "dbstop if error;fprintf(''Hello'');addpath(genpath(''/mnt/local/gdrive/public/USERS/erinconr/projects/interictal_hubs/tools/''));'\
     'cd ../get_hubs;get_spikes([{} {}]);exit"'.format(whichPts[0],whichPts[1])
 """
-    
+    print('stuff')
     subprocess.call([txt])
 
 if __name__ == '__main__':
