@@ -15,5 +15,5 @@ def run_matlab(whichPts):
     subprocess.call([txt])
 
 if __name__ == '__main__':
-    whichPts = sys.argv
+    whichPts = [sys.argv[1],sys.argv[2]]
     run_matlab(whichPts)
