@@ -1,7 +1,9 @@
 %% Parameters
-overwrite = 1; % overwrite if already exists?
 block = 60*30; % check every 30 minutes
 mini_block = 60*5; % 5 minute block every thirty minutes;
+
+%% Be very careful about changing this
+overwrite = 0; % overwrite if already exists? Would really screw up spike detections I already did
 
 %% Get file locs
 locations = interictal_hub_locations;

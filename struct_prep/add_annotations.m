@@ -34,6 +34,8 @@ for f = 1:length(pt(p).ieeg.file)
             continue
         end
     end
+    
+    fprintf('\nDoing %s file %d\n',pt(p).name,f);
             
     clear event
     
@@ -44,6 +46,11 @@ for f = 1:length(pt(p).ieeg.file)
     
     %% Get annotations
     n_layers = length(session.data.annLayer);
+    
+    if n_layers == 0
+        pt(p).ieeg.file(f).ann = 'empty';
+    end
+    
     for ai = 1:n_layers
         a=session.data.annLayer(ai).getEvents(0);
         n_ann = length(a);

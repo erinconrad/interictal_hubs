@@ -1,5 +1,10 @@
 function add_reimplant_pts
 
+%{
+This is intended as a one-time use function to add reimplantation patients
+to the primary structure
+%}
+
 %% Get file locs
 locations = interictal_hub_locations;
 data_folder = [locations.script_folder,'data/'];
@@ -32,6 +37,8 @@ for i = 1:length(re)
         end
     end
     
+    fprintf('\nDoing %s\n',re_name);
+    
     %% if doesn't exist, add stuff about it
     if done == 0
         pt(next_p).name = re_name;
@@ -50,6 +57,7 @@ for i = 1:length(re)
         
         %% Add seizure time data
         % Need to do!!!
+        pt(next_p).seizure_info = [];
         
     end
     
@@ -57,5 +65,5 @@ for i = 1:length(re)
     next_p = next_p + 1;
 end
 
-
+save([data_folder,'pt.mat'],'pt');
 end

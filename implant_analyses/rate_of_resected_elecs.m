@@ -1,8 +1,11 @@
-function sequence_movie(whichPts)
+function rate_of_resected_elecs(whichPts)
 
 %% Parameters
 filt = 2;
 timing = 'peak';
+do_smooth = 1;
+sm_span = 1;
+min_spike_rate = 1;
 
 %% Locations
 locations = interictal_hub_locations;
@@ -54,6 +57,7 @@ if isempty(whichPts)
     whichPts(logical(skip)) = [];
 end
 
+
 for p = whichPts
     pt_name = pt(p).name;
 
@@ -78,12 +82,12 @@ for p = whichPts
         %locs = pt(p).ieeg.file(f).locs;
         resected = pt(p).electrode_info.resected;
         res = resected_ch_nums(resected,chLabels);
-        clean_labs = clean_labels_2(chLabels);
+        is_res = ismember(1:nchs,res);
+        
+
         
         rate = nan(nchs,nblocks);
-        rl = nan(nchs,nblocks);
-        coa = nan(nchs,nchs,nblocks);
-        
+
         % Loop over blocks
         for h = 1:nblocks
             block = spikes.file(f).block(h);
@@ -119,116 +123,41 @@ for p = whichPts
                     end
                     rate(ich,h) = sum(gdf(:,1)==ich);
                 end
-                
-                 %% Get sequences, rl, coa
-                [~,rl(:,h),coa(:,:,h)] = new_get_sequences(gdf,nchs,fs);
+
             else
                 rate(:,h) = 0;
             end
-            
-           
-            
-            
+
         end
         
-        %% Raster plot of rate
+        %% 
+        avg_rate_by_ch = nanmean(rate,2);
+        include_ch = avg_rate_by_ch > min_spike_rate;
+
+        
+        %% Plot rate over time according to resected vs non-resected status
         if 1
-            if sum(sum(isnan(rate))) == size(rate,1)*size(rate,2)
-                continue;
+            figure
+            set(gcf,'position',[100 280 1300 500])
+            if do_smooth
+                plot(smooth(nanmean(rate(is_res'&include_ch,:),1),sm_span))
+                hold on
+                plot(smooth(nanmean(rate(~is_res'&include_ch,:),1),sm_span))
+            else
+                
+                plot(nanmean(rate(is_res,:),1))
+                hold on
+                plot(nanmean(rate(~is_res,:),1))
             end
-        r = corr(rate,nanmean(rate,2),'type','pearson','rows','pairwise');   
-        figure
-        turn_nans_white(rate)
-        yticks(1:nchs)
-        yticklabels(chLabels)
-        title(sprintf('%s file %d rate reliability: %1.1f',pt_name,f,nanmean(r)))
-        pause
-        close(gcf)
-        end
-        
-        %% Raster plot of rl
-        if 0
-        [~,I] = sort(nanmean(rl,2));
-        r = corr(rl,nanmean(rl,2),'type','pearson','rows','pairwise');
-        figure
-        turn_nans_white(rl)
-        title(sprintf('RL reliability: %1.1f',nanmean(r)))
-        end
-        
-        %% gif of coa matrix
-        if 0
-        fig = figure;
-        for h = 1:nblocks
-            imagesc(coa(:,:,h))
-            title(sprintf('Block %d of %d',h,size(coa,3)))
-            yticks(1:nchs)
-            xticks(1:nchs)
-            yticklabels(chLabels)
-            xticklabels(chLabels)
+            legend({'Resected','Not-resected'})
+            xlabel('Block')
+            ylabel('Average spike rate');
+            title(sprintf('%s file %d',pt_name,f))
+            set(gca,'fontsize',20)
             pause
+            close(gcf)
         end
-        end
-        
-        %% GE/NS of coa matrix
-        ns = squeeze(sum(coa,1));
-        ge = nan(nblocks,1);
-        for h = 1:nblocks
-            ge(h) = efficiency_wei(coa(:,:,h));
-        end
-        if 0
-        figure
-        subplot(2,1,1)
-        plot(mean(ns,1));
-        subplot(2,1,2)
-        plot(ge)
-        end
-        
-        %% Raster plot of ns
-        if 0
-        r = corr(ns,nanmean(ns,2),'type','pearson','rows','pairwise');   
-        figure
-        turn_nans_white(ns)
-        title(sprintf('Node strength reliability: %1.1f',nanmean(r)))
-        end
-        
-        %% Gif of spike rate
-        if 0 
-        fig = figure;
-        for h = 1:nblocks
-            scatter3(locs(:,1),locs(:,2),locs(:,3),100,ns(:,h),'filled');
-            hold on
-            scatter3(locs(:,1),locs(:,2),locs(:,3),100,'k');
-            scatter3(locs(res,1),locs(res,2),locs(res,3),100,'rp');
-            pause(0.2)
-            hold off
-        end
-        end
-        
         
     end
 
-end
-
-end
-
-
-function turn_nans_white(im)
-    % white
-    cmap = colormap;
-    nanjet = [ 1,1,1; cmap  ];
-    nanjetLen = length(nanjet); 
-    pctDataSlotStart = 2/nanjetLen;
-    pctDataSlotEnd   = 1;
-    pctCmRange = pctDataSlotEnd - pctDataSlotStart;
-
-    dmin = nanmin(im(:));
-    dmax = nanmax(im(:));
-    dRange = dmax - dmin;   % data range, excluding NaN
-
-    cLimRange = dRange / pctCmRange;
-    cmin = dmin - (pctDataSlotStart * cLimRange);
-    cmax = dmax;
-    imagesc(im);
-    set(gcf,'colormap',nanjet);
-    caxis([cmin cmax]);
 end
