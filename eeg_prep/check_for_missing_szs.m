@@ -10,7 +10,7 @@ end
 
 num_missing = 0;
 for i = 1:length(pt(p).seizure_info.sz)
-    if strcmp(pt(p).seizure_info.UEO,'missing')
+    if strcmp(pt(p).seizure_info.sz(i).UEO,'missing')
         num_missing = num_missing + 1;
     end
     
