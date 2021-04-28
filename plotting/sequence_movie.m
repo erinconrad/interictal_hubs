@@ -132,7 +132,7 @@ for p = whichPts
         end
         
         %% Raster plot of rate
-        if 0
+        if 1
             if sum(sum(isnan(rate))) == size(rate,1)*size(rate,2)
                 continue;
             end
@@ -147,7 +147,7 @@ for p = whichPts
         end
         
         %% NMF rate
-        if 1
+        if 0
         k = 2;
         A = rate;
         A(isnan(A)) = 0;
