@@ -27,7 +27,13 @@ for i = 1:length(whichPts)
         fprintf('\nDoing %s\n',name);
     end
     
-    szs = pt(p).seizure_info.sz;
+    
+    if isempty(pt(p).seizure_info)
+        szs = [];
+    else
+        szs = pt(p).seizure_info.sz;
+    end
+    
     
     if isempty(pt(p).ieeg), continue; end
     

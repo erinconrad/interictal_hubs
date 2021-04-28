@@ -75,7 +75,7 @@ for p = whichPts
         chLabels = spikes.file(f).block(1).chLabels;
         nchs = length(chLabels);
         nblocks = length(spikes.file(f).block);
-        %locs = pt(p).ieeg.file(f).locs;
+        locs = pt(p).ieeg.file(f).locs;
         resected = pt(p).electrode_info.resected;
         res = resected_ch_nums(resected,chLabels);
         clean_labs = clean_labels_2(chLabels);
@@ -132,7 +132,7 @@ for p = whichPts
         end
         
         %% Raster plot of rate
-        if 1
+        if 0
             if sum(sum(isnan(rate))) == size(rate,1)*size(rate,2)
                 continue;
             end
@@ -145,6 +145,32 @@ for p = whichPts
         pause
         close(gcf)
         end
+        
+        %% NMF rate
+        if 1
+        k = 2;
+        A = rate;
+        A(isnan(A)) = 0;
+        [W,H] = rate_nmf(A,k);
+        figure
+        for j = 1:k
+            subplot(1,k,j)
+            scatter3(locs(:,1),locs(:,2),locs(:,3),100,W(:,j),'filled');
+            hold on
+            scatter3(locs(:,1),locs(:,2),locs(:,3),100,'k');
+            scatter3(locs(res,1),locs(res,2),locs(res,3),100,'rp');
+            
+            % Find main chs
+            [~,I] = sort(W(:,j),'descend');
+            main_chs = I(1:3);
+            main_labs = chLabels(main_chs);
+            title(main_labs)
+        end
+        
+        figure
+        plot(H');
+        end
+        
         
         %% Raster plot of rl
         if 0
