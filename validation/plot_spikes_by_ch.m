@@ -1,6 +1,7 @@
 function plot_spikes_by_ch(whichPt,whichChs)
 
 %% General parameters
+machine_ref = 0;
 n_per_fig = 10;
 surround = 5;
 
@@ -86,16 +87,30 @@ while 1
     sp_index = surround*fs;
 
     clean_labs = clean_labels_2(chLabels);
-    [values,bipolar_labels] = pre_process(values,clean_labs);
+    [bi_values,bipolar_labels,chs_in_bipolar] = pre_process(values,clean_labs);
+    if ~machine_ref
+        
 
-    %% Plot data
-    plot(linspace(0,surround*2,size(values,1)),values(:,sp_ch),'linewidth',2);
-    hold on
-    plot(surround,values(round(sp_index),sp_ch),'o','markersize',10)
-    title(sprintf('Spike %d %1.1f s %s file %d, tmul %d absthresh %d',...
-        sp,sp_time,bipolar_labels{sp_ch},f,tmul,absthresh),'fontsize',10)
-    xlabel('Time (seconds)')
-    set(gca,'fontsize',20)
+        %% Plot data
+        plot(linspace(0,surround*2,size(bi_values,1)),bi_values(:,sp_ch),'linewidth',2);
+        hold on
+        plot(surround,bi_values(round(sp_index),sp_ch),'o','markersize',10)
+        title(sprintf('Spike %d %1.1f s %s file %d, tmul %d absthresh %d',...
+            sp,sp_time,bipolar_labels{sp_ch},f,tmul,absthresh),'fontsize',10)
+        xlabel('Time (seconds)')
+        set(gca,'fontsize',20)
+    else
+        %% Plot data
+        plot(linspace(0,surround*2,size(values,1)),values(:,sp_ch),'linewidth',2);
+        hold on
+        plot(surround,values(round(sp_index),sp_ch),'o','markersize',10)
+        
+        
+        title(sprintf('Spike %d %1.1f s %s file %d, tmul %d absthresh %d',...
+            sp,sp_time,bipolar_labels{sp_ch},f,tmul,absthresh),'fontsize',10)
+        xlabel('Time (seconds)')
+        set(gca,'fontsize',20)
+    end
     
     pause
     hold off

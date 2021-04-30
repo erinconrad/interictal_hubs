@@ -1,9 +1,13 @@
 function out_labels = clean_labels_2(chLabels)
 
-out_labels = chLabels;
+out_labels = cell(length(chLabels),1);
 
 for ich = 1:length(chLabels)
-    label = chLabels{ich};
+    if ischar(chLabels)
+        label = chLabels;
+    else
+        label = chLabels{ich};
+    end
 
     %% if it's a string, convert it to a char
     if strcmp(class(label),'string')

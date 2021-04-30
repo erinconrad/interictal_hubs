@@ -1,4 +1,4 @@
-function [seq,rl,coa] = new_get_sequences(gdf,nchs,fs)
+function [seq,rl,coa,num_seq] = new_get_sequences(gdf,nchs,fs)
     
 t2 = 15*1e-3; % max time from preceding spike (15 ms in paper)
 minSeqLength = 5; 
@@ -6,6 +6,7 @@ t2 = t2*fs;
 
 ns = size(gdf,1);
 coa = zeros(nchs,nchs);
+num_seq = zeros(nchs,1);
 
 %% Sort by time
 times = gdf(:,2);
@@ -113,6 +114,7 @@ for s = 1:nseq
     %% Get spike coactivation matrix
     chs = curr(:,1);
     for i = 1:length(chs)
+        num_seq(chs(i)) = num_seq(chs(i)) + 1;
         for j = 1:i-1
             ich = chs(i);
             jch = chs(j);

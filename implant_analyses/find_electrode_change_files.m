@@ -1,4 +1,4 @@
-function change = find_electrode_change_files(pt,p)
+function [change,no_change_ever] = find_electrode_change_files(pt,p)
 
 
 nfiles = length(pt(p).ieeg.file);
@@ -33,6 +33,16 @@ for f = 1:nfiles-1
     end
 end
 
+all_unchanged = cell(length(change),1);
+for c = 1:length(change)
+    all_unchanged{c} = change(c).unchanged;
+    
+end
+
+no_change_ever = all_unchanged{1};
+for c = 2:length(change)
+    no_change_ever = intersect(no_change_ever,all_unchanged{c});
+end
 
 
 end

@@ -109,13 +109,38 @@ end
 
 
 %% Now loop over pairs of spikes in the gdf and remove whichever one has the lowest amplitude
-if 1
+% Loop over gdf, 2 at a time
+%{
+keep = ones(ns,1);
+for s = 1:2:ns-1
+    amp1 = details.filter(1).amp(s);
+    amp2 = details.filter(1).amp(s+1);
+
+    if amp1 >= amp2
+        keep(s+1) = 0;
+    else
+        keep(s) = 0;
+    end
+end
+
+
+for f = 1:2
+    details.filter(f).amp(keep==0) = [];
+    details.filter(f).peak(keep==0) = [];
+    details.filter(f).rise(keep==0) = [];
+    details.filter(f).fall(keep==0) = [];
+    details.filter(f).gdf(keep==0,:) = [];
+    details.filter(f).gdf(:,3) = [];
+end
+%}
+
+%
 for f = 1:2
     % Loop over gdf, 2 at a time
     keep = ones(ns,1);
     for s = 1:2:ns-1
         amp1 = details.filter(f).amp(s);
-        amp2 = details.filter(f).amp(s);
+        amp2 = details.filter(f).amp(s+1);
 
         if amp1 >= amp2
             keep(s+1) = 0;
@@ -131,5 +156,5 @@ for f = 1:2
     details.filter(f).gdf(keep==0,:) = [];
     details.filter(f).gdf(:,3) = [];
 
-end
+%}
 end

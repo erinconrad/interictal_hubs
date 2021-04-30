@@ -36,7 +36,7 @@ for p = whichPts
     nfiles = length(spikes.file);
     
     %% Identify files with a change in electrodes
-    change = find_electrode_change_files(pt,p);
+    [change,no_change_ever] = find_electrode_change_files(pt,p);
     nchanges = length(change);
     
     for c = 1:nchanges
@@ -46,8 +46,37 @@ for p = whichPts
             last_file = nfiles;
         end
         added = change(c).added;
-        unchanged = change(c).unchanged;
+        unchanged = no_change_ever;%change(c).unchanged;
+        
+        
+        %% Get locs
+        chLabels = clean_labels_2(spikes.file(change(c).files(2)).block(1).chLabels);
+        [~,added_idx] = ismember(added,chLabels);
+        [~,unchanged_idx] = ismember(unchanged,chLabels);
+        unchanged_labels = chLabels(unchanged_idx);
+        added_labels = chLabels(added_idx);
+        if ~isfield(pt(p).ieeg.file(change(c).files(2)),'locs')
+            dist_info = unchanged_labels;
+        else
+            added_locs = pt(p).ieeg.file(change(c).files(2)).locs(added_idx,:);
+            unchanged_locs = pt(p).ieeg.file(change(c).files(2)).locs(unchanged_idx,:);
+        
+            %% For each unchanged electrode, get identity of and distance from nearest added electrode
+            [dist,closest_added] = distance_from_closest_added(unchanged_locs,added_locs);
+            closest_label = added_labels(closest_added);
+            dist_info = cellfun(@(x,y,z) sprintf('%s %s %1.1f',x,y,z),unchanged_labels,closest_label,num2cell(dist),'UniformOutput',false);
+
+
+            %% Show this
+            if 0
+                table(unchanged_labels,added_labels(closest_added),dist)
+
+            end
+        end
+        
         all_rate = [];
+        all_coa = [];
+        all_nseq = [];
         last_block = zeros(last_file-1,1);
         
         % Loop over files
@@ -56,14 +85,16 @@ for p = whichPts
             chLabels = clean_labels_2(spikes.file(f).block(1).chLabels);
             nchs = length(chLabels);
             nblocks = length(spikes.file(f).block);
-            rate = nan(nchs,nblocks);
+            rate = nan(nchs,nblocks); % default should be nans
+            coa = nan(nchs,nchs,nblocks);
+            num_seq = nan(nchs,nblocks);
             
             % Loop over blocks
             for h = 1:nblocks
                 block = spikes.file(f).block(h);
 
                 if block.run_skip == 1
-                    continue;
+                    continue; % leave the whole block as nans
                 end
 
                 %% Get spike channels and times (whatever time you want)
@@ -86,6 +117,8 @@ for p = whichPts
                 %% Spike rate
                 if ~isempty(gdf)
                     for ich = 1:nchs
+                        % If the channel was marked as bad or skip, keep it
+                        % a nan
                         if ismember(ich,block.bad) ||...
                                 ismember(ich,block.skip.all)
                             rate(ich,h) = nan;
@@ -93,6 +126,9 @@ for p = whichPts
                         end
                         rate(ich,h) = sum(gdf(:,1)==ich);
                     end
+                    
+                     %% Get sequences, rl, coa
+                    [~,~,coa(:,:,h),num_seq(:,h)] = new_get_sequences(gdf,nchs,fs);
 
                 else
                     rate(:,h) = 0;
@@ -100,21 +136,33 @@ for p = whichPts
                 
             end
             
+            % This part is important to stitch together things properly
+
             %% Get indices of unchanged and remove changed
             [lia,locb] = ismember(chLabels,unchanged);
             new_labels = chLabels;
             new_labels(~lia) = [];
             rate(~lia,:) =[];
-            
+
             %% Re-order as needed
-            [lia,locb] = ismember(new_labels,unchanged);
+            %[lia,locb] = ismember(new_labels,unchanged);
+            [lia,locb] = ismember(unchanged,new_labels);
             new_labels = new_labels(locb);
             rate = rate(locb,:);
             if ~isequal(new_labels,unchanged)
                 error('oh no');
             end
+            %}
             
             all_rate = [all_rate,rate];
+            
+            %% If it's a post-change file, add the coa matrix
+            if f >= change(c).files(2)
+                all_coa = cat(3,all_coa,coa);
+                all_nseq = [all_nseq,num_seq];
+                post_labels = chLabels;
+            end
+            
             if f<last_file
                 last_block(f) = size(all_rate,2);
             end
@@ -125,7 +173,26 @@ for p = whichPts
             
         end
         
+        
+   
     
+    lia = ismember(post_labels,added);
+    new_post_labels = post_labels;
+    for j = 1:length(post_labels)
+        if lia(j) == 1
+            new_post_labels{j} = [new_post_labels{j},'***'];
+        end
+    end
+    
+    if 0
+        figure
+        turn_nans_white(nanmean(all_coa(:,:,:),3))
+        xticks(1:length(post_labels))
+        yticks(1:length(post_labels))
+        xticklabels(new_post_labels)
+        xtickangle(90)
+        yticklabels(new_post_labels)
+    end
     
     if 1
         figure
@@ -137,10 +204,12 @@ for p = whichPts
         end
         plot([change_block change_block],ylim,'r','linewidth',3)
         yticks(1:length(unchanged))
-        yticklabels(unchanged)
-        title(added)
+        yticklabels(dist_info)
+        %title(added')
         
     end
+    
+    
     
     end
     

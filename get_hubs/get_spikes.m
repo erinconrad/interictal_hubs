@@ -14,10 +14,10 @@ plot_spikes = 0;
 do_save = 1;
 
 %% Test parameters
-test.pt = 8;
-test.time = 309128.9;%620570.00; %193231.80;% - ok except RA4;  %1605.05 - super high variance LAF1; 5617.68 - flat; 28583.69 - RA4 bad
-test.dur = 15;
-test.file = 1;
+test.pt = 105;
+test.time = 240620;%620570.00; %193231.80;% - ok except RA4;  %1605.05 - super high variance LAF1; 5617.68 - flat; 28583.69 - RA4 bad
+test.dur = 10;
+test.file = 2;
 test.ch =[];
 
 test.tmul = 17;
@@ -249,15 +249,15 @@ for i = 1:length(whichPts)
                 if do_plot
                     do_machine_ref = 1;
                     if do_machine_ref
-                        show_eeg_and_spikes(orig_values,clean_labs,gdf,dur,run_times(1),name,fs,bad,skip,params);
+                        show_eeg_and_spikes(orig_values,clean_labs,details.filter(2).gdf,dur,run_times(1),name,fs,bad,skip,params);
                     else
-                        show_eeg_and_spikes(values,bipolar_labels,gdf,dur,run_times(1),name,fs,bad,skip,params);
+                        show_eeg_and_spikes(values,bipolar_labels,details.filter(2).gdf,dur,run_times(1),name,fs,bad,skip,params);
                     end
                 end
                 
-                if plot_spikes &&  ~isempty(details) && ~isempty(details.orig_gdf)
+                if plot_spikes &&  ~isempty(details)% && ~isempty(details.orig_gdf)
                     filter = 2; % 1 =  no filter, 2 = high filter
-                    show_spike_details(orig_values,hf_values,clean_labs,details,fs,dur,filter) 
+                    show_spike_details(orig_values,clean_labs,details,fs,dur,filter) 
                     
                 end
 

@@ -1,12 +1,12 @@
-function show_spike_details(values,HFdata,chLabels,details,fs,dur,filter)
+function show_spike_details(values,chLabels,details,fs,dur,filter)
 
 %% basic info
 gdf = details.filter(filter).gdf;
 nsp = size(details.filter(filter).gdf,1);
 sp_ch = gdf(:,1);
 peak = details.filter(filter).peak;
-rise = details.filter(filter).mid_rise;
-fall = details.filter(filter).mid_fall;
+rise = details.filter(filter).rise;
+fall = details.filter(filter).fall;
 unique_sp_chs = unique(sp_ch);
 nchs = size(values,2);
 n_un_chs = length(unique_sp_chs);
