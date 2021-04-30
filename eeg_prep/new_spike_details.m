@@ -4,6 +4,8 @@ function details = new_spike_details(gdf,values,hf_values,fs)
 peak_look = [-50e-3 50e-3];
 min_look = [-100e-3 100e-3];
 ns = size(gdf,1);
+fn_fr  = 7;
+fr     = 40;
 
 %% Initialize structures
 %details.orig_gdf = gdf;
@@ -21,8 +23,10 @@ for s = 1:size(gdf,1)
     ch = gdf(s,1);
     t = gdf(s,2);
     
-    orig_data = values(:,ch);
+    orig_data = values(:,ch)-nanmean(values(:,ch));
     HF_data    = hf_values(:,ch); 
+    %HF_data = eegfilt(orig_data, fn_fr, 'hp',fs);
+    %HF_data    = eegfilt(HF_data, fr, 'lp',fs);
     
     % Loop over methods of filtering (HF filter or no)
     for f = 1:2
@@ -134,7 +138,7 @@ for f = 1:2
 end
 %}
 
-%
+%{
 for f = 1:2
     % Loop over gdf, 2 at a time
     keep = ones(ns,1);

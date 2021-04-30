@@ -77,6 +77,7 @@ for p = whichPts
         all_rate = [];
         all_coa = [];
         all_nseq = [];
+        all_seq = {};
         last_block = zeros(last_file-1,1);
         
         % Loop over files
@@ -88,6 +89,7 @@ for p = whichPts
             rate = nan(nchs,nblocks); % default should be nans
             coa = nan(nchs,nchs,nblocks);
             num_seq = nan(nchs,nblocks);
+            
             
             % Loop over blocks
             for h = 1:nblocks
@@ -128,8 +130,11 @@ for p = whichPts
                     end
                     
                      %% Get sequences, rl, coa
-                    [~,~,coa(:,:,h),num_seq(:,h)] = new_get_sequences(gdf,nchs,fs);
-
+                    [seq,~,coa(:,:,h),num_seq(:,h)] = new_get_sequences(gdf,nchs,fs);
+                    
+                    if f >= change(c).files(2)
+                        all_seq = [all_seq;seq];
+                    end
                 else
                     rate(:,h) = 0;
                 end
@@ -174,8 +179,7 @@ for p = whichPts
         end
         
         
-   
-    
+    %% Text to designate new chs
     lia = ismember(post_labels,added);
     new_post_labels = post_labels;
     for j = 1:length(post_labels)
@@ -183,6 +187,21 @@ for p = whichPts
             new_post_labels{j} = [new_post_labels{j},'***'];
         end
     end
+        
+    %% Perc before - perc after
+    perc_diff = comp_sequences(all_seq,post_labels,added,post_labels);
+    if 0
+        figure
+        imagesc(perc_diff)
+        xticks(1:length(post_labels))
+        yticks(1:length(post_labels))
+        xticklabels(new_post_labels)
+        xtickangle(90)
+        yticklabels(new_post_labels)
+        colorbar
+    end
+    
+    compare_co_occurrence(all_coa,unchanged,added,post_labels)
     
     if 0
         figure
@@ -194,7 +213,7 @@ for p = whichPts
         yticklabels(new_post_labels)
     end
     
-    if 1
+    if 0
         figure
         set(gcf,'position',[1 1 1400 800])
         turn_nans_white(all_rate)
