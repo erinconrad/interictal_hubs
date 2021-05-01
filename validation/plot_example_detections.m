@@ -1,4 +1,4 @@
-function plot_example_detections(whichPts,which_ver,overwrite)
+function plot_example_detections(whichPts,which_ver,do_car,overwrite)
 
 %% General parameters
 n_sp = 50;
@@ -73,12 +73,13 @@ for p = whichPts
     spikes = spikes.spikes;
     
     %% concatenate all spikes into one long thing
-    % Include an extra column for the file index
+    % Include an extra column for the file index and block
     all_spikes = [];
     for f = 1:length(spikes.file)
         for h = 1:length(spikes.file(f).block)
             all_spikes = [all_spikes;spikes.file(f).block(h).gdf,...
-                repmat(f,size(spikes.file(f).block(h).gdf,1),1)];
+                repmat(f,size(spikes.file(f).block(h).gdf,1),1),...
+                repmat(h,size(spikes.file(f).block(h).gdf,1),1)];
         end
     end
     
@@ -106,7 +107,7 @@ for p = whichPts
         fs = spikes.file(f).block(1).fs;
         fname = pt(p).ieeg.file(f).name;
         chLabels = spikes.file(f).block(1).chLabels;
-        
+        which_chs = spikes.file(f).block(h).run_chs;
         
         
         %% Get the EEG data
@@ -119,15 +120,24 @@ for p = whichPts
         sp_index = surround*fs;
         
         clean_labs = clean_labels_2(chLabels);
-        [values,bipolar_labels] = pre_process(values,clean_labs);
+        if do_car
+            values = new_pre_process(values,which_chs);
+        else
+            [values,bipolar_labels] = pre_process(values,clean_labs);
+        end
         
         %% Plot data
         axes(ha(b))
         plot(linspace(0,surround*2,size(values,1)),values(:,sp_ch),'linewidth',2);
         hold on
         plot(surround,values(round(sp_index),sp_ch),'o','markersize',10)
-        title(sprintf('Spike %d %1.1f s %s file %d, tmul %d absthresh %d',...
-            sp,sp_time,bipolar_labels{sp_ch},f,tmul,absthresh),'fontsize',10)
+        if do_car
+            title(sprintf('Spike %d %1.1f s %s file %d, tmul %d absthresh %d',...
+                sp,sp_time,clean_labs{sp_ch},f,tmul,absthresh),'fontsize',10)
+        else
+            title(sprintf('Spike %d %1.1f s %s file %d, tmul %d absthresh %d',...
+                sp,sp_time,bipolar_labels{sp_ch},f,tmul,absthresh),'fontsize',10)
+        end
         if b ~= n_per_fig
             xticklabels([])
         end

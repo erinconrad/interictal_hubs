@@ -14,7 +14,7 @@ login_name = locations.ieeg_login;
 addpath(genpath(locations.script_folder));
 data_folder = [locations.script_folder,'data/'];
 addpath(genpath(locations.ieeg_folder));
-spike_folder = [results_folder,'spikes/'];
+spike_folder = [results_folder,'new_spikes/'];
 bct_folder = locations.bct;
 addpath(genpath(bct_folder));
 
@@ -213,7 +213,7 @@ for p = whichPts
         yticklabels(new_post_labels)
     end
     
-    if 0
+    if 1
         figure
         set(gcf,'position',[1 1 1400 800])
         turn_nans_white(all_rate)
