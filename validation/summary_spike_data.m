@@ -9,7 +9,7 @@ addpath(genpath(scripts_folder));
 if which_ver == 1
     sp_folder = [results_folder,'spikes/'];
 elseif which_ver == 2
-    sp = [results_folder,'new_spikes/'];
+    sp_folder = [results_folder,'new_spikes/'];
 end
 
 % Loop over spike files
