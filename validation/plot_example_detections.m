@@ -1,4 +1,4 @@
-function plot_example_detections(whichPts,overwrite)
+function plot_example_detections(whichPts,which_ver,overwrite)
 
 %% General parameters
 n_sp = 50;
@@ -15,7 +15,11 @@ login_name = locations.ieeg_login;
 addpath(genpath(locations.script_folder));
 data_folder = [locations.script_folder,'data/'];
 addpath(genpath(locations.ieeg_folder));
-spike_folder = [results_folder,'spikes/'];
+if which_ver == 1
+    spike_folder = [results_folder,'spikes/'];
+elseif which_ver == 2
+    spike_folder = [results_folder,'new_spikes/'];
+end
 
 %% Load pt file
 pt = load([data_folder,'pt.mat']);

@@ -1,11 +1,16 @@
-function summary_spike_data
+function summary_spike_data(which_ver)
 
 %% Get file locs
 locations = interictal_hub_locations;
 results_folder = [locations.main_folder,'results/'];
 scripts_folder = locations.script_folder;
 addpath(genpath(scripts_folder));
-sp_folder = [results_folder,'spikes/'];
+
+if which_ver == 1
+    spike_folder = [results_folder,'spikes/'];
+elseif which_ver == 2
+    spike_folder = [results_folder,'new_spikes/'];
+end
 
 % Loop over spike files
 listing = dir([sp_folder,'*mat']);
