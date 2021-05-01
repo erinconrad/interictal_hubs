@@ -100,6 +100,7 @@ for p = whichPts
         
         %% Get info about the spike
         f = all_spikes(sp,3);
+        h = all_spikes(sp,4);
         sp_time = all_spikes(sp,2);
         sp_ch = all_spikes(sp,1);
         tmul = spikes.file(f).block(1).params.tmul;
@@ -135,8 +136,8 @@ for p = whichPts
             title(sprintf('Spike %d %1.1f s %s file %d, tmul %d absthresh %d',...
                 sp,sp_time,clean_labs{sp_ch},f,tmul,absthresh),'fontsize',10)
         else
-            title(sprintf('Spike %d %1.1f s %s file %d, tmul %d absthresh %d',...
-                sp,sp_time,bipolar_labels{sp_ch},f,tmul,absthresh),'fontsize',10)
+            title(sprintf('Spike %d %1.1f s %s file %d block %d, tmul %d absthresh %d',...
+                sp,sp_time,bipolar_labels{sp_ch},f,h,tmul,absthresh),'fontsize',10)
         end
         if b ~= n_per_fig
             xticklabels([])
