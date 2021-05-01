@@ -1,8 +1,8 @@
 function new_spikes(whichPts)
 
 %% Parameters
-overwrite = ;
-test.do_test = ;
+overwrite = 0;
+test.do_test = 0;
 do_plot = 0;
 plot_spikes = 0;
 do_save = 1;
