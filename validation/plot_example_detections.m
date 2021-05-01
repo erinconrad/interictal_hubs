@@ -44,7 +44,14 @@ end
 
 for p = whichPts
     pt_name = pt(p).name;
-    out_folder = [results_folder,'validation/',pt_name,'/'];
+    
+    if which_ver == 1
+        out_folder = [results_folder,'validation/',pt_name,'/'];
+    elseif which_ver == 2
+        out_folder = [results_folder,'new_validation/',pt_name,'/'];
+    end
+    
+   
     
     if exist(out_folder,'dir') ~= 0
         listing = dir([out_folder,'*.jpg']);
