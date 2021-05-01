@@ -1,4 +1,4 @@
-function [gdf,hf_values] = detector(values,fs,which_chs,params)
+function gdf = detector(values,fs,which_chs,params)
 
 tmul = params.tmul;
 absthresh = params.absthresh;
@@ -14,7 +14,7 @@ aftdur   = aftdur*fs/1000;   % convert to points;
 spikedur = 10; % minimum spike duration in points
 fn_fr  = 7; % high pass filter for spikey component
 
-hf_values = nan(size(values,1),size(values,2));
+%hf_values = nan(size(values,1),size(values,2));
 
 % Initialize things
 all_spikes  = [];
@@ -39,7 +39,7 @@ for j = 1:length(which_chs)
     % first look at the high frequency data for the 'spike' component
     fndata   = eegfilt(data, fn_fr, 'hp',fs); % high pass filter
     HFdata    = eegfilt(fndata, fr, 'lp',fs); % low pass filter
-    hf_values(:,dd) = HFdata;
+    %hf_values(:,dd) = HFdata;
 
     if 0
         plot(data)
