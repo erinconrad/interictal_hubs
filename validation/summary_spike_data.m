@@ -7,9 +7,9 @@ scripts_folder = locations.script_folder;
 addpath(genpath(scripts_folder));
 
 if which_ver == 1
-    spike_folder = [results_folder,'spikes/'];
+    sp_folder = [results_folder,'spikes/'];
 elseif which_ver == 2
-    spike_folder = [results_folder,'new_spikes/'];
+    sp = [results_folder,'new_spikes/'];
 end
 
 % Loop over spike files
