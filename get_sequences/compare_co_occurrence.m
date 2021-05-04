@@ -13,6 +13,11 @@ if ndims(coa) == 3
     coa = nanmean(coa,3);
 end
 
+
+
+%% Identify electrodes with a large increase in spike rate
+
+
 %% For each unchanged electrode, identify its maximally co-occurring added electrode
 nunchanged = length(unchanged);
 all_max_add = nan(nunchanged,1);
@@ -56,7 +61,7 @@ end
 
 [sorted_ranks,I] = sort(all_added_rank);
 
-table(labels(unchanged(I)),labels((all_max_add(I))),sorted_ranks)
+T = table(labels(unchanged(I)),labels((all_max_add(I))),sorted_ranks);
 
 
 end

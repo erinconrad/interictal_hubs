@@ -57,10 +57,11 @@ for p = whichPts
         added_labels = chLabels(added_idx);
         if ~isfield(pt(p).ieeg.file(change(c).files(2)),'locs')
             dist_info = unchanged_labels;
+            dist = nan(length(unchanged_labels),1);
         else
             added_locs = pt(p).ieeg.file(change(c).files(2)).locs(added_idx,:);
             unchanged_locs = pt(p).ieeg.file(change(c).files(2)).locs(unchanged_idx,:);
-        
+            
             %% For each unchanged electrode, get identity of and distance from nearest added electrode
             [dist,closest_added] = distance_from_closest_added(unchanged_locs,added_locs);
             closest_label = added_labels(closest_added);
@@ -75,10 +76,13 @@ for p = whichPts
         end
         
         all_rate = [];
-        all_coa = [];
+        coa_post = [];
+        rate_post = [];
         all_nseq = [];
         all_seq = {};
         last_block = zeros(last_file-1,1);
+        findices = [];
+        bindices = [];
         
         % Loop over files
         for f = 1:last_file
@@ -89,6 +93,7 @@ for p = whichPts
             rate = nan(nchs,nblocks); % default should be nans
             coa = nan(nchs,nchs,nblocks);
             num_seq = nan(nchs,nblocks);
+            
             
             
             % Loop over blocks
@@ -139,6 +144,9 @@ for p = whichPts
                     rate(:,h) = 0;
                 end
                 
+                findices = [findices,f];
+                bindices = [bindices,h];
+                
             end
             
             % This part is important to stitch together things properly
@@ -163,7 +171,8 @@ for p = whichPts
             
             %% If it's a post-change file, add the coa matrix
             if f >= change(c).files(2)
-                all_coa = cat(3,all_coa,coa);
+                coa_post = cat(3,coa_post,coa);
+                rate_post = [rate_post,rate];
                 all_nseq = [all_nseq,num_seq];
                 post_labels = chLabels;
             end
@@ -201,7 +210,7 @@ for p = whichPts
         colorbar
     end
     
-    compare_co_occurrence(all_coa,unchanged,added,post_labels)
+    
     
     if 0
         figure
@@ -213,7 +222,7 @@ for p = whichPts
         yticklabels(new_post_labels)
     end
     
-    if 1
+    if 0
         figure
         set(gcf,'position',[1 1 1400 800])
         turn_nans_white(all_rate)
@@ -228,6 +237,58 @@ for p = whichPts
         
     end
     
+    %% Get rate increase of electrodes with minimum spike rate
+    [rate_increase,spikey_labels,spikey_idx] = find_rate_increase(all_rate,change_block,unchanged);
+    
+    %% Get distance from closest new electrode of these spikey electrodes
+    dist_spikey = dist(spikey_idx);
+    
+    %% Are electrodes with bigger spike rate increase closer to the new electrodes than are other spikey electrodes?
+    if 1
+        [biggest_inc,I] = sort(rate_increase,'descend');
+        table(spikey_labels(I),biggest_inc,dist_spikey(I))
+        [r,pval] = corr(biggest_inc,dist_spikey(I),'Type','Spearman')
+    end
+    
+    %% Are eletrodes with bigger spike rate increase more likely to co-spike with new electrodes?
+    blocks = 1:100;
+    [cos,unchanged_spikey_labels] = ...
+        co_spike_index(rate_post,spikey_idx,coa_post,blocks,added,unchanged,post_labels,new_post_labels);
+    
+    if 1
+        table(spikey_labels(I),biggest_inc,cos)
+        figure
+        plot(biggest_inc,cos,'o')
+        [r,pval] = corr(biggest_inc,cos,'Type','Spearman')
+    end
+    
+    if 1
+        figure
+        set(gcf,'position',[1 1 1400 800])
+        turn_nans_white(all_rate)
+        hold on
+        for b = 1:length(last_block)
+            plot([last_block(b) last_block(b)],ylim,'k','linewidth',3)
+        end
+        plot([change_block change_block],ylim,'r','linewidth',3)
+        yticks(1:length(unchanged))
+        yticklabels(dist_info)
+        %title(added')
+        if 0
+            while 1
+                [x,y] = ginput;
+                chLab = unchanged{round(y(end))};
+                fidx = findices(round(x(end)));
+                bidx = bindices(round(x(end)));
+                fprintf('\nShowing spikes for %s ch %s file %d block %d\n',...
+                    pt_name,chLab,fidx,bidx);
+
+                plot_spikes_by_ch(p,chLab,fidx,bidx)
+
+            end
+        end
+        
+    end
     
     
     end

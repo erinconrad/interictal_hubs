@@ -1,6 +1,7 @@
-function plot_spikes_by_ch(whichPt,whichChs,do_car)
+function plot_spikes_by_ch(whichPt,whichChs,whichFiles,userBlocks)
 
 %% General parameters
+do_car = 1;
 surround = 5;
 
 %% Locations
@@ -32,8 +33,17 @@ spikes = spikes.spikes;
 % Include an extra column for the file index
 all_spikes = [];
 all_elecs = {};
-for f = 1:length(spikes.file)
-    for h = 1:length(spikes.file(f).block)
+
+if isempty(whichFiles)
+    whichFiles = 1:length(spikes.file);
+end
+for f = whichFiles
+    if isempty(userBlocks)
+        whichBlocks = 1:length(spikes.file(f).block);
+    else
+        whichBlocks = userBlocks;
+    end
+    for h = whichBlocks
         if isempty(spikes.file(f).block(h).gdf)
             continue;
         end
@@ -55,11 +65,12 @@ all_elecs(~matching_idx) = [];
 
 %% Prep plot
 which_plot = 0;
-figure
+fig2 = figure;
 set(gcf,'position',[0 0 1400 250])
 
 
 while 1
+    
 
     %% Randomly pick spike
     sp = randi(size(all_spikes,1));
@@ -75,7 +86,7 @@ while 1
     fname = pt(p).ieeg.file(f).name;
     chLabels = spikes.file(f).block(1).chLabels;
     which_chs = spikes.file(f).block(h).run_chs;
-
+    matching_chs = find(ismember(chLabels,whichChs));
 
 
     %% Get the EEG data
@@ -97,23 +108,51 @@ while 1
         
 
     %% Plot data
-    plot(linspace(0,surround*2,size(values,1)),values(:,sp_ch),'linewidth',2);
-    hold on
-    plot(surround,values(round(sp_index),sp_ch),'o','markersize',10)
+    offset = 0;
+    ch_offsets = zeros(length(matching_chs),1);
+    ch_bl = zeros(length(matching_chs),1);
+    for i = 1:length(matching_chs)
+        ich = matching_chs(i);
+        plot(linspace(0,surround*2,size(values,1)),values(:,ich)-offset,'linewidth',2);
+        hold on
+        ch_offsets(i) = offset;
+        ch_bl(i) = -offset + nanmedian(values(:,ich));
+        if ich == sp_ch
+            sp_offset = offset;
+        end
+        if do_car
+            text(surround*2+0.05,ch_bl(i),sprintf('%s',clean_labs{ich}),'fontsize',20)
+        else
+            text(surround*2+0.05,ch_bl(i),sprintf('%s',bipolar_labels{ich}),'fontsize',20)
+        end
+        if i<length(matching_chs)
+            if ~isnan(min(values(:,ich)) - max(values(:,matching_chs(i+1))))
+                offset = offset - (min(values(:,ich)) - max(values(:,matching_chs(i+1))));
+            end
+        end
+    end
+    
+    plot(surround,values(round(sp_index),sp_ch)-sp_offset,'o','markersize',10)
     if do_car
-        title(sprintf('Spike %d %1.1f s %s file %d, tmul %d absthresh %d',...
-            sp,sp_time,clean_labs{sp_ch},f,tmul,absthresh),'fontsize',10)
+        title(sprintf('Spike %d %1.1f s %s file %d block %d, tmul %d absthresh %d',...
+            sp,sp_time,clean_labs{sp_ch},f,h,tmul,absthresh),'fontsize',10)
     else
-        title(sprintf('Spike %d %1.1f s %s file %d, tmul %d absthresh %d',...
-            sp,sp_time,bipolar_labels{sp_ch},f,tmul,absthresh),'fontsize',10)
+        title(sprintf('Spike %d %1.1f s %s file %d block %d, tmul %d absthresh %d',...
+            sp,sp_time,bipolar_labels{sp_ch},f,h,tmul,absthresh),'fontsize',10)
     end
     xlabel('Time (seconds)')
     set(gca,'fontsize',20)
     
     
-    pause
     hold off
 
+    str = input('\nPlot another? (y/n)\n','s');
+    if contains(str,'y') || contains(str,'Y')
+        % go to next
+    else
+        close(fig2)
+        break % end function
+    end
 
 end
     
