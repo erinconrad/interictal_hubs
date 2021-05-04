@@ -27,7 +27,7 @@ ieeg_folder = locations.ieeg_folder;
 addpath(genpath(ieeg_folder));
 pwfile = locations.ieeg_pw_file;
 login_name = locations.ieeg_login;
-sp_folder = [results_folder,'new_spikes/'];
+sp_folder = [results_folder,'nina_spikes/'];
 
 if exist(sp_folder,'dir') == 0
     mkdir(sp_folder);
