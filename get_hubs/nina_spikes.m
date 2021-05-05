@@ -34,7 +34,7 @@ if exist(sp_folder,'dir') == 0
 end
 
 %% Load pt struct
-pt = load([data_folder,'pt.mat']);
+pt = load([data_folder,'nina_pt.mat']);
 pt = pt.pt;
 
 %% Load parameter file
