@@ -1,4 +1,4 @@
-function new_spikes(whichPts)
+function nina_spikes(whichPts)
 
 %% Parameters
 overwrite = 0;

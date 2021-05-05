@@ -39,7 +39,7 @@ for p = whichPts
     [change,no_change_ever] = find_electrode_change_files(pt,p);
     nchanges = length(change);
     
-    for c = 1:nchanges
+    for c = nchanges
         if c < nchanges
             last_file = change(c+1).files(2)-1;
         else
@@ -99,6 +99,9 @@ for p = whichPts
             % Loop over blocks
             for h = 1:nblocks
                 block = spikes.file(f).block(h);
+                
+                findices = [findices,f];
+                bindices = [bindices,h];
 
                 if block.run_skip == 1
                     continue; % leave the whole block as nans
@@ -144,8 +147,7 @@ for p = whichPts
                     rate(:,h) = 0;
                 end
                 
-                findices = [findices,f];
-                bindices = [bindices,h];
+                
                 
             end
             
@@ -251,11 +253,13 @@ for p = whichPts
     end
     
     %% Are eletrodes with bigger spike rate increase more likely to co-spike with new electrodes?
+    %{
     blocks = 1:100;
     [cos,unchanged_spikey_labels] = ...
         co_spike_index(rate_post,spikey_idx,coa_post,blocks,added,unchanged,post_labels,new_post_labels);
+    %}
     
-    if 1
+    if 0
         table(spikey_labels(I),biggest_inc,cos)
         figure
         plot(biggest_inc,cos,'o')

@@ -84,7 +84,7 @@ while 1
     absthresh = spikes.file(f).block(1).params.absthresh;
     fs = spikes.file(f).block(1).fs;
     fname = pt(p).ieeg.file(f).name;
-    chLabels = spikes.file(f).block(1).chLabels;
+    chLabels = clean_labels_2(spikes.file(f).block(1).chLabels);
     which_chs = spikes.file(f).block(h).run_chs;
     matching_chs = find(ismember(chLabels,whichChs));
 

@@ -19,6 +19,8 @@ if which_ver == 1
     spike_folder = [results_folder,'spikes/'];
 elseif which_ver == 2
     spike_folder = [results_folder,'new_spikes/'];
+elseif which_ver == 3
+    spike_folder = [results_folder,'nina_spikes/'];
 end
 
 %% Load pt file
@@ -49,6 +51,8 @@ for p = whichPts
         out_folder = [results_folder,'validation/',pt_name,'/'];
     elseif which_ver == 2
         out_folder = [results_folder,'new_validation/',pt_name,'/'];
+    elseif which_ver == 3
+        out_folder = [results_folder,'nina_validation/',pt_name,'/'];
     end
     
    

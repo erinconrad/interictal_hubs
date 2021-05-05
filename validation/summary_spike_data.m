@@ -10,6 +10,8 @@ if which_ver == 1
     sp_folder = [results_folder,'spikes/'];
 elseif which_ver == 2
     sp_folder = [results_folder,'new_spikes/'];
+elseif which_ver == 3
+    sp_folder = [results_folder,'nina_spikes/'];
 end
 
 % Loop over spike files
