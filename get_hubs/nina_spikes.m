@@ -158,7 +158,7 @@ for i = 1:length(whichPts)
             end
             if ~isempty(run_times)
              
-                run_idx = run_times(1)*fs:run_times(2)*fs;
+                run_idx = max(1,run_times(1)*fs):run_times(2)*fs;
                 dur = diff(run_times);
 
 
