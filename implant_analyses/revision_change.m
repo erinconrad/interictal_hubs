@@ -33,6 +33,8 @@ for p = whichPts
     spikes = load([spike_folder,sprintf('%s_spikes.mat',pt_name)]);
     spikes = spikes.spikes;
     name = spikes.name;
+    block_dur = diff(pt(p).ieeg.file(1).block_times(1,:))/3600;
+    run_dur = diff(spikes.file(1).block(1).run_times)/60;
     nfiles = length(spikes.file);
     
     %% Identify files with a change in electrodes
@@ -239,14 +241,19 @@ for p = whichPts
         
     end
     
+    %% Overall change in spike rate
+    if 0
+        show_overall_rate(all_rate,block_dur,last_block,change_block,run_dur,name,results_folder)
+    end
+    
     %% Get rate increase of electrodes with minimum spike rate
-    [rate_increase,spikey_labels,spikey_idx] = find_rate_increase(all_rate,change_block,unchanged);
+    [rate_increase,spikey_labels,spikey_idx,mean_rate_post] = find_rate_increase(all_rate,change_block,unchanged);
     
     %% Get distance from closest new electrode of these spikey electrodes
     dist_spikey = dist(spikey_idx);
     
     %% Are electrodes with bigger spike rate increase closer to the new electrodes than are other spikey electrodes?
-    if 1
+    if 0
         [biggest_inc,I] = sort(rate_increase,'descend');
         table(spikey_labels(I),biggest_inc,dist_spikey(I))
         [r,pval] = corr(biggest_inc,dist_spikey(I),'Type','Spearman')
@@ -256,41 +263,21 @@ for p = whichPts
     %{
     blocks = 1:100;
     [cos,unchanged_spikey_labels] = ...
-        co_spike_index(rate_post,spikey_idx,coa_post,blocks,added,unchanged,post_labels,new_post_labels);
+        co_spike_index(rate_post,spikey_idx,coa_post,blocks,added,unchanged,post_labels,new_post_labels,mean_rate_post);
     %}
     
     if 0
-        table(spikey_labels(I),biggest_inc,cos)
-        figure
-        plot(biggest_inc,cos,'o')
+        [biggest_inc,I] = sort(rate_increase,'descend');
+        table(spikey_labels(I),biggest_inc,cos(I),mean_rate_post(I),'VariableNames',...
+            {'Electrode','SpikeIncrease','CoSpikeIndex','MeanRatePostRevision'})
+        %figure
+        %plot(biggest_inc,cos,'o')
         [r,pval] = corr(biggest_inc,cos,'Type','Spearman')
     end
     
     if 1
-        figure
-        set(gcf,'position',[1 1 1400 800])
-        turn_nans_white(all_rate)
-        hold on
-        for b = 1:length(last_block)
-            plot([last_block(b) last_block(b)],ylim,'k','linewidth',3)
-        end
-        plot([change_block change_block],ylim,'r','linewidth',3)
-        yticks(1:length(unchanged))
-        yticklabels(dist_info)
-        %title(added')
-        if 0
-            while 1
-                [x,y] = ginput;
-                chLab = unchanged{round(y(end))};
-                fidx = findices(round(x(end)));
-                bidx = bindices(round(x(end)));
-                fprintf('\nShowing spikes for %s ch %s file %d block %d\n',...
-                    pt_name,chLab,fidx,bidx);
-
-                plot_spikes_by_ch(p,chLab,fidx,bidx)
-
-            end
-        end
+        raster_rate_chs(all_rate,last_block,block_dur,run_dur,change_block,...
+    dist_info,unchanged,name,results_folder)
         
     end
     
@@ -302,23 +289,3 @@ end
 
 end
 
-function turn_nans_white(im)
-    % white
-    cmap = colormap;
-    nanjet = [ 1,1,1; cmap  ];
-    nanjetLen = length(nanjet); 
-    pctDataSlotStart = 2/nanjetLen;
-    pctDataSlotEnd   = 1;
-    pctCmRange = pctDataSlotEnd - pctDataSlotStart;
-
-    dmin = nanmin(im(:));
-    dmax = nanmax(im(:));
-    dRange = dmax - dmin;   % data range, excluding NaN
-
-    cLimRange = dRange / pctCmRange;
-    cmin = dmin - (pctDataSlotStart * cLimRange);
-    cmax = dmax;
-    imagesc(im);
-    set(gcf,'colormap',nanjet);
-    caxis([cmin cmax]);
-end

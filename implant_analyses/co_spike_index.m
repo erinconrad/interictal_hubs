@@ -1,4 +1,15 @@
-function [cos,unchanged_spikey_labels] = co_spike_index(rate_post,spikey_idx,coa_post,blocks,added_labels,unchanged_labels,post_labels,new_post_labels)
+function [cos,unchanged_spikey_labels] = co_spike_index(rate_post,spikey_idx,coa_post,blocks,added_labels,unchanged_labels,post_labels,new_post_labels,mean_rate_post)
+
+%% Parameters
+do_max = 1;
+do_coa = 0;
+%{
+ When do_max = 1 and do_coa = 0, I am defining the co-spike index for an
+ electrode to be the number of times it co-spikes with its maximum
+ co-spiking added electrode (per block) divided by its overall spike rate
+ (per block). A co-spike index of 1 means that every time the electrode
+ spikes, its maximally co-spiking added electrode spikes at the same time.
+%}
 
 %% Find unchanged electrodes that are spikey enough
 unchanged_spikey_labels = unchanged_labels(spikey_idx);
@@ -21,10 +32,11 @@ nunchanged = length(unchanged);
 all_max_add = nan(nunchanged,1);
 all_max_coa = nan(nunchanged,1);
 sum_coa = nan(nunchanged,1);
+all_added_coa = nan(nunchanged,1);
 for i = 1:nunchanged
     ich = unchanged(i);
     
-    % co-activation array between ich and all added electrode
+    % co-activation array between ich and all added electrodes
     coa_added = coa_post(ich,added,:);
     
     % Take mean across blocks
@@ -37,19 +49,47 @@ for i = 1:nunchanged
     all_max_add(i) = max_add;
     all_max_coa(i) = max_coa;
     
+    % get summed coa across all added
+    all_added_coa = sum(coa_added);
+    
     % Sum across all other electrodes to get the sum coa
     sum_coa(i) = nansum(nanmean(coa_post(ich,:,:),3));
 end
 
-%% Divide this by its overall co-spikeyness to get its relative co-spike index
-%cos = all_max_coa./nanmean(rate_unchanged,2);
-cos = all_max_coa./sum_coa;
+
+
+if do_coa
+    %% Divide by overall co-spikeyness to get co-spike index
+    if do_max
+        cos = all_max_coa./sum_coa;
+    else
+        cos = all_added_coa./sum_coa;
+    end
+    
+else
+    %% Divide this by its overall post-revision rate to get its relative co-spike index
+    avg_rate = nanmean(rate_unchanged,2);
+
+    if do_max
+        cos = all_max_coa./nanmean(rate_unchanged,2);
+    else
+        cos = all_added_coa./nanmean(rate_unchanged,2);
+    end
+end
+%cos = all_max_coa./sum_coa;
 
 cos_all = nanmean(coa_post(:,:,blocks),3);
-cos_all_rel = cos_all./repmat(sum_coa,1,size(cos_all,2));
+%cos_all_rel = cos_all./repmat(sum_coa,1,size(cos_all,2));
+
+if ~isequal(avg_rate,mean_rate_post)
+    error('oh nos');
+end
 
 %% show stuff
 if 1
+    %[sorted,I] = sort(cos,'descend');
+    %T =  table(unchanged_spikey_labels(I),spikey_post_labels(all_max_add),sorted,all_max_coa(I),avg_rate(I));
+    
     figure
     set(gcf,'position',[0 0 1300 800]);
     %imagesc(nanmean(coa_post(:,:,blocks),3))
