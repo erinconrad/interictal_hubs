@@ -22,6 +22,16 @@ addpath(genpath(bct_folder));
 pt = load([data_folder,'pt.mat']);
 pt = pt.pt;
 
+if isempty(whichPts)
+    whichPts = [20 103 105 106 107 35 109 110 111 94 97];
+end
+
+%% Prep info for aggregate tables
+all_names = {};
+all_big_inc = {};
+all_anat = {};
+all_inc = [];
+
 for p = whichPts
     pt_name = pt(p).name;
 
@@ -50,13 +60,15 @@ for p = whichPts
         added = change(c).added;
         unchanged = no_change_ever;%change(c).unchanged;
         
-        
-        %% Get locs
+        %% Ch labels
         chLabels = clean_labels_2(spikes.file(change(c).files(2)).block(1).chLabels);
         [~,added_idx] = ismember(added,chLabels);
         [~,unchanged_idx] = ismember(unchanged,chLabels);
         unchanged_labels = chLabels(unchanged_idx);
         added_labels = chLabels(added_idx);
+        
+        
+        %% Get locs
         if ~isfield(pt(p).ieeg.file(change(c).files(2)),'locs')
             dist_info = unchanged_labels;
             dist = nan(length(unchanged_labels),1);
@@ -64,6 +76,7 @@ for p = whichPts
             added_locs = pt(p).ieeg.file(change(c).files(2)).locs(added_idx,:);
             unchanged_locs = pt(p).ieeg.file(change(c).files(2)).locs(unchanged_idx,:);
             
+
             %% For each unchanged electrode, get identity of and distance from nearest added electrode
             [dist,closest_added] = distance_from_closest_added(unchanged_locs,added_locs);
             closest_label = added_labels(closest_added);
@@ -75,6 +88,13 @@ for p = whichPts
                 table(unchanged_labels,added_labels(closest_added),dist)
 
             end
+        end
+        
+        %% Get anatomy
+        if ~isfield(pt(p).ieeg.file(change(c).files(2)),'anatomy')
+            unchanged_anatomy = cell(length(unchanged_labels),1);
+        else
+            unchanged_anatomy = pt(p).ieeg.file(change(c).files(2)).anatomy(unchanged_idx);
         end
         
         all_rate = [];
@@ -247,16 +267,32 @@ for p = whichPts
     end
     
     %% Get rate increase of electrodes with minimum spike rate
-    [rate_increase,spikey_labels,spikey_idx,mean_rate_post] = find_rate_increase(all_rate,change_block,unchanged);
     
-    %% Get distance from closest new electrode of these spikey electrodes
-    dist_spikey = dist(spikey_idx);
+    [rate_increase,spikey_labels,spikey_idx,mean_rate_post,...
+        big_inc_labels,big_inc_rate_sorted,abs_increase] = find_rate_increase(all_rate,change_block,unchanged);
+    % Get anatomy of the big increase electrodes
+    [~,big_inc_chs] = ismember(big_inc_labels,unchanged_labels);
+    big_inc_anatomy = unchanged_anatomy(big_inc_chs);
+    
+    all_big_inc = [all_big_inc;big_inc_labels];
+    all_anat = [all_anat;big_inc_anatomy];
+    all_names = [all_names;repmat(cellstr(pt_name),length(big_inc_anatomy),1)];
+    all_inc = [all_inc; big_inc_rate_sorted];
+    
     
     %% Are electrodes with bigger spike rate increase closer to the new electrodes than are other spikey electrodes?
-    if 0
+    if 1
+        
+        % Get distance from closest new electrode of these spikey electrodes
+        dist_spikey = dist(spikey_idx);
+        
+        % Sort by rate of increase
         [biggest_inc,I] = sort(rate_increase,'descend');
-        table(spikey_labels(I),biggest_inc,dist_spikey(I))
-        [r,pval] = corr(biggest_inc,dist_spikey(I),'Type','Spearman')
+        T=table(spikey_labels(I),biggest_inc,dist_spikey(I));
+        
+        plot_inc_as_fcn_of_dist(rate_increase,abs_increase,dist_spikey,...
+            spikey_labels,name,results_folder,run_dur,big_inc_labels)
+
     end
     
     %% Are eletrodes with bigger spike rate increase more likely to co-spike with new electrodes?
@@ -275,7 +311,7 @@ for p = whichPts
         [r,pval] = corr(biggest_inc,cos,'Type','Spearman')
     end
     
-    if 1
+    if 0
         raster_rate_chs(all_rate,last_block,block_dur,run_dur,change_block,...
     dist_info,unchanged,name,results_folder)
         
@@ -285,6 +321,17 @@ for p = whichPts
     end
     
 end
+
+if 0
+%% Show table with anatomical localizations
+outfolder = [results_folder,'anatomy/'];
+if ~exist(outfolder,'dir')
+    mkdir(outfolder)
+end
+T = table(all_names,all_big_inc,all_inc,all_anat);
+writetable(T,[outfolder,'anatomy.csv']);
+end
+
 
 
 end
