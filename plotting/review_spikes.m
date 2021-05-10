@@ -113,10 +113,10 @@ end
 end
 
 
-function turn_nans_gray(im)
+function h = turn_nans_gray(im)
     % white
     cmap = colormap;
-    nanjet = [ 0.5,0.5,0.5; cmap  ];
+    nanjet = [ 0.7,0.7,0.7; cmap  ];
     nanjetLen = length(nanjet); 
     pctDataSlotStart = 2/nanjetLen;
     pctDataSlotEnd   = 1;
@@ -129,7 +129,7 @@ function turn_nans_gray(im)
     cLimRange = dRange / pctCmRange;
     cmin = dmin - (pctDataSlotStart * cLimRange);
     cmax = dmax;
-    imagesc(im);
+    h= imagesc(im);
     set(gcf,'colormap',nanjet);
     caxis([cmin cmax]);
 end
