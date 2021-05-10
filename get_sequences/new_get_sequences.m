@@ -1,7 +1,7 @@
 function [seq,rl,coa,num_seq] = new_get_sequences(gdf,nchs,fs)
     
 t2 = 15*1e-3; % max time from preceding spike (15 ms in paper)
-minSeqLength = 5; 
+minSeqLength = 5;  % 5 in paper
 t2 = t2*fs;
 
 ns = size(gdf,1);

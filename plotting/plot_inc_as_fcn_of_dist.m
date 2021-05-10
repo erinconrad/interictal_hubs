@@ -98,7 +98,6 @@ else
         title(sprintf('%s Pearson correlation r = %1.2f p = %1.3f',name,r,pval))
     end
     set(gca,'fontsize',20)
-    xlim([0 3])
 
     print(gcf,[out_folder,name,'_distance'],'-dpng');
     close(gcf)

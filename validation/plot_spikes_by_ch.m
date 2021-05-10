@@ -1,33 +1,40 @@
-function plot_spikes_by_ch(whichPt,whichChs,whichFiles,userBlocks)
+function plot_spikes_by_ch(whichPt,whichChs,whichFiles,userBlocks,spikes)
 
 %% General parameters
-do_car = 1;
+do_car = 1; % common average ref? If 0, will do bipolar
 surround = 5;
 
 %% Locations
 locations = interictal_hub_locations;
 results_folder = [locations.main_folder,'results/'];
+
+% ieeg stuff
 ieeg_folder = locations.ieeg_folder;
 addpath(genpath(ieeg_folder));
 pwfile = locations.ieeg_pw_file;
 login_name = locations.ieeg_login;
+
+% scripts and data
 addpath(genpath(locations.script_folder));
 data_folder = [locations.script_folder,'data/'];
-addpath(genpath(locations.ieeg_folder));
-spike_folder = [results_folder,'new_spikes/'];
+
+
 
 %% Load pt file
 pt = load([data_folder,'pt.mat']);
 pt = pt.pt;
 p = whichPt;
 
-
 pt_name = pt(p).name;
 
 
 %% Load spike file
-spikes = load([spike_folder,sprintf('%s_spikes.mat',pt_name)]);
-spikes = spikes.spikes;
+if isempty(spikes)
+    spike_folder = [results_folder,'new_spikes/'];
+    spikes = load([spike_folder,sprintf('%s_spikes.mat',pt_name)]);
+    spikes = spikes.spikes;
+end
+
 
 %% concatenate all spikes into one long thing
 % Include an extra column for the file index
@@ -73,6 +80,11 @@ while 1
     
 
     %% Randomly pick spike
+    if isempty(all_spikes)
+        fprintf('\nWarning, no spikes seen for this block and channel combo, choose another\n');
+        close(fig2)
+        break
+    end
     sp = randi(size(all_spikes,1));
 
     %% Get info about the spike

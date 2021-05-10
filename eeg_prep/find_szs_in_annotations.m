@@ -1,10 +1,16 @@
-function T = find_szs_in_annotations(pt)
+function T = find_szs_in_annotations(pt,whichPts)
 
 poss_sz_text = {};
 poss_sz_start = {};
 files = [];
 names = [];
-for p = 1:length(pt)
+
+if isempty(whichPts)
+    whichPts = 1:length(pt);
+end
+
+for j = 1:length(whichPts)
+    p = whichPts(j);
     
     if isempty(pt(p).ieeg), continue; end
     

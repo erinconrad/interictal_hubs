@@ -4,9 +4,11 @@ function [rate_increase,spikey_labels,idx_above_min,mean_rate_post,...
 %% Parameters
 min_rate = 0.5;
 big_inc_thresh = 1;
-pre_blocks = 1:change_block-1;
-post_blocks = change_block+1:min(change_block+100,size(all_rate,2));
-
+num_blocks = 100;
+pre_blocks = max(1,change_block-num_blocks):change_block-1;%1:change_block-1;
+post_blocks = change_block+1:min(change_block+num_blocks,size(all_rate,2));
+%pre_blocks = 1:change_block-1;
+%post_blocks = change_block:size(all_rate,2);
 
 %% Get indices of electrodes above the mean rate
 mean_rate = nanmean(all_rate(:,post_blocks),2);

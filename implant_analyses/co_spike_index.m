@@ -1,4 +1,7 @@
-function [cos,unchanged_spikey_labels] = co_spike_index(rate_post,spikey_idx,coa_post,blocks,added_labels,unchanged_labels,post_labels,new_post_labels,mean_rate_post)
+function [cos,unchanged_spikey_labels] = co_spike_index(rate_post,spikey_idx,coa_post,blocks,added_labels,...
+    unchanged_labels,post_labels,new_post_labels,mean_rate_post,abs_increase,name,...
+    run_dur,results_folder)
+        %})
 
 %% Parameters
 do_max = 1;
@@ -86,7 +89,7 @@ if ~isequal(avg_rate,mean_rate_post)
 end
 
 %% show stuff
-if 1
+if 0
     %[sorted,I] = sort(cos,'descend');
     %T =  table(unchanged_spikey_labels(I),spikey_post_labels(all_max_add),sorted,all_max_coa(I),avg_rate(I));
     
@@ -102,4 +105,28 @@ if 1
     
 end
 
+
+if 1
+    
+    %% Prep output folder
+    out_folder = [results_folder,'cospike/'];
+    if ~exist(out_folder,'dir')
+        mkdir(out_folder);
+    end
+    
+    figure
+    set(gcf,'position',[440 464 865 334])
+    plot(abs_increase/run_dur,cos,'o','color',[1 1 1])
+    hold on
+    text(abs_increase/run_dur,cos,unchanged_spikey_labels,'horizontalalignment','center',...
+        'fontsize',20)
+    [r,pval] = corr(abs_increase,cos,'Type','Spearman');
+    xlabel('Change in spike rate (spikes/min)')
+    ylabel('Co-spike index')
+    set(gca,'fontsize',20)
+    title(sprintf('%s Spearman rank correlation rho = %1.2f, p = %1.3f',name,r,pval))
+    
+    print(gcf,[out_folder,name,'_cospike'],'-dpng');
+    close(gcf)
+end
 end

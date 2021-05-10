@@ -286,9 +286,6 @@ for p = whichPts
         % Get distance from closest new electrode of these spikey electrodes
         dist_spikey = dist(spikey_idx);
         
-        % Sort by rate of increase
-        [biggest_inc,I] = sort(rate_increase,'descend');
-        T=table(spikey_labels(I),biggest_inc,dist_spikey(I));
         
         plot_inc_as_fcn_of_dist(rate_increase,abs_increase,dist_spikey,...
             spikey_labels,name,results_folder,run_dur,big_inc_labels)
@@ -296,19 +293,16 @@ for p = whichPts
     end
     
     %% Are eletrodes with bigger spike rate increase more likely to co-spike with new electrodes?
-    %{
-    blocks = 1:100;
-    [cos,unchanged_spikey_labels] = ...
-        co_spike_index(rate_post,spikey_idx,coa_post,blocks,added,unchanged,post_labels,new_post_labels,mean_rate_post);
-    %}
-    
     if 0
-        [biggest_inc,I] = sort(rate_increase,'descend');
-        table(spikey_labels(I),biggest_inc,cos(I),mean_rate_post(I),'VariableNames',...
-            {'Electrode','SpikeIncrease','CoSpikeIndex','MeanRatePostRevision'})
-        %figure
-        %plot(biggest_inc,cos,'o')
-        [r,pval] = corr(biggest_inc,cos,'Type','Spearman')
+        blocks = 1:100;
+        [cos,unchanged_spikey_labels] = ...
+            co_spike_index(rate_post,spikey_idx,coa_post,...
+            blocks,added,unchanged,post_labels,new_post_labels,mean_rate_post,...
+            abs_increase,pt_name,run_dur,results_folder);
+        %}
+
+        
+    
     end
     
     if 0
@@ -316,6 +310,7 @@ for p = whichPts
     dist_info,unchanged,name,results_folder)
         
     end
+    
     
     
     end
