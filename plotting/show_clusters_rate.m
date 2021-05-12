@@ -1,17 +1,17 @@
-function show_overall_rate(all_rate,block_dur,last_block,change_block,run_dur,name,results_folder)
+function show_clusters_rate(all_rate,block_dur,change_block,run_dur,name,results_folder,clusts,clust_names)
 
 figure
 set(gcf,'position',[172 233 1181 423])
 times = 1:size(all_rate,2);
 times = times*block_dur;
-plot(times,nanmean(all_rate,1)/run_dur,'linewidth',1)
-
-hold on
-%{
-for b = 1:length(last_block)
-    fp = plot([last_block(b)*block_dur last_block(b)*block_dur],ylim,'k--','linewidth',3);
+mp = zeros(length(clusts),1);
+for i = 1:length(clusts)
+    chs = clusts{i};
+    mp(i) = plot(times,nanmean(all_rate(chs,:),1)/run_dur,'linewidth',1);
+    hold on
 end
-%}
+
+
 
 nan_blocks = find(isnan(nanmean(all_rate,1)));
 for b = 1:length(nan_blocks)
@@ -27,14 +27,14 @@ ylabel('Spikes/min')
 xlabel('Hour')
 title(sprintf('%s',name));
 set(gca,'fontsize',20)
-legend([cp ap],{'Revision','Data missing'},'fontsize',20,'location','northeast')
+legend([mp' cp ap],[clust_names,{'Revision','Data missing'}],'fontsize',20,'location','northeast')
 
-output_folder = [results_folder,'overall_rate/'];
+output_folder = [results_folder,'rate_clusters/'];
 if exist(output_folder,'dir') == 0
     mkdir(output_folder)
 end
 
-print(gcf,[output_folder,name,'_rate'],'-dpng')
+print(gcf,[output_folder,name,'_clust'],'-dpng')
 close(gcf)
 
 end

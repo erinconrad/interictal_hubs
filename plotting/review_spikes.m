@@ -33,7 +33,7 @@ end
 for f = 1:nfiles
 
     chLabels = clean_labels_2(spikes.file(f).block(1).chLabels);
-    dur = diff(spikes.file(f).block(1).run_times)/3600;
+    dur = diff(pt(p).ieeg.file(f).block_times(1,:))/3600;
     ekg_chs = identify_ekg(chLabels);
     non_ekg_chs = find(~ekg_chs);
     non_ekg_labels = chLabels(~ekg_chs);
@@ -96,7 +96,7 @@ for f = 1:nfiles
             end
             chLab = non_ekg_labels{round(y(end))};
             fidx = f;
-            bidx = bindices(round(x(end)));
+            bidx = bindices(round(x(end)/dur));
             fprintf('\nShowing spikes for %s ch %s file %d block %d (hour %d)\n',...
                 name,chLab,fidx,bidx,round(bidx*dur));
 

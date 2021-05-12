@@ -91,7 +91,11 @@ else
     end
     ylabel({'Distance from nearest','added electrode (mm)'});
     if do_spear
-        [r,pval] = corr(rate,dist_spikey,'Type','Spearman');
+        try
+            [r,pval] = corr(rate,dist_spikey,'Type','Spearman');
+        catch
+            r = nan; pval = nan;
+        end
         title(sprintf('%s Spearman correlation rho = %1.2f p = %1.3f',name,r,pval))
     else
         [r,pval] = corr(rate,dist_spikey,'Type','Pearson');

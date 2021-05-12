@@ -3,6 +3,7 @@ function revision_change(whichPts)
 %% Parameters
 filt = 2;
 timing = 'peak';
+only_depth = 1;
 
 %% Locations
 locations = interictal_hub_locations;
@@ -48,7 +49,7 @@ for p = whichPts
     nfiles = length(spikes.file);
     
     %% Identify files with a change in electrodes
-    [change,no_change_ever] = find_electrode_change_files(pt,p);
+    [change,no_change_ever] = find_electrode_change_files(pt,p,only_depth);
     nchanges = length(change);
     
     for c = nchanges
@@ -59,6 +60,10 @@ for p = whichPts
         end
         added = change(c).added;
         unchanged = no_change_ever;%change(c).unchanged;
+        
+        if isempty(added)
+            continue
+        end
         
         %% Ch labels
         chLabels = clean_labels_2(spikes.file(change(c).files(2)).block(1).chLabels);
@@ -266,6 +271,15 @@ for p = whichPts
         show_overall_rate(all_rate,block_dur,last_block,change_block,run_dur,name,results_folder)
     end
     
+    %% clustered
+    if 0
+        if strcmp(name,'HUP128')
+            clusts{1} = find(contains(unchanged,'L')); clusts{2} = find(contains(unchanged,'R'));
+            clust_names = {'Left','Right'};
+            show_clusters_rate(all_rate,block_dur,change_block,run_dur,name,results_folder,clusts,clust_names)
+        end
+    end
+    
     %% Get rate increase of electrodes with minimum spike rate
     
     [rate_increase,spikey_labels,spikey_idx,mean_rate_post,...
@@ -281,7 +295,7 @@ for p = whichPts
     
     
     %% Are electrodes with bigger spike rate increase closer to the new electrodes than are other spikey electrodes?
-    if 1
+    if 0
         
         % Get distance from closest new electrode of these spikey electrodes
         dist_spikey = dist(spikey_idx);

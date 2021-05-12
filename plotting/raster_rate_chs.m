@@ -44,5 +44,6 @@ figure
     end
 
     print(gcf,[output_folder,name,'_raster'],'-dpng')
+    close(gcf)
 
 end
