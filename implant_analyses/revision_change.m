@@ -3,7 +3,8 @@ function revision_change(whichPts)
 %% Parameters
 filt = 2;
 timing = 'peak';
-only_depth = 1;
+only_depth = 0;
+clean_blocks = 1;
 
 %% Locations
 locations = interictal_hub_locations;
@@ -43,6 +44,12 @@ for p = whichPts
       
     spikes = load([spike_folder,sprintf('%s_spikes.mat',pt_name)]);
     spikes = spikes.spikes;
+    
+    %% Flip things that we think are bad to bad
+    if clean_blocks
+        spikes = clean_missed_bad_blocks(spikes);
+    end
+    
     name = spikes.name;
     block_dur = diff(pt(p).ieeg.file(1).block_times(1,:))/3600;
     run_dur = diff(spikes.file(1).block(1).run_times)/60;
@@ -216,6 +223,7 @@ for p = whichPts
             
         end
         
+    %% Clean rate
         
     %% Text to designate new chs
     lia = ismember(post_labels,added);
@@ -293,6 +301,21 @@ for p = whichPts
     all_names = [all_names;repmat(cellstr(pt_name),length(big_inc_anatomy),1)];
     all_inc = [all_inc; big_inc_rate_sorted];
     
+    
+    %% Look at electrodes by spike rate change
+    % A way to validate spikes
+    if 0
+    scatterplot_rate_change(abs_increase,spikey_labels,spikes,p,name)
+    end
+    
+    %% Get anatomy of spikey electrodes
+    spikey_anatomy = unchanged_anatomy(spikey_idx);
+    
+    % group anatomy
+    [ana_lat,ana_loc] = anatomy_grouper(spikey_anatomy);
+    
+    %% Is there a difference in spike rate change based on anatomy?
+    group_rate_change_by_anatomy(ana_lat,ana_loc,abs_increase,name,results_folder)
     
     %% Are electrodes with bigger spike rate increase closer to the new electrodes than are other spikey electrodes?
     if 0
