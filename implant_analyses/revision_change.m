@@ -1,8 +1,12 @@
 function revision_change(whichPts)
 
 %% Parameters
-filt = 2;
-timing = 'peak';
+%filt = 2;
+%timing = 'peak';
+
+% probably should do
+rm_sz = 1;
+rm_dup = 1;
 only_depth = 0;
 clean_blocks = 1;
 
@@ -23,6 +27,14 @@ addpath(genpath(bct_folder));
 %% Load pt file
 pt = load([data_folder,'pt.mat']);
 pt = pt.pt;
+
+if ischar(whichPts)
+    all_pt_names = cell(length(pt),1);
+    for i = 1:length(pt)
+        all_pt_names{i}=pt(i).name;
+    end
+    whichPts = find(strcmp(all_pt_names,whichPts));
+end
 
 if isempty(whichPts)
     whichPts = [20 103 105 106 107 35 109 110 111 94 97];
@@ -127,13 +139,13 @@ for p = whichPts
             rate = nan(nchs,nblocks); % default should be nans
             coa = nan(nchs,nchs,nblocks);
             num_seq = nan(nchs,nblocks);
-            
+            sz_times = all_sz_times_in_file(pt,p,f);
             
             
             % Loop over blocks
             for h = 1:nblocks
                 block = spikes.file(f).block(h);
-                
+                fs = block.fs;
                 findices = [findices,f];
                 bindices = [bindices,h];
 
@@ -142,6 +154,7 @@ for p = whichPts
                 end
 
                 %% Get spike channels and times (whatever time you want)
+                %{
                 if isempty(block.details)
                     chs = [];
                     times = [];
@@ -149,7 +162,7 @@ for p = whichPts
                     chs = block.details.filter(filt).gdf(:,1);
                     times = block.details.filter(filt).(timing);
                 end
-                fs = block.fs;
+                
 
                 %% Get sorted spike indices and chs
                 [times,I] = sort(times);
@@ -157,9 +170,31 @@ for p = whichPts
 
                 %% Construct gdf
                 gdf = [chs,times];
+                %}
+                gdf = spikes.file(f).block(h).gdf;
                 
                 %% Spike rate
                 if ~isempty(gdf)
+                    
+                    %% Remove duplicates
+                    if rm_dup 
+                        [gdf,~] = remove_duplicates(gdf);
+                    end
+                    
+                    if isempty(gdf)
+                        continue
+                    end
+                    
+                    
+                    %% Remove any spikes in sz
+                    if rm_sz
+                        [gdf,n_removed] = remove_spikes_in_sz(gdf,sz_times);
+                        if n_removed ~= 0
+                            fprintf('\n%s Removed %d spikes in file %d block %d\n',...
+                                pt_name,n_removed,f,h);
+                        end
+                    end
+                    
                     for ich = 1:nchs
                         % If the channel was marked as bad or skip, keep it
                         % a nan
@@ -172,13 +207,24 @@ for p = whichPts
                     end
                     
                      %% Get sequences, rl, coa
-                    [seq,~,coa(:,:,h),num_seq(:,h)] = new_get_sequences(gdf,nchs,fs);
-                    
-                    if f >= change(c).files(2)
-                        all_seq = [all_seq;seq];
-                    end
+                     if ~isempty(gdf)
+                        [seq,~,coa(:,:,h),num_seq(:,h)] = new_get_sequences(gdf,nchs,fs);
+
+                        if f >= change(c).files(2)
+                            all_seq = [all_seq;seq];
+                        end
+                     end
                 else
-                    rate(:,h) = 0;
+                    for ich = 1:nchs
+                        % If the channel was marked as bad or skip, keep it
+                        % a nan
+                        if ismember(ich,block.bad) ||...
+                                ismember(ich,block.skip.all)
+                            rate(ich,h) = nan;
+                            continue
+                        end
+                        rate(ich,h) = 0;
+                    end
                 end
                 
                 
@@ -222,9 +268,7 @@ for p = whichPts
             end
             
         end
-        
-    %% Clean rate
-        
+                
     %% Text to designate new chs
     lia = ismember(post_labels,added);
     new_post_labels = post_labels;
@@ -281,15 +325,31 @@ for p = whichPts
     
     %% clustered
     if 0
+        %clust = {{'RB1','RB7','RB2'},{'LA4','LA2'}};
+        clust = {{'LB8','LB9'};{'RB2','RB3'}};
+        show_clusters_rate(all_rate,block_dur,change_block,run_dur,name,results_folder,clust,[],unchanged)
+        %{
         if strcmp(name,'HUP128')
             clusts{1} = find(contains(unchanged,'L')); clusts{2} = find(contains(unchanged,'R'));
             clust_names = {'Left','Right'};
-            show_clusters_rate(all_rate,block_dur,change_block,run_dur,name,results_folder,clusts,clust_names)
+            show_clusters_rate(all_rate,block_dur,change_block,run_dur,name,results_folder,clusts,clust_names,unchanged)
         end
+        %}
     end
     
     %% Get rate increase of electrodes with minimum spike rate
+    surround = 100;
+    abs_increase = new_rate_increase(all_rate,change_block,surround);
     
+    
+    %% Restrict to minimum number of spikes
+    min_num = 1;
+    [spikey_idx,~] = find_spikey_elecs(all_rate,min_num,change_block,surround);
+
+    spikey_labels = unchanged(spikey_idx);
+    spikey_rate_inc = abs_increase(spikey_idx);
+    
+    %{
     [rate_increase,spikey_labels,spikey_idx,mean_rate_post,...
         big_inc_labels,big_inc_rate_sorted,abs_increase] = find_rate_increase(all_rate,change_block,unchanged);
     % Get anatomy of the big increase electrodes
@@ -301,11 +361,16 @@ for p = whichPts
     all_names = [all_names;repmat(cellstr(pt_name),length(big_inc_anatomy),1)];
     all_inc = [all_inc; big_inc_rate_sorted];
     
+    if sum(spikey_idx) == 0
+        continue;
+    end
+    %}
+    
     
     %% Look at electrodes by spike rate change
     % A way to validate spikes
     if 0
-    scatterplot_rate_change(abs_increase,spikey_labels,spikes,p,name)
+    scatterplot_rate_change(spikey_rate_inc,spikey_labels,spikes,p,name)
     end
     
     %% Get anatomy of spikey electrodes
@@ -315,7 +380,12 @@ for p = whichPts
     [ana_lat,ana_loc] = anatomy_grouper(spikey_anatomy);
     
     %% Is there a difference in spike rate change based on anatomy?
-    group_rate_change_by_anatomy(ana_lat,ana_loc,abs_increase,name,results_folder)
+    if 0
+    
+    if sum(cell2mat(cellfun(@(x) ~isempty(x),spikey_anatomy,'uniformoutput',false))) ~= 0
+        group_rate_change_by_anatomy(ana_lat,ana_loc,abs_increase,name,results_folder)
+    end
+    end
     
     %% Are electrodes with bigger spike rate increase closer to the new electrodes than are other spikey electrodes?
     if 0
@@ -324,8 +394,8 @@ for p = whichPts
         dist_spikey = dist(spikey_idx);
         
         
-        plot_inc_as_fcn_of_dist(rate_increase,abs_increase,dist_spikey,...
-            spikey_labels,name,results_folder,run_dur,big_inc_labels)
+        plot_inc_as_fcn_of_dist([],spikey_rate_inc,dist_spikey,...
+            spikey_labels,name,results_folder,run_dur,[])
 
     end
     
@@ -342,7 +412,7 @@ for p = whichPts
     
     end
     
-    if 0
+    if 1
         raster_rate_chs(all_rate,last_block,block_dur,run_dur,change_block,...
     dist_info,unchanged,name,results_folder)
         

@@ -92,7 +92,7 @@ else
     ylabel({'Distance from nearest','added electrode (mm)'});
     if do_spear
         try
-            [r,pval] = corr(rate,dist_spikey,'Type','Spearman');
+            [r,pval] = corr(rate,dist_spikey,'Type','Spearman','rows','complete');
         catch
             r = nan; pval = nan;
         end

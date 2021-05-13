@@ -7,7 +7,9 @@ for ich = 1:length(anatomy)
     curr = anatomy{ich};
     
     if isempty(curr)
-        continue;
+        lat{ich} = 'Unspecified';
+        loc{ich} = 'Unspecified';
+        continue
     end
     
     

@@ -1,4 +1,25 @@
-function show_clusters_rate(all_rate,block_dur,change_block,run_dur,name,results_folder,clusts,clust_names)
+function show_clusters_rate(all_rate,block_dur,change_block,run_dur,name,results_folder,clusts,clust_names,chLabels)
+
+% Convert to indices
+old_clusts = clusts;
+for i = 1:length(clusts)
+    curr = clusts{i};
+    if ~strcmp(class(curr),'double')
+        curr = find(ismember(chLabels,curr));
+    end
+    clusts{i} = curr;
+end
+
+% if clust names is empty
+if isempty(clust_names)
+    clust_names = cell(1,length(clusts));
+    for i = 1:length(old_clusts)
+        clust_names{i} = strjoin(old_clusts{i});
+        
+    end
+    
+end
+
 
 figure
 set(gcf,'position',[172 233 1181 423])
