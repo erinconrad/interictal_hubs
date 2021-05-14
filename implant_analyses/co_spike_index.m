@@ -1,5 +1,6 @@
+
 function [cos,unchanged_spikey_labels] = co_spike_index(rate_post,spikey_idx,coa_post,blocks,added_labels,...
-    unchanged_labels,post_labels,new_post_labels,mean_rate_post,abs_increase,name,...
+    unchanged_labels,post_labels,new_post_labels,abs_increase,name,...
     run_dur,results_folder)
         %})
 
@@ -84,12 +85,10 @@ end
 cos_all = nanmean(coa_post(:,:,blocks),3);
 %cos_all_rel = cos_all./repmat(sum_coa,1,size(cos_all,2));
 
-if ~isequal(avg_rate,mean_rate_post)
-    error('oh nos');
-end
+
 
 %% show stuff
-if 0
+if 1
     %[sorted,I] = sort(cos,'descend');
     %T =  table(unchanged_spikey_labels(I),spikey_post_labels(all_max_add),sorted,all_max_coa(I),avg_rate(I));
     

@@ -122,6 +122,7 @@ for p = whichPts
         end
         
         all_rate = [];
+        all_rl = [];
         coa_post = [];
         rate_post = [];
         all_nseq = [];
@@ -137,6 +138,7 @@ for p = whichPts
             nchs = length(chLabels);
             nblocks = length(spikes.file(f).block);
             rate = nan(nchs,nblocks); % default should be nans
+            rl = nan(nchs,nblocks);
             coa = nan(nchs,nchs,nblocks);
             num_seq = nan(nchs,nblocks);
             sz_times = all_sz_times_in_file(pt,p,f);
@@ -153,24 +155,7 @@ for p = whichPts
                     continue; % leave the whole block as nans
                 end
 
-                %% Get spike channels and times (whatever time you want)
-                %{
-                if isempty(block.details)
-                    chs = [];
-                    times = [];
-                else
-                    chs = block.details.filter(filt).gdf(:,1);
-                    times = block.details.filter(filt).(timing);
-                end
-                
-
-                %% Get sorted spike indices and chs
-                [times,I] = sort(times);
-                chs = chs(I);
-
-                %% Construct gdf
-                gdf = [chs,times];
-                %}
+               
                 gdf = spikes.file(f).block(h).gdf;
                 
                 %% Spike rate
@@ -189,10 +174,6 @@ for p = whichPts
                     %% Remove any spikes in sz
                     if rm_sz
                         [gdf,n_removed] = remove_spikes_in_sz(gdf,sz_times);
-                        if n_removed ~= 0
-                            fprintf('\n%s Removed %d spikes in file %d block %d\n',...
-                                pt_name,n_removed,f,h);
-                        end
                     end
                     
                     for ich = 1:nchs
@@ -208,7 +189,7 @@ for p = whichPts
                     
                      %% Get sequences, rl, coa
                      if ~isempty(gdf)
-                        [seq,~,coa(:,:,h),num_seq(:,h)] = new_get_sequences(gdf,nchs,fs);
+                        [seq,rl(:,h),coa(:,:,h),num_seq(:,h)] = new_get_sequences(gdf,nchs,fs);
 
                         if f >= change(c).files(2)
                             all_seq = [all_seq;seq];
@@ -238,18 +219,21 @@ for p = whichPts
             new_labels = chLabels;
             new_labels(~lia) = [];
             rate(~lia,:) =[];
+            rl(~lia,:) = [];
 
             %% Re-order as needed
             %[lia,locb] = ismember(new_labels,unchanged);
             [lia,locb] = ismember(unchanged,new_labels);
             new_labels = new_labels(locb);
             rate = rate(locb,:);
+            rl = rl(locb,:);
             if ~isequal(new_labels,unchanged)
                 error('oh no');
             end
             %}
             
             all_rate = [all_rate,rate];
+            all_rl = [all_rl,rl];
             
             %% If it's a post-change file, add the coa matrix
             if f >= change(c).files(2)
@@ -278,49 +262,10 @@ for p = whichPts
         end
     end
         
-    %% Perc before - perc after
-    perc_diff = comp_sequences(all_seq,post_labels,added,post_labels);
-    if 0
-        figure
-        imagesc(perc_diff)
-        xticks(1:length(post_labels))
-        yticks(1:length(post_labels))
-        xticklabels(new_post_labels)
-        xtickangle(90)
-        yticklabels(new_post_labels)
-        colorbar
-    end
-    
-    
-    
-    if 0
-        figure
-        turn_nans_white(nanmean(all_coa(:,:,:),3))
-        xticks(1:length(post_labels))
-        yticks(1:length(post_labels))
-        xticklabels(new_post_labels)
-        xtickangle(90)
-        yticklabels(new_post_labels)
-    end
-    
-    if 0
-        figure
-        set(gcf,'position',[1 1 1400 800])
-        turn_nans_white(all_rate)
-        hold on
-        for b = 1:length(last_block)
-            plot([last_block(b) last_block(b)],ylim,'k','linewidth',3)
-        end
-        plot([change_block change_block],ylim,'r','linewidth',3)
-        yticks(1:length(unchanged))
-        yticklabels(dist_info)
-        %title(added')
-        
-    end
-    
+
     %% Overall change in spike rate
-    if 1
-        show_overall_rate(all_rate,block_dur,last_block,change_block,run_dur,name,results_folder)
+    if 0
+        show_overall_rate(all_rate,all_rl,block_dur,last_block,change_block,run_dur,name,results_folder)
     end
     
     %% clustered
@@ -349,6 +294,7 @@ for p = whichPts
     spikey_labels = unchanged(spikey_idx);
     spikey_rate_inc = abs_increase(spikey_idx);
     
+    
     %{
     [rate_increase,spikey_labels,spikey_idx,mean_rate_post,...
         big_inc_labels,big_inc_rate_sorted,abs_increase] = find_rate_increase(all_rate,change_block,unchanged);
@@ -366,6 +312,9 @@ for p = whichPts
     end
     %}
     
+    if 1
+        rate_order_stability(all_rate,all_rl,change_block,surround,block_dur,pt_name,results_folder)
+    end
     
     %% Look at electrodes by spike rate change
     % A way to validate spikes
@@ -387,25 +336,37 @@ for p = whichPts
     end
     end
     
+
+    %% Spatial clustering
+    if 0
+    do_moran(abs_increase,unchanged_locs,spikey_idx,added_locs,name,results_folder)
+    end
+
     %% Are electrodes with bigger spike rate increase closer to the new electrodes than are other spikey electrodes?
-    if 1
+    if 0
         
         % Get distance from closest new electrode of these spikey electrodes
         dist_spikey = dist(spikey_idx);
-        
-        
-        plot_inc_as_fcn_of_dist([],spikey_rate_inc,dist_spikey,...
+        show_anatomy = 0;
+        if show_anatomy
+            plot_inc_as_fcn_of_dist([],spikey_rate_inc,dist_spikey,...
+            spikey_anatomy,name,results_folder,run_dur,[])
+        else
+            plot_inc_as_fcn_of_dist([],spikey_rate_inc,dist_spikey,...
             spikey_labels,name,results_folder,run_dur,[])
+        end
 
     end
+
+   
     
     %% Are eletrodes with bigger spike rate increase more likely to co-spike with new electrodes?
     if 0
         blocks = 1:100;
         [cos,unchanged_spikey_labels] = ...
             co_spike_index(rate_post,spikey_idx,coa_post,...
-            blocks,added,unchanged,post_labels,new_post_labels,mean_rate_post,...
-            abs_increase,pt_name,run_dur,results_folder);
+            blocks,added,unchanged,post_labels,new_post_labels,...
+            spikey_rate_inc,pt_name,run_dur,results_folder);
         %}
 
         
@@ -413,8 +374,8 @@ for p = whichPts
     end
     
     if 0
-        raster_rate_chs(all_rate,last_block,block_dur,run_dur,change_block,...
-    dist_info,unchanged,name,results_folder)
+        raster_rate_chs(all_rate,block_dur,change_block,...
+    unchanged,name,results_folder,findices,bindices,p,spikes)
         
     end
     

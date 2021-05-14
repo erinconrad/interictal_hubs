@@ -1,5 +1,5 @@
-function raster_rate_chs(all_rate,last_block,block_dur,run_dur,change_block,...
-    dist_info,unchanged,name,results_folder)
+function raster_rate_chs(all_rate,block_dur,change_block,...
+    unchanged,name,results_folder,findices,bindices,p,spikes)
 
 figure
     set(gcf,'position',[1 1 1400 800])
@@ -9,11 +9,6 @@ figure
     set(h,'XData',[0:size(all_rate,2)*block_dur])
     xlim([0 size(all_rate,2)*block_dur])
     hold on
-    %{
-    for b = 1:length(last_block)
-        plot([last_block(b) last_block(b)],ylim,'k--','linewidth',3)
-    end
-    %}
     cp = plot([change_block*block_dur change_block*block_dur],ylim,'r--','linewidth',3);
     yticks(1:length(unchanged))
     title(sprintf('%s',name))
@@ -23,16 +18,16 @@ figure
 
 
     ylabel('Hour')
-    if 0
+    if 1
         while 1
             [x,y] = ginput;
             chLab = unchanged{round(y(end))};
-            fidx = findices(round(x(end)));
-            bidx = bindices(round(x(end)));
+            fidx = findices(round(x(end)/block_dur));
+            bidx = bindices(round(x(end)/block_dur));
             fprintf('\nShowing spikes for %s ch %s file %d block %d\n',...
-                pt_name,chLab,fidx,bidx);
+                name,chLab,fidx,bidx);
 
-            plot_spikes_by_ch(p,chLab,fidx,bidx)
+            plot_spikes_by_ch(p,chLab,fidx,bidx,spikes)
 
         end
     end
