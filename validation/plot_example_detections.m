@@ -94,6 +94,9 @@ for p = whichPts
         for h = 1:length(spikes.file(f).block)
             gdf = spikes.file(f).block(h).gdf;
             
+            if isempty(gdf)
+                continue
+            end
             if rm_dup
                 [gdf,~] = remove_duplicates(gdf);
             end
