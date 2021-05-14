@@ -264,7 +264,7 @@ for p = whichPts
         
 
     %% Overall change in spike rate
-    if 0
+    if 1
         show_overall_rate(all_rate,block_dur,change_block,run_dur,name,results_folder)
     end
     

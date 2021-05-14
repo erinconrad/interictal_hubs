@@ -4,6 +4,7 @@ function plot_example_detections(whichPts,which_ver,do_car,overwrite)
 n_sp = 50;
 n_per_fig = 10;
 surround = 5;
+rm_sz = 1;
 
 %% Locations
 locations = interictal_hub_locations;
@@ -21,6 +22,8 @@ elseif which_ver == 2
     spike_folder = [results_folder,'new_spikes/'];
 elseif which_ver == 3
     spike_folder = [results_folder,'nina_spikes/'];
+elseif which_ver == 4
+    spike_folder = [results_folder,'revision_spikes/'];
 end
 
 %% Load pt file
@@ -80,10 +83,21 @@ for p = whichPts
     % Include an extra column for the file index and block
     all_spikes = [];
     for f = 1:length(spikes.file)
+        
+        if rm_sz
+            sz_times = all_sz_times_in_file(pt,p,f);
+        end
+        
         for h = 1:length(spikes.file(f).block)
-            all_spikes = [all_spikes;spikes.file(f).block(h).gdf,...
-                repmat(f,size(spikes.file(f).block(h).gdf,1),1),...
-                repmat(h,size(spikes.file(f).block(h).gdf,1),1)];
+            gdf = spikes.file(f).block(h).gdf;
+            
+            if rm_sz
+                [gdf,~]= remove_spikes_in_sz(gdf,sz_times);
+            end
+            
+            all_spikes = [all_spikes;gdf,...
+                repmat(f,size(gdf,1),1),...
+                repmat(h,size(gdf,1),1)];
         end
     end
     
