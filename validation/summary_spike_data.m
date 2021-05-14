@@ -8,6 +8,7 @@ rm_sz = 1;
 locations = interictal_hub_locations;
 results_folder = [locations.main_folder,'results/'];
 scripts_folder = locations.script_folder;
+data_folder = [scripts_folder,'data/'];
 addpath(genpath(scripts_folder));
 
 if which_ver == 1
@@ -23,6 +24,22 @@ listing = dir([sp_folder,'*mat']);
 for i = 1:length(listing)
     spikes = load([sp_folder,listing(i).name]);
     spikes = spikes.spikes;
+    
+    pt = load([data_folder,'pt.mat']);
+    pt = pt.pt;
+    
+    % Get corresponding pt
+    name = spikes.name;
+    foundit = 0;
+    for p = 1:length(pt)
+        if strcmp(pt(p).name,name)
+            foundit = 1;
+            break
+        end
+    end
+    if foundit == 0
+        error('what');e
+    end
     
     nbad = [];
     nskip = [];
