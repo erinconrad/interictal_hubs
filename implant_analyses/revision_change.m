@@ -265,7 +265,7 @@ for p = whichPts
 
     %% Overall change in spike rate
     if 0
-        show_overall_rate(all_rate,all_rl,block_dur,last_block,change_block,run_dur,name,results_folder)
+        show_overall_rate(all_rate,block_dur,change_block,run_dur,name,results_folder)
     end
     
     %% clustered
@@ -312,7 +312,7 @@ for p = whichPts
     end
     %}
     
-    if 1
+    if 0
         rate_order_stability(all_rate,all_rl,change_block,surround,block_dur,pt_name,results_folder)
     end
     

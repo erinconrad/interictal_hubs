@@ -191,22 +191,24 @@ if isempty(gdf) == 0
 end
 
 %% remove duplicates
-keep = ones(size(gdf,1),1);
+if ~isempty(gdf)
+    keep = ones(size(gdf,1),1);
 
-% take diff of times
-diff_times = [inf;diff(gdf(:,2))];
+    % take diff of times
+    diff_times = [inf;diff(gdf(:,2))];
 
-% take diff of chs
-diff_chs = [inf;diff(gdf(:,1))];
+    % take diff of chs
+    diff_chs = [inf;diff(gdf(:,1))];
 
-% find those that are close in time and the same ch
-too_close = abs(diff_times) < 50e-3*fs & diff_chs == 0;
+    % find those that are close in time and the same ch
+    too_close = abs(diff_times) < 50e-3*fs & diff_chs == 0;
 
-keep(too_close) = 0;
-keep = logical(keep);
+    keep(too_close) = 0;
+    keep = logical(keep);
 
-n_removed = sum(~keep);
-gdf(~keep,:) = [];
+    n_removed = sum(~keep);
+    gdf(~keep,:) = [];
+end
 
 
 end
