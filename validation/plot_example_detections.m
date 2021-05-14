@@ -5,6 +5,7 @@ n_sp = 50;
 n_per_fig = 10;
 surround = 5;
 rm_sz = 1;
+rm_dup = 1;
 
 %% Locations
 locations = interictal_hub_locations;
@@ -92,6 +93,10 @@ for p = whichPts
         
         for h = 1:length(spikes.file(f).block)
             gdf = spikes.file(f).block(h).gdf;
+            
+            if rm_dup
+                [gdf,~] = remove_duplicates(gdf);
+            end
             
             if rm_sz
                 [gdf,~]= remove_spikes_in_sz(gdf,sz_times);
