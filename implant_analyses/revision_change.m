@@ -319,7 +319,7 @@ for p = whichPts
     end
     
     %% Overall change in spike rate
-    if 0
+    if 1
         show_overall_rate(all_rate,block_dur,last_block,change_block,run_dur,name,results_folder)
     end
     
@@ -388,7 +388,7 @@ for p = whichPts
     end
     
     %% Are electrodes with bigger spike rate increase closer to the new electrodes than are other spikey electrodes?
-    if 0
+    if 1
         
         % Get distance from closest new electrode of these spikey electrodes
         dist_spikey = dist(spikey_idx);
@@ -412,7 +412,7 @@ for p = whichPts
     
     end
     
-    if 1
+    if 0
         raster_rate_chs(all_rate,last_block,block_dur,run_dur,change_block,...
     dist_info,unchanged,name,results_folder)
         

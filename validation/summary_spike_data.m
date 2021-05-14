@@ -1,5 +1,9 @@
 function summary_spike_data(which_ver)
 
+%% Parameters
+rm_dup = 1;
+rm_sz = 1;
+
 %% Get file locs
 locations = interictal_hub_locations;
 results_folder = [locations.main_folder,'results/'];
@@ -24,11 +28,19 @@ for i = 1:length(listing)
     nskip = [];
     nspikes = 0;
     nblocks = 0;
+    n_dup = 0;
+    n_sz = 0;
     name = spikes.name;
     tmul1 = spikes.file(1).block(1).params.tmul;
     absthresh1 = spikes.file(1).block(1).params.absthresh;
     
     for f = 1:length(spikes.file)
+        
+        if rm_sz
+            sz_times = all_sz_times_in_file(pt,p,f);
+        end
+            
+        
         for h = 1:length(spikes.file(f).block)
             nbad = [nbad;length(spikes.file(f).block(h).bad)];
             if isempty(spikes.file(f).block(h).skip)
@@ -36,7 +48,23 @@ for i = 1:length(listing)
             else
                 nskip = [nskip;length(spikes.file(f).block(h).skip.all)];
             end
-            nspikes = nspikes + size(spikes.file(f).block(h).gdf,1);
+            
+            gdf = spikes.file(f).block(h).gdf;
+            if isempty(gdf)
+                continue
+            end
+            
+            if rm_dup
+                [gdf,n_dup_temp] = remove_duplicates(gdf);
+                n_dup = n_dup + n_dup_temp;
+            end
+            
+            if rm_sz
+                [gdf,n_sz_temp]= remove_spikes_in_sz(gdf,sz_times);
+                n_sz = n_sz + n_sz_temp;
+            end
+            
+            nspikes = nspikes + size(gdf,1);
             nblocks = nblocks + 1;
         end
     end
@@ -45,8 +73,9 @@ for i = 1:length(listing)
     nskip = mean(nskip);
     
     fprintf(['\nFor %s, using tmul %d and absthresh %d\n'...
-        'in %d blocks, %d spikes detected, (mean %1.1f contacts skipped and %1.1f rejected as artifact)\n'],...
-        name,tmul1,absthresh1,nblocks,nspikes,nskip,nbad);
+        'in %d blocks, %d spikes detected \nmean %1.1f contacts skipped'...
+        ', %1.1f rejected as artifact, %d duplicates removed, %d in sz removed\n'],...
+        name,tmul1,absthresh1,nblocks,nspikes,nskip,nbad,n_dup,n_sz);
     
 end
 
