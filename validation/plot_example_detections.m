@@ -56,6 +56,8 @@ for p = whichPts
         out_folder = [results_folder,'new_validation/',pt_name,'/'];
     elseif which_ver == 3
         out_folder = [results_folder,'nina_validation/',pt_name,'/'];
+    elseif which_ver == 4
+        out_folder = [results_folder,'revision_validation/',pt_name,'/'];
     end
     
    
