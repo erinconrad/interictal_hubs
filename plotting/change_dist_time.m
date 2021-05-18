@@ -1,17 +1,21 @@
-function show_overall_rate(all_rate,block_dur,change_block,run_dur,name,results_folder,surround)
+function change_dist_time(all_dist,block_dur,change_block,name,results_folder,surround,all_rate)
 
+do_mean = 1;
+if do_mean
+    mean_dist = cellfun(@(x) nanmean(x),all_dist);
+    mtext = '_mean';
+else
+    mean_dist = cellfun(@(x) mode(x),all_dist);
+    mtext = '_mode';
+end
 
-%% Significance testing
-pval = rate_analysis(all_rate,change_block,surround);
+pval = stats_time_comp(mean_dist,change_block,surround);
 
 figure
 set(gcf,'position',[172 233 1181 423])
 times = 1:size(all_rate,2);
 times = times*block_dur;
-plot(times,all_rate/run_dur,'--','color',[0, 0.4470, 0.7410])
-hold on
-plot(times,nanmean(all_rate,1)/run_dur,'k','linewidth',2)
-
+plot(times,mean_dist)
 hold on
 
 nan_blocks = find(isnan(nanmean(all_rate,1)));
@@ -24,19 +28,19 @@ end
 cp = plot([change_block*block_dur change_block*block_dur],ylim,'r--','linewidth',4);
 
 xlim([0 size(all_rate,2)*block_dur]);
-ylabel('Spikes/min')
 xlabel('Hour')
+ylabel('Mean distance from nearest added elecs')
 title(sprintf('%s p = %1.3f',name,pval));
+
 set(gca,'fontsize',20)
 legend([cp ap],{'Revision','Data missing'},'fontsize',20,'location','northeast')
 
-
-output_folder = [results_folder,'overall_rate/'];
+output_folder = [results_folder,'dist_time/'];
 if exist(output_folder,'dir') == 0
     mkdir(output_folder)
 end
 
-print(gcf,[output_folder,name,'_rate_',sprintf('%d',surround)],'-dpng')
+print(gcf,[output_folder,name],'-dpng')
 close(gcf)
 
 end

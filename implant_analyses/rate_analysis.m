@@ -1,8 +1,11 @@
 function pval = rate_analysis(rate,change,surround)
 
+
+
 do_vecnorm = 0;
 
 nb = 1e3;
+
 nblocks = size(rate,2);
 
 %% Compare spike rate pre and post change

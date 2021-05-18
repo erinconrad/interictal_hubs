@@ -1,12 +1,14 @@
-function [seq,rl,coa,num_seq] = new_get_sequences(gdf,nchs,fs)
+function [seq,rl,coa,num_seq,cos] = new_get_sequences(gdf,nchs,fs,...
+    is_post,chLabels,added_labels,unchanged_labels)
     
 t2 = 15*1e-3; % max time from preceding spike (15 ms in paper)
 minSeqLength = 5;  % 5 in paper
-t2 = t2*fs;
+%t2 = t2*fs;
 
 ns = size(gdf,1);
 coa = zeros(nchs,nchs);
 num_seq = zeros(nchs,1);
+cos = zeros(nchs,1);
 
 %% Sort by time
 times = gdf(:,2);
@@ -123,6 +125,21 @@ for s = 1:nseq
         end
     end
     %}
+    
+    if is_post
+        
+        % get channels idx corresponding to added labels
+        added = find(ismember(chLabels,added_labels));
+        
+        % count if any added channel is co-spiking with the current channel
+        chs = curr(:,1);
+        for i = 1:length(chs)
+            ich = chs(i);
+            cos(ich) = cos(ich) + any(ismember(chs,added));
+        end
+        
+        
+    end
 end
 
 rl = nanmean(rl,2);

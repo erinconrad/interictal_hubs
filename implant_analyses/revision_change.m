@@ -1,8 +1,10 @@
 function revision_change(whichPts)
 
+
 %% Parameters
 %filt = 2;
 %timing = 'peak';
+surround = 48; % 24 hours
 
 % probably should do
 rm_sz = 1;
@@ -130,9 +132,14 @@ for p = whichPts
         last_block = zeros(last_file-1,1);
         findices = [];
         bindices = [];
+        all_cos = [];
+        all_dist = {};
         
         % Loop over files
         for f = 1:last_file
+            
+            flocs = pt(p).ieeg.file(f).locs;
+            fdist = distance_from_closest_added(flocs,added_locs);
             
             chLabels = clean_labels_2(spikes.file(f).block(1).chLabels);
             nchs = length(chLabels);
@@ -140,7 +147,9 @@ for p = whichPts
             rate = nan(nchs,nblocks); % default should be nans
             rl = nan(nchs,nblocks);
             coa = nan(nchs,nchs,nblocks);
+            cos = nan(nchs,nblocks);
             num_seq = nan(nchs,nblocks);
+            sdist = cell(nblocks,1);
             sz_times = all_sz_times_in_file(pt,p,f);
             
             
@@ -187,9 +196,33 @@ for p = whichPts
                         rate(ich,h) = sum(gdf(:,1)==ich);
                     end
                     
+                    %% Get spike distances
+                    
+                    % find the channel indices corresponding to unchanged
+                    % labels
+                    unchanged_idx = find(ismember(chLabels,unchanged_labels));
+                    
+                    unchanged_spikes = ismember(gdf(:,1),unchanged_idx);
+                    sdist{h} = fdist(gdf(unchanged_spikes,1));
+                    
                      %% Get sequences, rl, coa
                      if ~isempty(gdf)
-                        [seq,rl(:,h),coa(:,:,h),num_seq(:,h)] = new_get_sequences(gdf,nchs,fs);
+                        if f >= change(c).files(2)
+                            is_post = 1;
+                        else
+                            is_post = 0;
+                        end
+                         
+                        
+                        %% Get cospike inde
+                        cos(:,h) = co_spiking(gdf,fs,added_labels,chLabels);
+                        
+                        if 0
+                        [seq,rl(:,h),coa(:,:,h),num_seq(:,h),cos(:,h)] = new_get_sequences(gdf,nchs,fs,...
+                            is_post,chLabels,added_labels,unchanged_labels);
+                        else
+                            seq = [];
+                        end
 
                         if f >= change(c).files(2)
                             all_seq = [all_seq;seq];
@@ -220,6 +253,7 @@ for p = whichPts
             new_labels(~lia) = [];
             rate(~lia,:) =[];
             rl(~lia,:) = [];
+            cos(~lia,:) = [];
 
             %% Re-order as needed
             %[lia,locb] = ismember(new_labels,unchanged);
@@ -227,6 +261,7 @@ for p = whichPts
             new_labels = new_labels(locb);
             rate = rate(locb,:);
             rl = rl(locb,:);
+            cos = cos(locb,:);
             if ~isequal(new_labels,unchanged)
                 error('oh no');
             end
@@ -234,10 +269,12 @@ for p = whichPts
             
             all_rate = [all_rate,rate];
             all_rl = [all_rl,rl];
+            all_dist = [all_dist;sdist];
             
             %% If it's a post-change file, add the coa matrix
             if f >= change(c).files(2)
                 coa_post = cat(3,coa_post,coa);
+                all_cos = [all_cos,cos];
                 rate_post = [rate_post,rate];
                 all_nseq = [all_nseq,num_seq];
                 post_labels = chLabels;
@@ -263,9 +300,14 @@ for p = whichPts
     end
         
 
-    %% Overall change in spike rate
     if 1
-        show_overall_rate(all_rate,block_dur,change_block,run_dur,name,results_folder)
+       change_dist_time(all_dist,block_dur,change_block,name,results_folder,surround,all_rate); 
+        
+    end
+    
+    %% Overall change in spike rate
+    if 0
+        show_overall_rate(all_rate,block_dur,change_block,run_dur,name,results_folder,surround)
     end
     
     %% clustered
@@ -283,9 +325,16 @@ for p = whichPts
     end
     
     %% Get rate increase of electrodes with minimum spike rate
-    surround = 100;
-    abs_increase = new_rate_increase(all_rate,change_block,surround);
+    [pre,post,cosi] = new_rate_increase(all_rate,change_block,all_cos,surround);
+    abs_increase = (post-pre);
+    rel_increase = (post-pre)./pre;
     
+    %% Histogram of rate increase
+    if 0
+    histogram_rate_change(abs_increase,unchanged_labels);
+    end
+    
+   
     
     %% Restrict to minimum number of spikes
     min_num = 1;
@@ -293,7 +342,14 @@ for p = whichPts
 
     spikey_labels = unchanged(spikey_idx);
     spikey_rate_inc = abs_increase(spikey_idx);
+    coa_spikey_idx = ismember(post_labels,spikey_labels);
+    coa_added_idx = ismember(post_labels,added_labels);
     
+     %% Spatial clustering of rate increase
+    if 0
+    do_moran(abs_increase,unchanged_locs,spikey_idx,added_locs,name,results_folder,...
+        run_dur)
+    end
     
     %{
     [rate_increase,spikey_labels,spikey_idx,mean_rate_post,...
@@ -337,16 +393,14 @@ for p = whichPts
     end
     
 
-    %% Spatial clustering
-    if 0
-    do_moran(abs_increase,unchanged_locs,spikey_idx,added_locs,name,results_folder)
-    end
+    
 
     %% Are electrodes with bigger spike rate increase closer to the new electrodes than are other spikey electrodes?
+    dist_spikey = dist(spikey_idx);
     if 0
         
         % Get distance from closest new electrode of these spikey electrodes
-        dist_spikey = dist(spikey_idx);
+        
         show_anatomy = 0;
         if show_anatomy
             plot_inc_as_fcn_of_dist([],spikey_rate_inc,dist_spikey,...
@@ -358,13 +412,25 @@ for p = whichPts
 
     end
 
+   if 0
+      new_distance(rel_increase,dist,spikey_idx,unchanged_labels,name,results_folder); 
+       
+   end
    
+   if 0
+   cosi_over_time(all_rate,cosi,spikey_idx,unchanged_labels,name,results_folder,...
+    block_dur,change_block,run_dur,surround)
+   end
     
     %% Are eletrodes with bigger spike rate increase more likely to co-spike with new electrodes?
+    % NOTE WHETHER IM PASSING ABS INCREASE OR REL INCREASE
     if 0
+        do_rel = 1;
+        new_cos(post,cosi,abs_increase,spikey_idx,unchanged_labels,name,results_folder,dist,rel_increase,do_rel)
+        %{
         blocks = 1:100;
         [cos,unchanged_spikey_labels] = ...
-            co_spike_index(rate_post,spikey_idx,coa_post,...
+            co_spike_index(post_rate,spikey_idx,coa_post,...
             blocks,added,unchanged,post_labels,new_post_labels,...
             spikey_rate_inc,pt_name,run_dur,results_folder);
         %}
@@ -375,7 +441,8 @@ for p = whichPts
     
     if 0
         raster_rate_chs(all_rate,block_dur,change_block,...
-    unchanged,name,results_folder,findices,bindices,p,spikes)
+    unchanged,name,results_folder,findices,bindices,p,spikes,...
+    spikey_idx,surround)
         
     end
     
