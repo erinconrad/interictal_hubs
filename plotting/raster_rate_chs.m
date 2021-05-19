@@ -22,33 +22,39 @@ figure
     
     
     %% Permanova analysis
-    if 1
-    relative = 0;
-    if relative == 0
-        rel_text = 'Pre-post difference';
-    else
-        rel_text = 'Pre-post relative difference';
-    end
-    pval = ec_permanova(all_rate,spikey_idx,change_block,surround,relative);
-    title(sprintf('%s %s p = %1.3f',name,rel_text,pval))
-    
-    output_folder = [results_folder,'raster_rate/'];
-    if exist(output_folder,'dir') == 0
-        mkdir(output_folder)
-    end
+    if 0
+        relative = 0;
+        if relative == 0
+            rel_text = 'Pre-post difference';
+        else
+            rel_text = 'Pre-post relative difference';
+        end
+        pval = ec_permanova(all_rate,spikey_idx,change_block,surround,relative);
+        title(sprintf('%s %s p = %1.3f',name,rel_text,pval))
 
-    if relative
-        print(gcf,[output_folder,name,'_rel'],'-dpng')
-    else
-        print(gcf,[output_folder,name,'_abs'],'-dpng')
+        output_folder = [results_folder,'raster_rate/'];
+        if exist(output_folder,'dir') == 0
+            mkdir(output_folder)
+        end
+
+    
+        if relative
+            print(gcf,[output_folder,name,'_rel'],'-dpng')
+        else
+            print(gcf,[output_folder,name,'_abs'],'-dpng')
+        end
+        close(gcf)
     end
-    close(gcf)
-    end
+    
     
     %% Pick a desired ch and block and show spikes
-    if 0
+    if 1
         while 1
-            [x,y] = ginput;
+            try
+                [x,y] = ginput;
+            catch
+                return
+            end
             chLab = unchanged{round(y(end))};
             fidx = findices(round(x(end)/block_dur));
             bidx = bindices(round(x(end)/block_dur));

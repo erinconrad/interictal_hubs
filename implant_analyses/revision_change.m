@@ -39,7 +39,7 @@ if ischar(whichPts)
 end
 
 if isempty(whichPts)
-    whichPts = [20 103 105 106 107 35 109 110 111 94 97];
+    whichPts = [20 103 106 107 35 109 110 111 94 97];
 end
 
 %% Prep info for aggregate tables
@@ -47,6 +47,8 @@ all_names = {};
 all_big_inc = {};
 all_anat = {};
 all_inc = [];
+all_added_anat = {};
+all_rate_change = [];
 
 for p = whichPts
     pt_name = pt(p).name;
@@ -119,9 +121,12 @@ for p = whichPts
         %% Get anatomy
         if ~isfield(pt(p).ieeg.file(change(c).files(2)),'anatomy')
             unchanged_anatomy = cell(length(unchanged_labels),1);
+            added_anatomy = cell(length(added_labels),1);
         else
             unchanged_anatomy = pt(p).ieeg.file(change(c).files(2)).anatomy(unchanged_idx);
+            added_anatomy = pt(p).ieeg.file(change(c).files(2)).anatomy(added_idx);
         end
+        all_added_anat{end+1} = added_anatomy;
         
         all_rate = [];
         all_rl = [];
@@ -307,7 +312,7 @@ for p = whichPts
     end
     
     %% Overall change in spike rate
-    if 1
+    if 0
         show_overall_rate(all_rate,block_dur,change_block,run_dur,name,results_folder,surround)
     end
     
@@ -324,6 +329,13 @@ for p = whichPts
         end
         %}
     end
+    
+    %% Overall rate increase
+    mean_rate = nanmean(all_rate,1);
+    mean_pre = nanmean(mean_rate(change_block-surround:change_block-1));
+    mean_post = nanmean(mean_rate(change_block+1:change_block+surround));
+    mean_change = (mean_post-mean_pre)./mean_pre;
+    all_rate_change = [all_rate_change;mean_change];
     
     %% Get rate increase of electrodes with minimum spike rate
     [pre,post,cosi] = new_rate_increase(all_rate,change_block,all_cos,surround);
@@ -363,7 +375,7 @@ for p = whichPts
      %% Spatial clustering of rate increase
     if 0
     do_moran(abs_increase,unchanged_locs,spikey_idx,added_locs,name,results_folder,...
-        run_dur)
+        run_dur,all_rate,change_block,surround)
     end
     
     %{
@@ -477,7 +489,9 @@ T = table(all_names,all_big_inc,all_inc,all_anat);
 writetable(T,[outfolder,'anatomy.csv']);
 end
 
-
+if 1
+    multi_pt_added_info(all_rate_change,all_added_anat,results_folder)
+end
 
 end
 
