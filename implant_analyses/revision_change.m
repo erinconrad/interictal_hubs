@@ -299,14 +299,15 @@ for p = whichPts
         end
     end
         
+    
 
-    if 1
+    if 0
        change_dist_time(all_dist,block_dur,change_block,name,results_folder,surround,all_rate); 
         
     end
     
     %% Overall change in spike rate
-    if 0
+    if 1
         show_overall_rate(all_rate,block_dur,change_block,run_dur,name,results_folder,surround)
     end
     
@@ -344,6 +345,20 @@ for p = whichPts
     spikey_rate_inc = abs_increase(spikey_idx);
     coa_spikey_idx = ismember(post_labels,spikey_labels);
     coa_added_idx = ismember(post_labels,added_labels);
+    
+    if 0
+        
+        thing = cosi;%dist;
+        ttext = 'cospike';%'distance';
+        outfolder = [results_folder,ttext,'/'];
+        if ~exist(outfolder,'dir')
+            mkdir(outfolder)
+        end
+        do_abs = 1;
+        corr_time_perm(thing,all_rate,change_block,surround,spikey_idx,do_abs,...
+    ttext,outfolder,unchanged_labels,name)
+        
+    end
     
      %% Spatial clustering of rate increase
     if 0
@@ -386,9 +401,9 @@ for p = whichPts
     
     %% Is there a difference in spike rate change based on anatomy?
     if 0
-    
+    rchange = rel_increase(spikey_idx);
     if sum(cell2mat(cellfun(@(x) ~isempty(x),spikey_anatomy,'uniformoutput',false))) ~= 0
-        group_rate_change_by_anatomy(ana_lat,ana_loc,abs_increase,name,results_folder)
+        group_rate_change_by_anatomy(ana_lat,ana_loc,rchange,name,results_folder)
     end
     end
     

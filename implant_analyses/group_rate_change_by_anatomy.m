@@ -28,7 +28,7 @@ end
 %% Group by laterality
 % group groups
 [ana_lat_groups,~,ic] = unique(ana_lat);
-nLats = length(ana_loc_groups);
+nLats = length(ana_lat_groups);
 grouped_rates_lat = cell(nLats,1);
 rates_table = [];
 loc_table = {};

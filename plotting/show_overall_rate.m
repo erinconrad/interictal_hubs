@@ -8,7 +8,7 @@ figure
 set(gcf,'position',[172 233 1181 423])
 times = 1:size(all_rate,2);
 times = times*block_dur;
-plot(times,all_rate/run_dur,'--','color',[0, 0.4470, 0.7410])
+%plot(times,all_rate/run_dur,'--','color',[0, 0.4470, 0.7410])
 hold on
 plot(times,nanmean(all_rate,1)/run_dur,'k','linewidth',2)
 
