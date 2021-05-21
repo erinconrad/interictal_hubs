@@ -4,7 +4,7 @@ function revision_change(whichPts)
 %% Parameters
 %filt = 2;
 %timing = 'peak';
-surround = 48; % 24 hours
+surround = 96; % Divide by 2 to get number of hours
 
 % probably should do
 rm_sz = 1;
@@ -312,7 +312,7 @@ for p = whichPts
     end
     
     %% Overall change in spike rate
-    if 0
+    if 1
         show_overall_rate(all_rate,block_dur,change_block,run_dur,name,results_folder,surround)
     end
     
@@ -358,7 +358,7 @@ for p = whichPts
     coa_spikey_idx = ismember(post_labels,spikey_labels);
     coa_added_idx = ismember(post_labels,added_labels);
     
-    if 0
+    if 1
         
         thing = cosi;%dist;
         ttext = 'cospike';%'distance';
@@ -366,7 +366,21 @@ for p = whichPts
         if ~exist(outfolder,'dir')
             mkdir(outfolder)
         end
-        do_abs = 1;
+        do_abs = 0;
+        corr_time_perm(thing,all_rate,change_block,surround,spikey_idx,do_abs,...
+    ttext,outfolder,unchanged_labels,name)
+        
+    end
+    
+    if 1
+        
+        thing = dist;
+        ttext = 'distance';
+        outfolder = [results_folder,ttext,'/'];
+        if ~exist(outfolder,'dir')
+            mkdir(outfolder)
+        end
+        do_abs = 0;
         corr_time_perm(thing,all_rate,change_block,surround,spikey_idx,do_abs,...
     ttext,outfolder,unchanged_labels,name)
         
@@ -423,6 +437,7 @@ for p = whichPts
     
 
     %% Are electrodes with bigger spike rate increase closer to the new electrodes than are other spikey electrodes?
+    %{
     dist_spikey = dist(spikey_idx);
     if 0
         
@@ -465,6 +480,7 @@ for p = whichPts
         
     
     end
+    %}
     
     if 0
         raster_rate_chs(all_rate,block_dur,change_block,...
@@ -490,7 +506,7 @@ writetable(T,[outfolder,'anatomy.csv']);
 end
 
 if 1
-    multi_pt_added_info(all_rate_change,all_added_anat,results_folder)
+    multi_pt_added_info(all_rate_change,all_added_anat,results_folder,surround)
 end
 
 end

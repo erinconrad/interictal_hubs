@@ -1,10 +1,10 @@
-function multi_pt_added_info(rchange,anat,results_folder)
+function multi_pt_added_info(rchange,anat,results_folder,surround)
 
 nch = cellfun(@(x) length(x),anat);
 nch = nch';
 
 %% Correlate number of electrodes with rate change
-[r,pval] = corr(nch,rchange);
+[r,pval] = corr(nch(~isnan(rchange)),rchange(~isnan(rchange)));
 
 figure
 h = plot(nch,rchange,'o','markersize',15,'linewidth',2);
@@ -70,14 +70,14 @@ t = tiledlayout(1,4,'TileSpacing','Compact');
 for k = 1:4
     nexttile
     h = plot(loc_n(k,:),rchange,'o','markersize',15,'linewidth',2);
-    [r,pval] = corr(loc_n(k,:)',rchange);
+    [r,pval] = corr(loc_n(k,(~isnan(rchange)))',rchange(~isnan(rchange)));
     title(sprintf('%s\nr = %1.2f, p = %1.3f',loc_groups{k},r,pval))
     set(gca,'fontsize',20)
 end
 
 ylabel(t,{'Relative change','in spike rate'},'fontsize',20);
 xlabel(t,{'Number of added electrodes in given location'},'fontsize',20);
-print(fig,[outfolder,'anatomy'],'-dpng')
+print(fig,[outfolder,'anatomy',sprintf('_%d',surround)],'-dpng')
 
 
 end

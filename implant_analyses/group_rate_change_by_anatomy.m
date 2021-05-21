@@ -1,4 +1,4 @@
-function group_rate_change_by_anatomy(ana_lat,ana_loc,rate_increase,name,results_folder)
+function group_rate_change_by_anatomy(ana_lat,ana_loc,rate_increase,name,results_folder,surround)
 
 
 

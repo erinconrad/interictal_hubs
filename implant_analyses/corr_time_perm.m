@@ -44,6 +44,11 @@ else
     atext = 'rel';
 end
 
+if sum(~isnan(rchange)) == 0
+    fprintf('\nSkipping %s as rchange is all nans\n',name);
+    return
+end
+
 %% Correlate change with thing
 % thing could be distance from nearest added electrode, or co-spike index
 true_rho = corr(rchange,thing,'Type','Spearman','rows','pairwise');
@@ -103,7 +108,7 @@ ylabel(ttext)
 title(sprintf('%s rho = %1.2f (p = %1.3f by permutation test)',name,true_rho,pval))
 set(gca,'fontsize',20)
 
-print(gcf,[outfolder,name,'_',ttext,'_',atext],'-dpng')
+print(gcf,[outfolder,name,'_',ttext,'_',sprintf('%d',surround)],'-dpng')
 close(gcf)
 
 
