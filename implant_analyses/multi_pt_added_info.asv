@@ -8,7 +8,7 @@ nch = nch';
 
 figure
 plot(nch,rchange,'o','markersize',15,'linewidth',2,'color',[1 1 1]);
-text(nch,rchange,pt_names,'horizontalalignment','center',...
+texy(nch,rchange,pt_names,'horizontalalignment','center',...
     'fontsize',20)
 xlim([min(nch) max(nch)])
 ylim([min(rchange) max(rchange)])
@@ -62,7 +62,7 @@ end
 missing = loc_n(1,:) == sum(loc_n,1);
 loc_n(:,missing) = [];
 rchange(missing) = [];
-pt_names(missing) = [];
+pt_names(missing) = []
 
 %% Do locs
 % Ignore unspecified in locs
@@ -75,8 +75,7 @@ t = tiledlayout(1,4,'TileSpacing','Compact');
 for k = 1:4
     nexttile
     plot(loc_n(k,:),rchange,'o','markersize',15,'linewidth',2,'color',[1 1 1]);
-    text(loc_n(k,:),rchange,pt_names,'horizontalalignment','center',...
-        'fontsize',20)
+    text(loc_n(k,:),rchange,
     [r,pval] = corr(loc_n(k,(~isnan(rchange)))',rchange(~isnan(rchange)));
     title(sprintf('%s\nr = %1.2f, p = %1.3f',loc_groups{k},r,pval))
     set(gca,'fontsize',20)

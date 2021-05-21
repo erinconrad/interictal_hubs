@@ -1,10 +1,11 @@
 function revision_change(whichPts)
 
+% Testing testing
 
 %% Parameters
 %filt = 2;
 %timing = 'peak';
-surround = 96; % Divide by 2 to get number of hours
+surround = 48; % Divide by 2 to get number of hours
 
 % probably should do
 rm_sz = 1;
@@ -49,6 +50,7 @@ all_anat = {};
 all_inc = [];
 all_added_anat = {};
 all_rate_change = [];
+pt_names = {};
 
 for p = whichPts
     pt_name = pt(p).name;
@@ -312,7 +314,7 @@ for p = whichPts
     end
     
     %% Overall change in spike rate
-    if 1
+    if 0
         show_overall_rate(all_rate,block_dur,change_block,run_dur,name,results_folder,surround)
     end
     
@@ -336,6 +338,7 @@ for p = whichPts
     mean_post = nanmean(mean_rate(change_block+1:change_block+surround));
     mean_change = (mean_post-mean_pre)./mean_pre;
     all_rate_change = [all_rate_change;mean_change];
+    pt_names = [pt_names;pt_name];
     
     %% Get rate increase of electrodes with minimum spike rate
     [pre,post,cosi] = new_rate_increase(all_rate,change_block,all_cos,surround);
@@ -358,7 +361,7 @@ for p = whichPts
     coa_spikey_idx = ismember(post_labels,spikey_labels);
     coa_added_idx = ismember(post_labels,added_labels);
     
-    if 1
+    if 0
         
         thing = cosi;%dist;
         ttext = 'cospike';%'distance';
@@ -372,7 +375,7 @@ for p = whichPts
         
     end
     
-    if 1
+    if 0
         
         thing = dist;
         ttext = 'distance';
@@ -505,8 +508,8 @@ T = table(all_names,all_big_inc,all_inc,all_anat);
 writetable(T,[outfolder,'anatomy.csv']);
 end
 
-if 1
-    multi_pt_added_info(all_rate_change,all_added_anat,results_folder,surround)
+if 0
+    multi_pt_added_info(all_rate_change,all_added_anat,results_folder,surround,pt_names)
 end
 
 end

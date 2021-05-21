@@ -22,8 +22,8 @@ figure
     
     
     %% Permanova analysis
-    if 0
-        relative = 0;
+    if 1
+        relative = 1;
         if relative == 0
             rel_text = 'Pre-post difference';
         else
@@ -48,7 +48,7 @@ figure
     
     
     %% Pick a desired ch and block and show spikes
-    if 1
+    if 0
         while 1
             try
                 [x,y] = ginput;
