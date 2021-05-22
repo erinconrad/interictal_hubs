@@ -1,6 +1,6 @@
 function revision_change(whichPts)
 
-% Testing testing
+% for permutation test, restrict to post implant
 
 %% Parameters
 %filt = 2;
@@ -51,6 +51,7 @@ all_inc = [];
 all_added_anat = {};
 all_rate_change = [];
 pt_names = {};
+all_t = [];
 
 for p = whichPts
     pt_name = pt(p).name;
@@ -141,6 +142,8 @@ for p = whichPts
         bindices = [];
         all_cos = [];
         all_dist = {};
+        all_alt_cos = [];
+        all_added_rate= [];
         
         % Loop over files
         for f = 1:last_file
@@ -155,6 +158,8 @@ for p = whichPts
             rl = nan(nchs,nblocks);
             coa = nan(nchs,nchs,nblocks);
             cos = nan(nchs,nblocks);
+            added_rate = nan(length(added_labels),nblocks);
+            alt_cos = nan(length(added_labels),length(unchanged_labels),nblocks);
             num_seq = nan(nchs,nblocks);
             sdist = cell(nblocks,1);
             sz_times = all_sz_times_in_file(pt,p,f);
@@ -223,7 +228,7 @@ for p = whichPts
                         
                         %% Get cospike inde
                         cos(:,h) = co_spiking(gdf,fs,added_labels,chLabels);
-                        
+                        [alt_cos(:,:,h),added_rate(:,h)] = alt_co_spiking(gdf,added_labels,unchanged_labels,chLabels);
                         if 0
                         [seq,rl(:,h),coa(:,:,h),num_seq(:,h),cos(:,h)] = new_get_sequences(gdf,nchs,fs,...
                             is_post,chLabels,added_labels,unchanged_labels);
@@ -233,6 +238,7 @@ for p = whichPts
 
                         if f >= change(c).files(2)
                             all_seq = [all_seq;seq];
+                            
                         end
                      end
                 else
@@ -278,6 +284,7 @@ for p = whichPts
             all_rl = [all_rl,rl];
             all_dist = [all_dist;sdist];
             
+            
             %% If it's a post-change file, add the coa matrix
             if f >= change(c).files(2)
                 coa_post = cat(3,coa_post,coa);
@@ -285,6 +292,12 @@ for p = whichPts
                 rate_post = [rate_post,rate];
                 all_nseq = [all_nseq,num_seq];
                 post_labels = chLabels;
+                all_alt_cos = cat(3,all_alt_cos,alt_cos);
+                all_added_rate = [all_added_rate,added_rate];
+                
+                if size(all_alt_cos,3) ~= size(all_added_rate,2)
+                    error('what');
+                end
             end
             
             if f<last_file
@@ -312,6 +325,13 @@ for p = whichPts
        change_dist_time(all_dist,block_dur,change_block,name,results_folder,surround,all_rate); 
         
     end
+    
+    %%
+    if 0
+    cosa = cosi_analysis(all_alt_cos,all_rate,change_block,surround,unchanged_labels,name,...
+        all_added_rate);
+    end
+    
     
     %% Overall change in spike rate
     if 0
@@ -361,31 +381,27 @@ for p = whichPts
     coa_spikey_idx = ismember(post_labels,spikey_labels);
     coa_added_idx = ismember(post_labels,added_labels);
     
-    if 0
-        
-        thing = cosi;%dist;
-        ttext = 'cospike';%'distance';
-        outfolder = [results_folder,ttext,'/'];
-        if ~exist(outfolder,'dir')
-            mkdir(outfolder)
-        end
-        do_abs = 0;
-        corr_time_perm(thing,all_rate,change_block,surround,spikey_idx,do_abs,...
-    ttext,outfolder,unchanged_labels,name)
-        
+    if 1
+        do_rel = 0;
+        thing = dist;
+        fprintf('\n\n\n%s\n',name);
+        rprep(thing,all_rate,change_block,surround,unchanged_locs,spikey_idx,...
+            results_folder,name,do_rel)
     end
     
     if 0
         
-        thing = dist;
-        ttext = 'distance';
+        thing = cosi;
+        ttext = 'cospike';
         outfolder = [results_folder,ttext,'/'];
         if ~exist(outfolder,'dir')
             mkdir(outfolder)
         end
         do_abs = 0;
-        corr_time_perm(thing,all_rate,change_block,surround,spikey_idx,do_abs,...
-    ttext,outfolder,unchanged_labels,name)
+        do_simple = 1;
+        tstat = corr_time_perm(thing,all_rate,change_block,surround,spikey_idx,do_abs,...
+    ttext,outfolder,unchanged_labels,name,do_simple);
+        all_t = [all_t;tstat];
         
     end
     

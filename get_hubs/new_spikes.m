@@ -1,17 +1,17 @@
 function new_spikes(whichPts)
 
 %% Parameters
-overwrite = 0;
-test.do_test = 0;
-do_plot = 0;
-plot_spikes = 0;
-do_save = 1;
+overwrite = 1;
+test.do_test = 1;
+do_plot = 1;
+plot_spikes = 1;
+do_save = 0;
 
 %% Test parameters
-test.pt = 105;
-test.time = 240620;%620570.00; %193231.80;% - ok except RA4;  %1605.05 - super high variance LAF1; 5617.68 - flat; 28583.69 - RA4 bad
+test.pt = 111;
+test.time = 11725;%620570.00; %193231.80;% - ok except RA4;  %1605.05 - super high variance LAF1; 5617.68 - flat; 28583.69 - RA4 bad
 test.dur = 10;
-test.file = 2;
+test.file = 3;
 test.ch =[];
 
 test.tmul = 17;

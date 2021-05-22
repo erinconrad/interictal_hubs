@@ -11,7 +11,7 @@ times = times * block_dur;
 mean_rate = nanmean(all_rate,2);
 mean_rl = nanmean(all_rl,2);
 
-% For each block, take the Spearman correlation between the mean rate and
+% For each block, take the correlation between the mean rate and
 % the current rate
 rho = corr(all_rate,mean_rate,'rows','pairwise');
 rho_rl = corr(all_rl,mean_rl,'rows','pairwise');
@@ -59,20 +59,20 @@ pre = rate(:,change-surround:change-1);
 post = rate(:,change+1:change+surround);
 pre_mean = nanmean(pre,2);
 post_mean = nanmean(post,2);
-true_rho = corr(pre_mean,post_mean,'Type','Spearman','rows','pairwise');
+true_rho = corr(pre_mean,post_mean,'rows','pairwise');
 
 perm_rho = nan(nb,1);
 
 for ib = 1:nb
     
     % Make a fake change time
-    fchange = randi([surround+1,nblocks-surround]);
+    fchange = randi([change,nblocks-surround]);
     
     % recalculate
     fpre = rate(:,fchange-surround:fchange-1);
     fpost = rate(:,fchange+1:fchange+surround);
     
-    perm_rho(ib) = corr(nanmean(fpre,2),nanmean(fpost,2),'Type','Spearman','rows','pairwise');
+    perm_rho(ib) = corr(nanmean(fpre,2),nanmean(fpost,2),'rows','pairwise');
     
 end
 

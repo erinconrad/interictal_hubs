@@ -66,7 +66,7 @@ whichChs = clean_labels_2(whichChs);
 all_elecs = clean_labels_2(all_elecs);
 
 %% Restrict spikes to those matching the electrodes of interest
-matching_idx = ismember(all_elecs,whichChs);
+matching_idx = ismember(all_elecs,whichChs(1));
 all_spikes(~matching_idx,:) = [];
 all_elecs(~matching_idx) = [];
 
