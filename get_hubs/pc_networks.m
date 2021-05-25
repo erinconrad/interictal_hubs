@@ -179,7 +179,7 @@ for i = 1:length(whichPts)
                     run_chs = [];
                     run_skip = 1;
                     details = [];
-                    pc = [];
+                    pc_out = [];
                     run_labels = {};
                 else
                     run_skip = 0;
