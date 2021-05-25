@@ -3,6 +3,9 @@ function out = do_filters(eeg,fs)
 out = eeg;
 for ich = 1:size(eeg,2)
     vals = eeg(:,ich);
+  
+    %% Turn nans into median of signal
+    vals(isnan(vals)) = nanmedian(vals);
     
     %% Notch filter
     vals = bandstop(vals,[59 61],fs,...

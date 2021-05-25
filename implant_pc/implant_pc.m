@@ -63,6 +63,14 @@ for p = whichPts
         if isempty(added)
             continue
         end
+        
+        %% Get total number of blocks
+        nb = 0;
+        for f = 1:last_file
+            nb = nb + length(pc.file(f).block);
+        end
+        
+
     
         %% Ch labels
         chLabels = clean_labels_2(pc.file(change(c).files(2)).block(1).chLabels);
@@ -70,6 +78,9 @@ for p = whichPts
         [~,unchanged_idx] = ismember(unchanged,chLabels);
         unchanged_labels = chLabels(unchanged_idx);
         added_labels = chLabels(added_idx);
+        
+        
+        
         
         %% Get locs
         if ~isfield(pt(p).ieeg.file(change(c).files(2)),'locs')
@@ -96,6 +107,8 @@ for p = whichPts
             added_anatomy = pt(p).ieeg.file(change(c).files(2)).anatomy(added_idx);
         end
         
+        %% initialize thingy
+        net = nan(length(unchanged_labels),nb);
         findices = [];
         bindices = [];
         
@@ -104,9 +117,7 @@ for p = whichPts
             
             flocs = pt(p).ieeg.file(f).locs;
             fdist = distance_from_closest_added(flocs,added_locs);
-            
-            chLabels = clean_labels_2(pc.file(f).block(1).chLabels);
-           
+                       
              % Loop over blocks
             for h = 1:nblocks
                 block = pc.file(f).block(h);
@@ -120,8 +131,20 @@ for p = whichPts
                 end
 
                 
-                pc_uw = wrap_or_unwrap_adjacency(block.pc);
+                pc_w = block.pc;
                 
+                %% Get indices of unchanged and remove changed
+                [lia,locb] = ismember(run_labels,unchanged);
+                new_labels = run_labels;
+                new_labels(~lia) = [];
+                pc_w(~lia,:) = [];
+                pc_w(:,~lia) = [];
+                
+                %% Re-order as needed
+                [lia,locb] = ismember(unchanged,new_labels);
+                new_labels = new_labels(locb);
+                pc_w = pc_w(locb,:);
+                pc_w = pw_w(:,locb);
                 
                 if 1
                     figure
