@@ -1,5 +1,10 @@
 function cos = co_spiking(gdf,fs,added_labels,chLabels)
 
+%{
+This measures, for each channel, how many times it has a spike at around
+the same time one of the added channels has a spike
+%}
+
 t2 = 50*1e-3; % max time from preceding spike (15 ms in paper)
 
 nchs = length(chLabels);

@@ -370,6 +370,12 @@ for p = whichPts
     histogram_rate_change(abs_increase,unchanged_labels);
     end
     
+    %% Identity of spikiest electrode
+    if 1
+        spikiest_elec(all_rate,unchanged_labels,change_block,surround,...
+            results_folder,name,block_dur,run_dur)
+        
+    end
    
     
     %% Restrict to minimum number of spikes
@@ -381,12 +387,23 @@ for p = whichPts
     coa_spikey_idx = ismember(post_labels,spikey_labels);
     coa_added_idx = ismember(post_labels,added_labels);
     
-    if 1
+    %% SAR model
+    if 0
         do_rel = 0;
         thing = dist;
+        ttext = 'distance';
         fprintf('\n\n\n%s\n',name);
+        outfolder = [results_folder,ttext,'/'];
+        if ~exist(outfolder,'dir')
+            mkdir(outfolder)
+        end
+        
         rprep(thing,all_rate,change_block,surround,unchanged_locs,spikey_idx,...
-            results_folder,name,do_rel)
+            outfolder,name,do_rel,ttext,unchanged_labels)
+        %{
+        perm_sar(thing,all_rate,change_block,surround,unchanged_locs,spikey_idx,outfolder,...
+    name,do_rel,ttext)
+        %}
     end
     
     if 0

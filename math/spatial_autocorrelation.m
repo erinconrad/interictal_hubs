@@ -1,6 +1,5 @@
-function spatial_autocorrelation(x,y,dmin,locs)
-
-wij = getwij3(locs,dmin);
+function [coeffs,pvals] = spatial_autocorrelation(x,y,dmin,locs,first_order)
+wij = getwij3(locs,dmin,first_order);
 
 %{
 A = zeros(length(y),1);
@@ -14,19 +13,29 @@ tbl = table(y,x,A);
 lm = fitlm(tbl,'y~x+A');
 %}
 
-f = isnan(x);
+% Remove nans
+f = isnan(x) | isnan(y);
 x(f) = [];
 y(f) = [];
 wij(f,:) = [];
 wij(:,f) = [];
 
+if isempty(y)
+    coeffs = [nan;nan];
+    pvals = [nan; nan];
+    return
+end
+
 results = sar(y,x,wij);
-prt(results)
+coeffs = [results.beta;results.rho];
+pvals = norm_prb(results.tstat);
+
+%prt(results)
 
 end
 
 
-function wij = getwij3(locs,dmin)
+function wij = getwij3(locs,dmin,first_order)
 
 nChannels = size(locs,1);
 
@@ -40,18 +49,27 @@ for iChannel = 1:nChannels
            wij(iChannel,jChannel) = 0;
        else
            % calculate Euclidean distance between the two channels
-           dij(iChannel,jChannel) =  sqrt(sum((locs(iChannel,:) - locs(jChannel,:)).^2));
+           dij(iChannel,jChannel) =  vecnorm(locs(iChannel,:)-locs(jChannel,:));
            
            % if this distance is less than a minimum distance
            if dij(iChannel,jChannel) <= dmin
                
-               % make the weight be 1/d
-               wij(iChannel,jChannel) = 1/dij(iChannel,jChannel);
+               if first_order
                
-               if wij(iChannel,jChannel) == inf
-                   wij(iChannel,jChannel) = 0;
-                   fprintf('Warning, channels %d and %d have the same location, making spatial weight 0\n',iChannel,jChannel);
+                   wij(iChannel,jChannel) = 1;
+                   
+               else
+                   
+                   % make the weight be 1/d
+                   wij(iChannel,jChannel) = 1/dij(iChannel,jChannel);
+
+                   if wij(iChannel,jChannel) == inf
+                       wij(iChannel,jChannel) = 0;
+                       fprintf('Warning, channels %d and %d have the same location, making spatial weight 0\n',iChannel,jChannel);
+                   end
+                   
                end
+
            else
                
                % if they're further, set the weight to 0
