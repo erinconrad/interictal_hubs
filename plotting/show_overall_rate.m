@@ -3,6 +3,16 @@ function show_overall_rate(all_rate,block_dur,change_block,run_dur,name,results_
 
 %% Significance testing
 pval = rate_analysis(all_rate,change_block,surround);
+%pval = overall_pre_post_rate(all_rate,change_block);
+
+%{
+pre = 1:change_block-1;
+post = change_block+1:size(all_rate,2);
+rate_pre = nanmean(all_rate(:,pre),1);
+rate_post = nanmean(all_rate(:,post),1);
+
+pval = ranksum(rate_pre,rate_post);
+%}
 
 figure
 set(gcf,'position',[172 233 1181 423])
@@ -10,7 +20,7 @@ times = 1:size(all_rate,2);
 times = times*block_dur;
 %plot(times,all_rate/run_dur,'--','color',[0, 0.4470, 0.7410])
 hold on
-plot(times,nanmean(all_rate,1)/run_dur,'k','linewidth',2)
+plot(times,nansum(all_rate,1)/run_dur,'k','linewidth',2)
 
 hold on
 
@@ -18,8 +28,10 @@ nan_blocks = find(isnan(nanmean(all_rate,1)));
 for b = 1:length(nan_blocks)
     bidx = [max(nan_blocks(b) - 0.5,1) min(nan_blocks(b)+0.5,size(all_rate,2))];
     bidx = bidx*block_dur;
-    ap = area(bidx,ylim,'basevalue',0,...
-        'FaceColor',[0.7 0.7 0.7],'EdgeColor',[0.7 0.7 0.7]);
+    yl = ylim;
+    ap = fill([bidx(1),bidx(2),bidx(2),bidx(1)],...
+        [yl(1),yl(1),yl(2),yl(2)],...
+        [0.7 0.7 0.7],'EdgeColor',[0.7 0.7 0.7]);
 end
 cp = plot([change_block*block_dur change_block*block_dur],ylim,'r--','linewidth',4);
 
@@ -69,7 +81,7 @@ perm_diff = nan(nb,1);
 for ib = 1:nb
     
     % Make a fake change time
-    fchange = randi([change,nblocks-surround]);
+    fchange = randi([surround+1,nblocks-surround]);
     
     % recalculate
     fpre = rate(:,fchange-surround:fchange-1);
@@ -100,11 +112,14 @@ if do_vecnorm
     
 else
     % For a two tailed test, find the number above true_diff or <-true_diff
+    num_as_sig = sum(abs(sorted_perm_diff) >= abs(true_diff));
+    %{
     if true_diff >= 0
         num_as_sig = sum(sorted_perm_diff>=true_diff | sorted_perm_diff <= -true_diff);
     else
         num_as_sig = sum(sorted_perm_diff<=true_diff | sorted_perm_diff >= -true_diff);
     end
+    %}
 end
 
 pval = (num_as_sig+1)/(nb+1);

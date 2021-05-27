@@ -108,13 +108,15 @@ for p = whichPts
         end
         
         %% initialize thingy
-        net = nan(length(unchanged_labels),nb);
+        net = nan(length(unchanged_labels)*(length(unchanged_labels)-1)/2,nb);
+        b_count = 0;
         findices = [];
         bindices = [];
         
         % Loop over files
         for f = 1:last_file
             
+            nblocks = length(pc.file(f).block);
             flocs = pt(p).ieeg.file(f).locs;
             fdist = distance_from_closest_added(flocs,added_locs);
                        
@@ -125,43 +127,71 @@ for p = whichPts
                 findices = [findices,f];
                 bindices = [bindices,h];
                 run_labels = block.run_labels;
+                b_count = b_count + 1;
                 
                 if block.run_skip == 1
                     continue; % leave the whole block as nans
                 end
 
                 
-                pc_w = block.pc;
+                pc_w = wrap_or_unwrap_adjacency(block.pc);
                 
-                %% Get indices of unchanged and remove changed
+                
+                %% Remove electrodes that are not unchanged
                 [lia,locb] = ismember(run_labels,unchanged);
                 new_labels = run_labels;
                 new_labels(~lia) = [];
                 pc_w(~lia,:) = [];
                 pc_w(:,~lia) = [];
                 
+                %% Pad with missing electrodes (primarily those that we excluded from run due to baddness)
+                missing_idx = ~ismember(unchanged,run_labels);
+                missing_labels = unchanged(missing_idx);
+                pc_w = padarray(pc_w,...
+                    [length(missing_labels) length(missing_labels)],...
+                    nan,'post');
+                new_labels = [new_labels;missing_labels];
+                
                 %% Re-order as needed
                 [lia,locb] = ismember(unchanged,new_labels);
                 new_labels = new_labels(locb);
                 pc_w = pc_w(locb,:);
-                pc_w = pw_w(:,locb);
+                pc_w = pc_w(:,locb);
                 
-                if 1
+                if ~isequal(new_labels,unchanged)
+                    error('ruh roh');
+                end
+                
+                %% Fill up network array
+                pc_uw =  wrap_or_unwrap_adjacency(pc_w);
+                net(:,b_count) = pc_uw;
+                
+                if 0
                     figure
-                    imagesc(pc_uw)
-                    xticks(1:size(pc_uw,1))
-                    yticks(1:size(pc_uw,1))
-                    xticklabels(run_labels)
-                    yticklabels(run_labels)
+                    turn_nans_white(pc_w)
+                    xticks(1:size(pc_w,1))
+                    yticks(1:size(pc_w,1))
+                    xticklabels(new_labels)
+                    yticklabels(new_labels)
                     colorbar
+                    title(sprintf('File %d block %d',f,h))
                     pause
                     close(gcf)
                 end
                 
             end
             
+            if f + 1 == change(c).files(2)
+                change_block = size(net,2);
+            end
+            
         end
         
+        %% Show net
+        if 1
+            figure
+            turn_nans_white(net)
+        end
     
 end
 

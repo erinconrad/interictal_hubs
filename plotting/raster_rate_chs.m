@@ -18,7 +18,7 @@ figure
     set(gca,'fontsize',10);
 
 
-    ylabel('Hour')
+    xlabel('Hour')
     
     
     %% Permanova analysis

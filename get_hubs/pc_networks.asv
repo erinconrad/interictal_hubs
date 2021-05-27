@@ -1,10 +1,10 @@
 function pc_networks(whichPts)
 
 %% Parameters
-overwrite = 0;
-test.do_test = 0;
-do_plot = 0;
-do_save = 1;
+overwrite = 1;
+test.do_test = 1;
+do_plot = 1;
+do_save = 0;
 
 tw = 2; % 2 second calculations
 
@@ -224,7 +224,7 @@ for i = 1:length(whichPts)
                     
                 end
                 
-                if 0
+                if 1
                     show_eeg_and_spikes(values,clean_labs,[],dur,run_times(1),name,fs,bad,skip,[]);
                 end
             else

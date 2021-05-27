@@ -7,6 +7,9 @@ for ich = 1:size(eeg,2)
     %% Turn nans into median of signal
     vals(isnan(vals)) = nanmedian(vals);
     
+    %% Subtract the baseline
+    vals = vals-nanmedian(vals);
+    
     %% Notch filter
     vals = bandstop(vals,[59 61],fs,...
         'ImpulseResponse','iir');

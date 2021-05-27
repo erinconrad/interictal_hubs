@@ -3,8 +3,6 @@ function revision_change(whichPts)
 % for permutation test, restrict to post implant
 
 %% Parameters
-%filt = 2;
-%timing = 'peak';
 surround = 48; % Divide by 2 to get number of hours
 
 % probably should do
@@ -144,6 +142,7 @@ for p = whichPts
         all_dist = {};
         all_alt_cos = [];
         all_added_rate= [];
+        all_un_cos = [];
         
         % Loop over files
         for f = 1:last_file
@@ -158,6 +157,7 @@ for p = whichPts
             rl = nan(nchs,nblocks);
             coa = nan(nchs,nchs,nblocks);
             cos = nan(nchs,nblocks);
+            un_cos = nan(nchs,nchs,nblocks);
             added_rate = nan(length(added_labels),nblocks);
             alt_cos = nan(length(added_labels),length(unchanged_labels),nblocks);
             num_seq = nan(nchs,nblocks);
@@ -226,8 +226,8 @@ for p = whichPts
                         end
                          
                         
-                        %% Get cospike inde
-                        cos(:,h) = co_spiking(gdf,fs,added_labels,chLabels);
+                        %% Get cospike index
+                        [cos(:,h),un_cos(:,:,h)] = co_spiking(gdf,fs,added_labels,chLabels);
                         [alt_cos(:,:,h),added_rate(:,h)] = alt_co_spiking(gdf,added_labels,unchanged_labels,chLabels);
                         if 0
                         [seq,rl(:,h),coa(:,:,h),num_seq(:,h),cos(:,h)] = new_get_sequences(gdf,nchs,fs,...
@@ -267,6 +267,8 @@ for p = whichPts
             rate(~lia,:) =[];
             rl(~lia,:) = [];
             cos(~lia,:) = [];
+            un_cos(~lia,:,:) = [];
+            un_cos(:,~lia,:) = [];
 
             %% Re-order as needed
             %[lia,locb] = ismember(new_labels,unchanged);
@@ -275,6 +277,8 @@ for p = whichPts
             rate = rate(locb,:);
             rl = rl(locb,:);
             cos = cos(locb,:);
+            un_cos = un_cos(lia,:,:);
+            un_cos = un_cos(:,lia,:);
             if ~isequal(new_labels,unchanged)
                 error('oh no');
             end
@@ -283,6 +287,7 @@ for p = whichPts
             all_rate = [all_rate,rate];
             all_rl = [all_rl,rl];
             all_dist = [all_dist;sdist];
+            all_un_cos = cat(3,all_un_cos,un_cos);
             
             
             %% If it's a post-change file, add the coa matrix
@@ -370,10 +375,16 @@ for p = whichPts
     histogram_rate_change(abs_increase,unchanged_labels);
     end
     
-    %% Identity of spikiest electrode
+    %% AES plot
     if 1
+    aes_plot(all_rate,block_dur,change_block,run_dur,unchanged_locs,added_locs,...
+    name,results_folder,unchanged_labels)
+    end
+    
+    %% Identity of spikiest electrode
+    if 0
         spikiest_elec(all_rate,unchanged_labels,change_block,surround,...
-            results_folder,name,block_dur,run_dur)
+            results_folder,name,block_dur,run_dur,unchanged_locs)
         
     end
    
@@ -390,8 +401,8 @@ for p = whichPts
     %% SAR model
     if 0
         do_rel = 0;
-        thing = dist;
-        ttext = 'distance';
+        thing = cosi;
+        ttext = 'cospike';
         fprintf('\n\n\n%s\n',name);
         outfolder = [results_folder,ttext,'/'];
         if ~exist(outfolder,'dir')
@@ -399,7 +410,7 @@ for p = whichPts
         end
         
         rprep(thing,all_rate,change_block,surround,unchanged_locs,spikey_idx,...
-            outfolder,name,do_rel,ttext,unchanged_labels)
+            outfolder,name,do_rel,ttext,unchanged_labels,all_un_cos)
         %{
         perm_sar(thing,all_rate,change_block,surround,unchanged_locs,spikey_idx,outfolder,...
     name,do_rel,ttext)

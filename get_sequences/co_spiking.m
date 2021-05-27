@@ -1,4 +1,4 @@
-function cos = co_spiking(gdf,fs,added_labels,chLabels)
+function [cos,un_cos] = co_spiking(gdf,fs,added_labels,chLabels)
 
 %{
 This measures, for each channel, how many times it has a spike at around
@@ -9,6 +9,7 @@ t2 = 50*1e-3; % max time from preceding spike (15 ms in paper)
 
 nchs = length(chLabels);
 cos = zeros(nchs,1);
+un_cos = zeros(nchs,nchs);
 
 added_idx = find(ismember(chLabels,added_labels));
 
@@ -33,6 +34,10 @@ for s = 1:size(gdf,1)
     
     % get the spike chs
     close_spikes = gdf(close,1);
+    
+    % add to uncos
+    un_cos(ch,close_spikes) = un_cos(ch,close_spikes) + 1;
+    %un_cos(close_spikes,ch) = un_cos(close_spikes,ch) + 1;
     
     % see if any are added channels
     if any(ismember(close_spikes,added_idx))
