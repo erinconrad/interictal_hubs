@@ -12,7 +12,7 @@ tw = 2; % 2 second calculations
 test.pt = 20;%111;
 test.time = 51384.29;%11725;
 test.dur = 15;
-test.file = 1;
+test.file = 3;
 test.ch =[];
 
 %% Get file locs
@@ -185,15 +185,34 @@ for i = 1:length(whichPts)
                     run_skip = 0;
                     
                     %% Do CAR on good chs
+                    %{
+                    I am adding something whereby I define the CAR to ONLY
+                    include those electrodes that are pre-existing. This is
+                    to avoid contaminating the pre-existing electrodes with
+                    new electrode signal, which might falsely cause me to
+                    see a change post-implantation (which is just the
+                    signal from the new electrodes)
+                    %}
                     run_chs = which_chs;
                     run_chs(ismember(run_chs,bad)) = [];
                     values = values(:,run_chs);
                     
+                    % Get the labels of the pre-existing channels
+                    [~,pre_existing_labels] = find_electrode_change_files(pt,p,0);
                     
-                    values = new_pre_process(values,1:size(values,2));
+                    % labels of channels I am currently planning to run it
+                    % over
+                    curr_labels = clean_labs(run_chs);
+                    
+                    % find those that match pre-existing labels 
+                    pre_existing_idx = find(ismember(curr_labels,pre_existing_labels));
+                    
+                    old_values = values;
+                    values = new_pre_process(values,pre_existing_idx); % define car according to preexisting only
+                    %values = new_pre_process(values,1:size(values,2));
                     
                     %% Do filters
-                    old_values = values;
+                    
                     values = do_filters(values,fs);
                     
                     %% Do PC
