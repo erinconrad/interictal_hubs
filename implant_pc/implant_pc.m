@@ -1,5 +1,11 @@
 function implant_pc(whichPts)
 
+%{
+Stuff to do:
+1) Run across pts
+2) Correlate change with connectivity to new chs
+%}
+
 surround = 48;
 
 % probably should do
@@ -200,30 +206,34 @@ for p = whichPts
         out = get_network_metrics(net);
         ns = out.ns_norm;
         
-        %% plot change in network metrics over time
         if 1
             figure
+            tiledlayout(2,1,'tilespacing','Compact')
+            
+            %% plot change in network metrics over time
+            nexttile
             turn_nans_white(out.ns_norm)
             yticks(1:length(unchanged_labels))
             yticklabels(unchanged_labels)
             hold on
             plot([change_block change_block],ylim,'r--','linewidth',3)
-        end
         
-        %% Correlate change in network metric with distance from new elecs
-        pre = change_block - surround: change_block-1;
-        post = change_block + 1:change_block+surround;
-        ns_pre_mean = nanmean(ns(:,pre),2);
-        ns_post_mean = nanmean(ns(:,post),2);
-        ns_diff = ns_post_mean - ns_pre_mean;
-        [rho,pval] = corr(dist,ns_diff,'Type','Spearman','rows','pairwise');
+            %% Correlate change in network metric with distance from new elecs
+            nexttile
+            pre = change_block - surround: change_block-1;
+            post = change_block + 1:change_block+surround;
+            ns_pre_mean = nanmean(ns(:,pre),2);
+            ns_post_mean = nanmean(ns(:,post),2);
+            ns_diff = ns_post_mean - ns_pre_mean;
+            [rho,pval] = corr(dist,ns_diff,'Type','Spearman','rows','pairwise');
         
-        if 1
-            figure
+        
+            
             plot(dist,ns_diff,'color',[1 1 1])
             hold on
             text(dist,ns_diff,unchanged_labels)
             title(sprintf('%s rho = %1.2f p = %1.3f',name,rho,pval))
+            
         end
     
 end

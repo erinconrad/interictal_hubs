@@ -324,7 +324,12 @@ for p = whichPts
         end
     end
         
-    
+    if 1
+        %% Spike count
+        fprintf('\n%s had %d spikes\n',pt_name,nansum(all_rate(:)));
+    end
+        
+    end
 
     if 0
        change_dist_time(all_dist,block_dur,change_block,name,results_folder,surround,all_rate); 
@@ -376,9 +381,9 @@ for p = whichPts
     end
     
     %% AES plot
-    if 1
-    aes_plot(all_rate,block_dur,change_block,run_dur,unchanged_locs,added_locs,...
-    name,results_folder,unchanged_labels)
+    if 0
+        aes_plot(all_rate,block_dur,change_block,run_dur,unchanged_locs,added_locs,...
+        name,results_folder,unchanged_labels)
     end
     
     %% Identity of spikiest electrode
@@ -417,6 +422,7 @@ for p = whichPts
         %}
     end
     
+    %{
     if 0
         
         thing = cosi;
@@ -432,6 +438,7 @@ for p = whichPts
         all_t = [all_t;tstat];
         
     end
+    %}
     
      %% Spatial clustering of rate increase
     if 0
@@ -538,9 +545,9 @@ for p = whichPts
     
     
     
-    end
-    
 end
+    
+
 
 if 0
 %% Show table with anatomical localizations

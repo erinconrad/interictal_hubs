@@ -14,6 +14,7 @@ for ib = 1:nblocks
     
     %% unpack matrix
     mat = wrap_or_unwrap_adjacency(net(:,ib));
+    mat(1:1+size(mat,1):end) = nan;
     
     %% Get network metrics
     %{
