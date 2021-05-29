@@ -60,7 +60,7 @@ curr_times = (1:length(curr_rate)) * out(p).block_dur;
 curr_change = out(p).change_block*out(p).block_dur;
 plot(curr_times,curr_rate,'k','linewidth',2)
 hold on
-nan_blocks = out(i).nan_blocks;
+nan_blocks = out(p).nan_blocks;
 
 xlim([0 length(curr_rate)*out(p).block_dur]);
 ylabel('Spikes/min')
@@ -78,12 +78,57 @@ end
 cp = plot([curr_change curr_change],ylim,'r--','linewidth',4);
 legend([cp ap],{'Revision','Data missing'},'fontsize',20,'location','northeast')
 
+
 %% Change for each patient
 nexttile
+all_pre = nan(length(whichPts),1);
+all_post = nan(length(whichPts),1);
 for i = 1:length(whichPts)
-    cb = out(i).change_block;
     rate = out(i).overall_rate/out(i).run_dur;
+    cblock = out(i).change_block;
+    pre = cblock - surround:cblock -1;
+    post = cblock + 1:cblock+surround;
+    pre_rate = nanmean(rate(pre));
+    post_rate = nanmean(rate(post));
+    %{
+    pr = plot([i-0.1],[pre_rate],'o','color',[0, 0.4470, 0.7410]);
+    hold on
+    ps = plot([i+0.1],[post_rate],'o','color',[0.8500, 0.3250, 0.098]);
+    %}
+    all_pre(i) = pre_rate;
+    all_post(i) = post_rate;
 end
+%xticks([1:length(whichPts)]);
+%xlabel('Patient ID')
+ylabel('Spikes/min')
+plot(1+0.05*rand(length(whichPts),1),all_pre,'o','color',[0, 0.4470, 0.7410],...
+    'markersize',15,'linewidth',2)
+hold on
+plot(2+0.05*rand(length(whichPts),1),all_post,'o','color',[0.8500, 0.3250, 0.098],...
+    'markersize',15,'linewidth',2)
+[~,pval] = ttest(all_pre,all_post);
+xlim([0.5 2.5])
+yl = ylim;
+ylim([yl(1) 1.10*(yl(2)-yl(1))])
+plot([1 2],[yl(1) + 0.95*(yl(2)-yl(1)) yl(1) + 0.95*(yl(2)-yl(1))],'k-')
+if pval < 0.05
+    text(1.5,yl(1) + 1.02*(yl(2)-yl(1)),'*','horizontalalignment','center','fontsize',20)
+else
+    text(1.5,yl(1) + 1.02*(yl(2)-yl(1)),'ns','horizontalalignment','center','fontsize',20)
+end
+xticks([1 2])
+xticklabels({'Pre-revision','Post-revision'})
+set(gca,'fontsize',20)
+%legend([pr ps],{'Pre-revision','Post-revision'},'fontsize',20);
+%{
+yl = ylim;
+for i = 1:length(whichPts)
+    pval = out(i).overall_rate_pval;
+    if pval < 0.05/length(whichPts)
+        text(i,yl(1)+1.05*(yl(2)-yl(1)),'*','horizontalalignment','center','fontsize',20)
+    end
+end
+%}
 
 
 
