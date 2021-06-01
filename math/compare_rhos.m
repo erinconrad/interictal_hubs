@@ -1,6 +1,5 @@
-function pval = compare_rhos(rate,change,surround)
+function pval = compare_rhos(rate,change,surround,nb)
 
-nb = 1e3;
 nblocks = size(rate,2);
 
 %% Compare spike rate pre and post change

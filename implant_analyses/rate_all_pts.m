@@ -50,7 +50,7 @@ end
 %% Initialize figure
 figure
 set(gcf,'position',[252 547 1001 250])
-tiledlayout(1,2)
+tiledlayout(1,2,'TileSpacing','compact','padding','compact')
 
 %% Example rate
 nexttile
@@ -111,12 +111,10 @@ xlim([0.5 2.5])
 yl = ylim;
 ylim([yl(1) 1.10*(yl(2)-yl(1))])
 plot([1 2],[yl(1) + 0.95*(yl(2)-yl(1)) yl(1) + 0.95*(yl(2)-yl(1))],'k-')
-if pval < 0.05
-    text(1.5,yl(1) + 1.02*(yl(2)-yl(1)),'*','horizontalalignment','center','fontsize',20)
-else
-    text(1.5,yl(1) + 1.02*(yl(2)-yl(1)),'ns','horizontalalignment','center','fontsize',20)
-end
+text(1.5,yl(1) + 1.02*(yl(2)-yl(1)),get_asterisks(pval,1),'horizontalalignment','center','fontsize',20)
+
 xticks([1 2])
+ylabel('Spikes/min')
 xticklabels({'Pre-revision','Post-revision'})
 set(gca,'fontsize',20)
 %legend([pr ps],{'Pre-revision','Post-revision'},'fontsize',20);
@@ -130,7 +128,12 @@ for i = 1:length(whichPts)
 end
 %}
 
+%% Add subtitle labels
+annotation('textbox',[0 0.93 0.1 0.1],'String','A','fontsize',30,'linestyle','none')
+annotation('textbox',[0.5 0.93 0.1 0.1],'String','B','fontsize',30,'linestyle','none')
 
+print(gcf,[main_spike_results,'Fig1'],'-depsc')
+print(gcf,[main_spike_results,'Fig1'],'-dpng')
 
 
 end

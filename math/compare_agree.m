@@ -1,6 +1,5 @@
-function pval = compare_agree(rate,change,surround)
+function pval = compare_agree(rate,change,surround,nb)
 
-nb = 1e3;
 nblocks = size(rate,2);
 
 [~,spikiest] = max(rate,[],1);
