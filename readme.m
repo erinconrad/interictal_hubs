@@ -34,7 +34,13 @@ rate_all_pts: this generates Figure 1 for the implant effect paper, showing
 the spike rate over time for a single patient and showing the change in
 spike rate pre- to post-revision for all patients.
 
+ros_all_pts: this generates Figure 2 for the implant effect paper, showing
+a raster plot of spike rate and ns for a single patient and showing the
+rate order stability and NS order stability from pre- to post-revision for
+all patients.
 
+corr_each_pt: this generates Figure 3 for the implant paper, showing a
+scatter plot of rate change as a function of something for each patient.
 
 
 %}
