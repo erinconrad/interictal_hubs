@@ -38,4 +38,8 @@ end
 num_as_sig = sum(sorted_perm_rho<=true_rho);
 pval = (num_as_sig+1)/(nb+1);
 
+if isnan(true_rho)
+    pval = nan;
+end
+
 end

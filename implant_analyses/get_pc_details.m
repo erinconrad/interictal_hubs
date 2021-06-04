@@ -1,4 +1,4 @@
-function out = get_pc_details(p)
+function metrics = get_pc_details(p)
 
 %{
 Think more about how I define connectivity to the new elecs (I kind of like
@@ -29,7 +29,7 @@ name = pt(p).name;
 
 %% Load pc file
 if exist([pc_folder,sprintf('%s_pc.mat',name)],'file') == 0
-    out = [];
+    metrics = [];
     return;
 end
 
@@ -226,6 +226,14 @@ end
 
 %% Get network metrics
 metrics = get_network_metrics(net);
+
+if 0
+    imagesc(metrics.avg_mat)
+    xticks(1:size(metrics.avg_mat,1))
+    yticks(1:size(metrics.avg_mat,1))
+    xticklabels(unchanged_labels)
+    yticklabels(unchanged_labels)
+end
 
 %% Get "ns" across added channels
 mean_net_post = nanmean(nanmean(net_post,3),2);

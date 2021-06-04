@@ -1,18 +1,13 @@
 function corr_each_pt(whichPts,saved_out)
 
-%{
-I should incorporate some sort of SAR model as well
-
-I should see if I can "whiten" the data for plotting
-
-Try FC for correlation
-%}
 
 %% Parameters
-surround = 48;
+surround = 24*2;
 nb = 1e4;
-which_pred = 'dist';
-which_rate = 'abs';
+which_resp = 'ns';
+which_pred = 'ns';
+corr_type = 'Pearson';
+min_rate = 0;
 
 %% Locations
 locations = interictal_hub_locations;
@@ -50,33 +45,54 @@ end
 
 %% Initialize figure
 figure
-set(gcf,'position',[1 100 1400 550])
-ax = tiledlayout(2,5,'TileSpacing','compact','padding','compact');
-all_zs = nan(length(whichPts),1);
+set(gcf,'position',[1 100 1200 700])
+ax = tiledlayout(3,5,'TileSpacing','compact','padding','compact');
+all_zs = nan(length(whichPts),5);
+axesi = zeros(length(whichPts),1);
 
 for i = 1:length(whichPts) 
     
-    nexttile
+    axesi(i) = nexttile;
     
-    rate = out(i).rate;
+    rate = out(i).rate./out(i).run_dur;
+    if isempty(out(i).metrics)
+        ns = nan(size(rate));
+    else
+        ns = out(i).metrics.ns_norm;
+    end
     cblock = out(i).change_block;
     
     % Identify pre and post times
-    pre = cblock-surround:cblock - 1;
-    post = cblock + 1: cblock+surround;
+    if isempty(surround)
+        pre = 1:cblock-1;
+        post = cblock+1:size(rate,2);
+    else
+        pre = cblock-surround:cblock - 1;
+        post = cblock + 1: cblock+surround;
+    end
+    
+    ekg = identify_ekg_scalp(out(i).unchanged_labels);
     
     % Calculate change in rate
-    switch which_rate
-        case 'abs'
-            rate_change = nanmean(rate(:,post),2) - nanmean(rate(:,pre),2);
-            rate_change = rate_change./out(i).run_dur;
-            rtext = 'Spike rate change (spikes/min)';
-            ekg = identify_ekg_scalp(out(i).unchanged_labels);
+    switch which_resp
+        case 'abs_rate'
+            resp = nanmean(rate(:,post),2) - nanmean(rate(:,pre),2);
+            rtext = 'Spike rate change (spikes/min)';     
             spikey_idx = ~ekg;
-        case 'rel'
-            rate_change = (nanmean(rate(:,post),2) - nanmean(rate(:,pre),2))./nanmean(rate(:,pre),2);
-            spikey_idx = nanmean(rate(:,[pre,post]),2) > 0.5;
+        case 'rel_rate'
+            %error('Are you sure you want this, seems like a bad analysis');
+            resp = (nanmean(rate(:,post),2) - nanmean(rate(:,pre),2))./nanmean(rate(:,pre),2);
+            spikey_idx = nanmean(rate(:,[pre,post]),2) > min_rate & ~ekg;
             rtext = 'Relative spike rate change';
+        case 'ns'
+            resp = nanmean(ns(:,post),2) - nanmean(ns(:,pre),2);
+            rtext = 'Node strength change';
+            spikey_idx = ~ekg;
+        case 'ns_rel'
+            resp = (nanmean(ns(:,post),2) - nanmean(ns(:,pre),2))./nanmean(ns(:,pre),2);
+            rtext = 'Relative node strength change';
+            spikey_idx = ~ekg;
+            
     end
     
     
@@ -87,49 +103,123 @@ for i = 1:length(whichPts)
             
             ptext = 'Distance from added electrodes (mm)';
         case 'cosi'
-            cos = out(i).cos;
-            cos_post = cos(:,1:end);
-            cosi = nanmean(cos_post./rate(:,cblock+1:end),2);
-            predictor = cosi;
+            %cos = out(i).cos;
+            %cos_post = cos(:,1:end);
+            %cosi = nanmean(cos_post./rate(:,cblock+1:end),2);
+            predictor = out(i).cosi;
             ptext = 'Co-spike index with added electrodes';
+        case 'ns'
+            if isempty(out(i).metrics)
+                predictor = nan(size(out(i).dist));
+            else
+                predictor = out(i).metrics.added_pc;
+            end
+            ptext = 'Functional connectivity with added electrodes';
     end
     
-    % Remove non-spikey if doing rel
-    rate_change(~spikey_idx) = [];
+    % Remove non-spikey
+    resp(~spikey_idx) = [];
     predictor(~spikey_idx) = [];
     
     % Monte carlo test to see how big correlation is compared to that at
     % different time points
-    [rho,pval] = mc_corr(rate(spikey_idx,:),predictor,cblock,surround,nb,which_rate);
+    if isempty(surround)
+        rho = corr(resp,predictor,'Type',corr_type,'rows','pairwise');
+        pval = nan;
+    else
+        [rho,pval] = mc_corr(rate(spikey_idx,:),ns(spikey_idx,:),predictor,...
+            cblock,surround,nb,which_resp,corr_type);
+    end
     
-    % Fisher's R to z transformation
-    z = atanh(rho);
-    all_zs(i) = z;
+    % Fisher's R to z transformation on the original rhos
+    n = sum(~isnan(resp) & ~isnan(predictor));
+    [z,z_score,pval2] = fisher_transform(rho,n);
+    [~,alt_pval2] = corr(resp,predictor,'Type',corr_type,'rows','pairwise');
+    
+    % this is to make sure I am getting a reasonable z-score from my fisher
+    % transformation.
+    if abs(pval2-alt_pval2) > 0.03
+        error('oh nos');
+    end
+    
+    % Fill up all z's with info
+    all_zs(i,:) = [z,z_score,rho,pval,n];
     
     % Plot
-    plot(predictor,rate_change,'o','linewidth',2);
-    title(sprintf('rho = %1.2f, p = %1.3f',rho,pval))   
-    set(gca,'fontsize',20)
+    plot(predictor,resp,'o','linewidth',2);
+    % the rho is the simple rho, but the p-value is the p-value from the MC
+    % test
+    %title(sprintf('rho = %1.2f, MC p = %1.3f',rho,pval))   
     
-end
+    set(gca,'fontsize',15)
+    if i == 8
+        xlabel(ptext)
+    end
+    
+    if i == 1 || i == 6
+        ylabel(rtext)
+    end
 
-ylabel(ax,rtext,'fontsize',20)
-xlabel(ax,ptext,'fontsize',20)
+end
 
 %% Stouffer's Z-score
-z = sum(all_zs)/sqrt(length(all_zs));
+% This tests whether the correlation goes in the same direction across
+% patients and is significant in aggregate (regardless of whether it is
+% larger than at other times)
+z = nansum(all_zs(:,2))/sqrt(sum(~isnan(all_zs(:,2))));
 
-% get two sided p-value
+% get two sided p-value from the combined z score
 pval = 2*normcdf(-abs(z));
 
-% get r back
-r = tanh(z);
+% get r back by averaging the z's and z-to-r transforming. Do weighted
+% average by sample size
+r = tanh(nansum(all_zs(:,1).*all_zs(:,5))./nansum(all_zs(:,5)));
 fprintf('\nCombined r = %1.2f, p = %1.3f\n',r,pval);
+
+%% Fisher's test to combine pvals
+% This tests whether, in aggregate, the revision time has a
+% disproportionately higher correlation relative to other times (regardless
+% of whether the direction is different across patients)
+X_2 = -2 * nansum(log(all_zs(:,4)));
+sum_p = 1-chi2cdf(X_2,2*sum(~isnan(all_zs(:,4))));
+fprintf('\nFisher combined p = %1.3f\n',sum_p);
+
+
+%% Plot aggregate statistics
+nexttile([1 5])
+plot(all_zs(:,3),'o','markersize',20,'linewidth',2)
+hold on
+ylim([-1 1])
+plot(xlim,[0 0],'k--')
+yl = ylim;
+xl = xlim;
+text(xl(1)+0.8*(xl(2)-xl(1)),yl(1)+0.9*(yl(2)-yl(1)),...
+    sprintf('Combined r = %1.2f\np = %1.3f',r,pval),'fontsize',15)
+xticklabels([])
+xlabel('Patient')
+ylabel('Correlation coefficient')
+set(gca,'fontsize',15)
+
+
+%% Plot individual statistics
+for i = 1:length(whichPts)
+    axes(axesi(i))
+    xl = xlim;
+    yl = ylim;
+    xpos = xl(1)+0.5*(xl(2)-xl(1));
+    ypos = yl(1) + 0.9*(yl(2)-yl(1));
+    text(xpos,ypos,sprintf('r = %1.2f\nMC p = %1.3f',all_zs(i,3),all_zs(i,4)),'fontsize',15)
+end
+
+%ylabel(ax,rtext,'fontsize',20)
+%xlabel(ax,ptext,'fontsize',20)
+print(gcf,[main_spike_results,which_resp,'_',which_pred],'-dpng')
+
 
 end
 
 
-function [true_rho,pval] = mc_corr(rate,predictor,cblock,surround,nb,which_rate)
+function [true_rho,pval] = mc_corr(rate,ns,predictor,cblock,surround,nb,which_resp,corr_type)
 
 nblocks = size(rate,2);
 
@@ -139,14 +229,18 @@ pre = cblock-surround:cblock - 1;
 post = cblock + 1: cblock+surround;
 
 % Calculate change in rate
-switch which_rate
-    case 'abs'
-        rate_change = nanmean(rate(:,post),2) - nanmean(rate(:,pre),2);
-    case 'rel'
-        rate_change = (nanmean(rate(:,post),2) - nanmean(rate(:,pre),2))./nanmean(rate(:,pre),2);
+switch which_resp
+    case 'abs_rate'
+        resp = nanmean(rate(:,post),2) - nanmean(rate(:,pre),2);
+    case 'rel_rate'
+        resp = (nanmean(rate(:,post),2) - nanmean(rate(:,pre),2))./nanmean(rate(:,pre),2);
+    case 'ns'
+        resp = nanmean(ns(:,post),2) - nanmean(ns(:,pre),2);
+    case 'ns_rel'
+        resp = (nanmean(ns(:,post),2) - nanmean(ns(:,pre),2))./nanmean(ns(:,pre),2);
 end
 
-true_rho = corr(rate_change,predictor,'Type','Pearson','rows','pairwise');
+true_rho = corr(resp,predictor,'Type',corr_type,'rows','pairwise');
 
 mc_rho = nan(nb,1);
 for ib = 1:nb
@@ -158,14 +252,18 @@ for ib = 1:nb
     fpre = fchange-surround:fchange-1;
     fpost = fchange+1:fchange+surround;
     
-    switch which_rate
-        case 'abs'
-            rate_change = nanmean(rate(:,fpost),2) - nanmean(rate(:,fpre),2);
-        case 'rel'
-            rate_change = (nanmean(rate(:,fpost),2) - nanmean(rate(:,fpre),2))./nanmean(rate(:,fpre),2);
+    switch which_resp
+        case 'abs_rate'
+            resp = nanmean(rate(:,fpost),2) - nanmean(rate(:,fpre),2);
+        case 'rel_rate'
+            resp = (nanmean(rate(:,fpost),2) - nanmean(rate(:,fpre),2))./nanmean(rate(:,fpre),2);
+        case 'ns'
+            resp = nanmean(ns(:,fpost),2) - nanmean(ns(:,fpre),2);
+        case 'ns_rel'
+            resp = (nanmean(ns(:,fpost),2) - nanmean(ns(:,fpre),2))./nanmean(ns(:,fpre),2);
     end
     
-    mc_rho(ib) = corr(rate_change,predictor,'Type','Pearson','rows','pairwise');
+    mc_rho(ib) = corr(resp,predictor,'Type',corr_type,'rows','pairwise');
     
 end
 
@@ -174,6 +272,18 @@ end
 num_as_sig = sum(abs(mc_rho) >= abs(true_rho)); % those more positive or more negative
 
 pval = (num_as_sig+1)/(nb+1);
+
+if isnan(true_rho)
+    pval = nan;
+end
+
+if 0
+    figure
+    plot(sort(mc_rho))
+    hold on
+    plot(xlim,[true_rho true_rho])
+    title(sprintf('%1.3f',pval))
+end
 
 
 end

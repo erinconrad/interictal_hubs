@@ -8,6 +8,7 @@ nchs = (1+sqrt(1+8*size(net,1)))/2;
 %% initialize
 ns_norm = nan(nchs,nblocks);
 ge = nan(1,nblocks);
+all_mat = nan(nchs,nchs,nblocks);
 
 %% Loop over blocks
 for ib = 1:nblocks
@@ -31,9 +32,13 @@ for ib = 1:nblocks
     E = efficiency_wei(mat,0);
     ge(ib) = E;
     
+    % all mat
+    all_mat(:,:,ib) = mat;
+    
 end
 
 out.ns_norm = ns_norm;
 out.ge = ge;
+out.avg_mat = nanmean(all_mat,3);
 
 end

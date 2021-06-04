@@ -26,7 +26,10 @@ upper = m + st;
 lower = m - st;
 in_between = [upper, fliplr(lower)];
 x2 = [times,fliplr(times)];
-stp = fill(x2, in_between,color,'linestyle','none');
+
+nan_idx = isnan(in_between) | isnan(x2);
+
+stp = fill(x2(~nan_idx), in_between(~nan_idx),color,'linestyle','none');
 alpha(stp,0.4);
 
 end

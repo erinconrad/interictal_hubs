@@ -220,4 +220,31 @@ out.fs = fs;
 out.block_dur = block_dur;
 out.run_dur = run_dur;
 
+%% Add cospike index
+% I am defining the co-spike index to be the number of times an unchanged
+% channel co-spikes with at least one added channel divided by the total
+% number of spikes on that channel. This should have a range between 0 and
+% 1 for each channel.
+cosi = nanmean(all_cos./rate_post,2);
+out.cosi = cosi;
+
+%% Get pc details
+metrics = get_pc_details(p);
+out.metrics = metrics;
+
+%% Example plot
+if 0
+    figure
+    tiledlayout(1,3)
+    
+    nexttile
+    plot(dist,cosi,'o')
+    
+    nexttile
+    plot(dist,metrics.added_pc,'o')
+    
+    nexttile
+    plot(cosi,metrics.added_pc,'o')
+end
+
 end

@@ -7,9 +7,10 @@ electrode for all patients
 %}
 
 %% Parameters
-surround = 48;
+surround = 24*2;
+do_save = 1;
 nb = 1e4;
-pl_surround = 96;
+%pl_surround = 48*3;
 
 %% Locations
 locations = interictal_hub_locations;
@@ -52,7 +53,7 @@ tiledlayout(2,2,'TileSpacing','compact','padding','compact')
 
 %% Example spike rate raster
 nexttile
-p = 1;
+p = 4;
 rate_raster = out(p).rate./out(p).run_dur;
 % Remove EKG and scalp electrodes
 ekg = identify_ekg_scalp(out(p).unchanged_labels);
@@ -74,10 +75,48 @@ ylabel(c,'Spikes/min','fontsize',20)
 
 %% Example node strength raster
 nexttile
+p = 4;
+ns_raster = out(p).metrics.ns_norm;
+% Remove EKG and scalp electrodes
+ekg = identify_ekg_scalp(out(p).unchanged_labels);
+ns_raster(ekg,:) = [];
+curr_times = (1:size(ns_raster,2)) * out(p).block_dur;
+curr_change = out(p).change_block*out(p).block_dur;
+h = turn_nans_white(ns_raster);
+set(h,'XData',[0:curr_times(end)]);
+xlim([0 curr_times(end)])
+hold on
+cp = plot([curr_change curr_change],ylim,'r--','linewidth',3);
+xlabel('Hour')
+legend(cp,'Revision','fontsize',20,'location','southeast')
+yticklabels([])
+ylabel('Electrode')
+set(gca,'fontsize',20)
+c = colorbar;
+ylabel(c,'Normalized node strength','fontsize',20)
 
 %% Rate order stability
 nexttile
-all_ros = nan(length(whichPts),pl_surround*2+1);
+
+% Get full surround time
+max_time_before = 0;
+max_time_after = 0;
+for i = 1:length(whichPts)
+    ntotal = size(out(i).rate,2);
+    cblock = out(i).change_block;
+    nbefore = cblock-1;
+    nafter = ntotal-cblock;
+    if nbefore > max_time_before
+        max_time_before = nbefore;
+    end
+    if nafter > max_time_after
+        max_time_after = nafter;
+    end
+end
+
+%all_ros = nan(length(whichPts),pl_surround*2+1);
+all_ros = nan(length(whichPts),max_time_before+max_time_after+1);
+mid_pos = max_time_before+1;
 all_ps = nan(length(whichPts),1);
 for i = 1:length(whichPts)
     rate = out(i).rate;
@@ -88,19 +127,36 @@ for i = 1:length(whichPts)
     rate(ekg,:) = [];
     
     % Take mean over pre-revision period
-    first_rate = nanmean(rate(:,cblock-pl_surround:cblock-1),2);
-    nblocks = pl_surround*2+1;
+    %first_period = max(1,cblock-pl_surround):cblock-1;
+    first_period = 1:cblock-1;
+    first_rate = nanmean(rate(:,first_period),2);
+    %nblocks = pl_surround*2+1;
        
     % Get rate order stability
+    %{
     ros = nan(nblocks,1);
     hcount = 0;
-    for h = cblock-pl_surround:cblock+pl_surround
+    period = max(1,cblock-pl_surround):min(cblock+pl_surround,size(rate,2));
+    for h = period
         hcount = hcount + 1;
         ros(hcount) = corr(first_rate,rate(:,h),'Type','Spearman','rows','pairwise');
     end
     
     % put it in the cell
     all_ros(i,:) = ros;
+    %}
+    
+    ros = nan(size(rate,2),1);
+    for h = 1:size(rate,2)
+        ros(h) = corr(first_rate,rate(:,h),'Type','Spearman','rows','pairwise');
+    end
+    
+    % Put it at the correct position in the larger array. If it's the one
+    % with the latest cblock, then we can start filling it up at the first
+    % position. If it has an earlier cblock, then we need to pad the
+    % beginning
+    pos_off = mid_pos - cblock;
+    all_ros(i,1+pos_off:length(ros)+pos_off) = ros;
     
     % do a ros permutation test to see whether the pre-post change is
     % larger than expected for randomly chosen times
@@ -113,26 +169,108 @@ end
 X_2 = -2 * sum(log(all_ps));
 sum_p = 1-chi2cdf(X_2,2*length(all_ps));
 
-% Plot the times
-times = -pl_surround:pl_surround;
+% Find the times in which at least 2 are non nans
 m = nanmean(all_ros,1);
 st = nanstd(all_ros,[],1);
+
+two_non_nans = sum(~isnan(all_ros),1)>=2;
+times = -max_time_before:max_time_after;
+times(~two_non_nans) = [];
+m(~two_non_nans) = [];
+st(~two_non_nans) = [];
+
+
 [mp,stp] = shaded_error_bars(times,m,st,[]);
 hold on
 set(gca,'fontsize',20)
 xlabel('Hours surrounding revision')
-ylabel('Rate order stability')
+ylabel('Spike rate consistency')
 yl = get(gca,'ylim');
 ylim([yl(1) yl(1) + 1.11*(yl(2)-yl(1))])
-plot([0 0],[yl(1) 0.98*(yl(2)-yl(1))],'r--','linewidth',3)
-plot([-surround surround],[1.01*(yl(2)-yl(1)) 1.01*(yl(2)-yl(1))],'k-','linewidth',2)
-text(0,1.03*(yl(2)-yl(1)),get_asterisks(sum_p,1),...
+plot([0 0],[yl(1) yl(1)+0.98*(yl(2)-yl(1))],'r--','linewidth',3)
+plot([-surround surround],[yl(1)+1.01*(yl(2)-yl(1)) yl(1)+1.01*(yl(2)-yl(1))],'k-','linewidth',2)
+text(0,yl(1)+1.03*(yl(2)-yl(1)),get_asterisks(sum_p,1),...
     'horizontalalignment','center','fontsize',30)
 
 xlim([times(1) times(end)])
 
 %% NS order stability
 nexttile
+all_ros = nan(length(whichPts),max_time_before+max_time_after+1);
+all_ps = nan(length(whichPts),1);
+for i = 1:length(whichPts)
+    if isempty(out(i).metrics)
+        ns = nan(size(out(i).rate));
+    else
+        ns = out(i).metrics.ns_norm;
+    end
+    cblock = out(i).change_block;
+    
+    % Remove EKG and scalp electrodes
+    ekg = identify_ekg_scalp(out(i).unchanged_labels);
+    ns(ekg,:) = [];
+    
+    % Take mean over pre-revision period
+    first_period = 1:cblock-1;
+    first_ns = nanmean(ns(:,first_period),2);
+    
+    %{
+    nblocks = pl_surround*2+1;
+       
+    % Get rate order stability
+    ros = nan(nblocks,1);
+    hcount = 0;
+    for h = cblock-pl_surround:cblock+pl_surround
+        hcount = hcount + 1;
+        ros(hcount) = corr(first_ns,ns(:,h),'Type','Spearman','rows','pairwise');
+    end
+    
+    % put it in the cell
+    all_ros(i,:) = ros;
+    %}
+    
+    ros = nan(size(ns,2),1);
+    for h = 1:size(ns,2)
+        ros(h) = corr(first_ns,ns(:,h),'Type','Spearman','rows','pairwise');
+    end
+
+    pos_off = mid_pos - cblock;
+    all_ros(i,1+pos_off:length(ros)+pos_off) = ros;
+    
+    % do a ros permutation test to see whether the pre-post change is
+    % larger than expected for randomly chosen times
+    pval_curr = compare_rhos(ns,cblock,surround,nb);
+    all_ps(i) = pval_curr;
+    
+end
+
+% Fisher test to combine pvalues
+X_2 = -2 * nansum(log(all_ps));
+sum_p = 1-chi2cdf(X_2,2*sum(~isnan(all_ps)));
+
+% Find the times in which at least 2 are non nans
+m = nanmean(all_ros,1);
+st = nanstd(all_ros,[],1);
+
+two_non_nans = sum(~isnan(all_ros),1)>=2;
+times = -max_time_before:max_time_after;
+times(~two_non_nans) = [];
+m(~two_non_nans) = [];
+st(~two_non_nans) = [];
+
+[mp,stp] = shaded_error_bars(times,m,st,[0.8500, 0.3250, 0.0980]);
+hold on
+set(gca,'fontsize',20)
+xlabel('Hours surrounding revision')
+ylabel('Node strength consistency')
+yl = get(gca,'ylim');
+ylim([yl(1) yl(1) + 1.11*(yl(2)-yl(1))])
+plot([0 0],[yl(1) yl(1)+0.98*(yl(2)-yl(1))],'r--','linewidth',3)
+plot([-surround surround],[yl(1)+1.01*(yl(2)-yl(1)) yl(1)+1.01*(yl(2)-yl(1))],'k-','linewidth',2)
+text(0,yl(1)+1.03*(yl(2)-yl(1)),get_asterisks(sum_p,1),...
+    'horizontalalignment','center','fontsize',30)
+
+xlim([times(1) times(end)])
 
 %% Spikiest electrode stability
 %{
@@ -193,5 +331,10 @@ text(0,1.03*(yl(2)-yl(1)),get_asterisks(sum_p,1),...
 xlim([times(1) times(end)])
 
 %}
+
+if do_save == 1
+    print(gcf,[main_spike_results,'Fig2'],'-dpng')
+    print(gcf,[main_spike_results,'Fig2'],'-depsc')
+end
 
 end

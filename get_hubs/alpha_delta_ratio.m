@@ -1,12 +1,10 @@
-function pc_networks(whichPts)
+function alpha_delta_ratio(whichPts)
 
 %% Parameters
 overwrite = 0;
 test.do_test = 0;
 do_plot = 0;
 do_save = 1;
-
-tw = 2; % 2 second calculations
 
 %% Test parameters
 test.pt = 20;%111;
@@ -25,7 +23,7 @@ ieeg_folder = locations.ieeg_folder;
 addpath(genpath(ieeg_folder));
 pwfile = locations.ieeg_pw_file;
 login_name = locations.ieeg_login;
-out_folder = [results_folder,'pc/'];
+out_folder = [results_folder,'ad/'];
 
 if exist(out_folder,'dir') == 0
     mkdir(out_folder);
@@ -56,20 +54,20 @@ for i = 1:length(whichPts)
         p = whichPts(i);
         name = pt(p).name;
         
-        out_file = [name,'_pc.mat'];
+        out_file = [name,'_ad.mat'];
         
         %% Throw warning if there is missing seizure data
         all_missed = check_for_missing_szs(pt,p);
         if all_missed == 1, fprintf('Missing seizure data, make sure you add this'); end
-
+        
         %% Load the existing pc structure if it exists
         if overwrite == 0 && exist([out_folder,out_file],'file') ~= 0
-            pc = load([out_folder,out_file]);
-            pc = pc.pc;
+            ad = load([out_folder,out_file]);
+            ad = ad.ad;
 
             % find the last block we have finished
-            next_file = pc.next_file;
-            next_block = pc.next_block;
+            next_file = ad.next_file;
+            next_block = ad.next_block;
 
             if isnan(next_file)
                 fprintf('\nAlready finished %s, skipping...\n',name);
@@ -77,32 +75,32 @@ for i = 1:length(whichPts)
             end
         else
             % initialize it
-            clear pc % I must clear this 
+            clear ad % I must clear this 
             next_file = 1;
             next_block = 1;
-            pc.name = name;
+            ad.name = name;
 
         end
+    end
         
-    end
-    
-    %% identify the correct index of the localization structure
-    for loc_p = 1:length(loc)
-        if strcmp(loc(loc_p).patient,name) == 1
-            break
+        %% identify the correct index of the localization structure
+        for loc_p = 1:length(loc)
+            if strcmp(loc(loc_p).patient,name) == 1
+                break
+            end
         end
-    end
-    
-    % Get clean loc labels
-    clean_loc_labs = clean_labels_2(loc(loc_p).labels);
-    
-    % Loop over ieeg files
-    if isempty(pt(p).ieeg)
-        n_files = 0;
-    else
-        n_files = length(pt(p).ieeg.file);
-    end
-    for f = next_file:n_files
+
+        % Get clean loc labels
+        clean_loc_labs = clean_labels_2(loc(loc_p).labels);
+
+        % Loop over ieeg files
+        if isempty(pt(p).ieeg)
+            n_files = 0;
+        else
+            n_files = length(pt(p).ieeg.file);
+        end
+        
+        for f = next_file:n_files
         
         if test.do_test == 1
             f = test.file;
@@ -134,6 +132,7 @@ for i = 1:length(whichPts)
         % Loop over blocks
         n_blocks = length(pt(p).ieeg.file(f).block);
         for h = next_block:n_blocks
+            
             tic;
             fprintf('\nDoing %s file %d block %d of %d\n',name,f,h,n_blocks);
             
@@ -166,7 +165,7 @@ for i = 1:length(whichPts)
                         which_chs = test.ch;
                     end
                 else
-
+                    
                     % I have already designated channels to run about at the
                     % file level
                 end
@@ -207,44 +206,34 @@ for i = 1:length(whichPts)
                     % find those that match pre-existing labels 
                     pre_existing_idx = find(ismember(curr_labels,pre_existing_labels));
                     
-                    old_values = values;
+                    
                     values = new_pre_process(values,pre_existing_idx); % define car according to preexisting only
                     %values = new_pre_process(values,1:size(values,2));
                     
                     %% Do filters
-                    values = do_filters(values,fs);
+                    % No, don't
                     
-                    %% Do PC
-                    pc_out = calc_pc(values,fs,tw);
+                    %% Get AD ratio
+                    ad_rat = calc_ad(values,fs);
                     run_labels = clean_labs(run_chs);
                     
                 end
-                
+                    
                 %% Run details
                 t = toc;
                 fprintf('\nTook %1.1f s\n',t);
                 fprintf('Of %d non-skipped chs, rejected %d for nans, %d for zeros,\n%d for variance, %d for noise, %d for std.\n',...
                     length(non_skip),length(bad_details.nans),length(bad_details.zeros),length(bad_details.var),...
                     length(bad_details.noisy),length(bad_details.higher_std));
-                
-                %% Example plot              
+
+
                 if do_plot
-                    pc_uw = wrap_or_unwrap_adjacency(pc_out);
                     figure
-                    imagesc(pc_uw)
-                    xticks(1:size(pc_uw,2));
-                    yticks(1:size(pc_uw,2));
-                    yticklabels(run_labels)
-                    xticklabels(run_labels);
-                    colorbar
+                    plot(sort(ad_rat))
                     pause
                     close(gcf)
-                    
                 end
-                
-                if 0
-                    show_eeg_and_spikes(values,clean_labs,[],dur,run_times(1),name,fs,bad,skip,[]);
-                end
+            
             else
                 
                 bad = [];
@@ -254,20 +243,22 @@ for i = 1:length(whichPts)
                 run_chs = [];
                 run_labels = {};
                 details = [];
+                ad_rat = [];
+                
                 
             end
             
-            %% Add pc matrix to structure
-            pc.file(f).block(h).run_times = run_times;
-            pc.file(f).block(h).fs = fs;
-            pc.file(f).block(h).chLabels = chLabels;
-            pc.file(f).block(h).bad = bad;
-            pc.file(f).block(h).run_skip = run_skip;
-            pc.file(f).block(h).bad_details = bad_details;
-            pc.file(f).block(h).skip = skip;
-            pc.file(f).block(h).run_chs = run_chs;
-            pc.file(f).block(h).run_labels = run_labels;
-            pc.file(f).block(h).pc = pc_out;
+            %% Add alpha delta ratio to structure
+            ad.file(f).block(h).run_times = run_times;
+            ad.file(f).block(h).fs = fs;
+            ad.file(f).block(h).chLabels = chLabels;
+            ad.file(f).block(h).bad = bad;
+            ad.file(f).block(h).run_skip = run_skip;
+            ad.file(f).block(h).bad_details = bad_details;
+            ad.file(f).block(h).skip = skip;
+            ad.file(f).block(h).run_chs = run_chs;
+            ad.file(f).block(h).run_labels = run_labels;
+            ad.file(f).block(h).ad = ad_rat;
             
             %% Mark the next block
             if h == n_blocks
@@ -279,17 +270,21 @@ for i = 1:length(whichPts)
             else
                 next_block = h + 1;     
             end
-            pc.next_file = next_file;
-            pc.next_block = next_block;
+            ad.next_file = next_file;
+            ad.next_block = next_block;
             
             %% Save structure
             if test.do_test == 0 && do_save == 1
-                save([out_folder,out_file],'pc');
+                save([out_folder,out_file],'ad');
             end
-            
+                
             
         end
-        
-    end
+
+
+        end
+    
+end
 
 end
+    
