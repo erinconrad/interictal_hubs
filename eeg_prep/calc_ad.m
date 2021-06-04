@@ -7,7 +7,7 @@ for ich = 1:nchs
     X = values(:,ich);
     
     % turn any nans into the mean of the signal
-    X(nan(X)) = nanmean(X);
+    X(isnan(X)) = nanmean(X);
     
     % subtract mean
     X = X - mean(X);
