@@ -1,11 +1,11 @@
 function new_spikes(whichPts)
 
 %% Parameters
-overwrite = 1;
-test.do_test = 1;
-do_plot = 1;
-plot_spikes = 1;
-do_save = 0;
+overwrite = 0;
+test.do_test = 0;
+do_plot = 0;
+plot_spikes = 0;
+do_save = 1;
 
 %% Test parameters
 test.pt = 111;
