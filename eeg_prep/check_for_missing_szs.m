@@ -2,6 +2,13 @@ function all_missed = check_for_missing_szs(pt,p)
 
 all_missed = 0;
 
+for f = 1:length(pt(p).ieeg.file)
+    if ~isfield(pt(p).ieeg.file(f),'sz')
+        all_missed = 1;
+    end
+    
+end
+%{
 if isempty(pt(p).seizure_info)
     all_missed = 1;
     return;
@@ -20,5 +27,6 @@ if num_missing == length(pt(p).seizure_info.sz)
     all_missed = 1;
     return;
 end
+%}
 
 end

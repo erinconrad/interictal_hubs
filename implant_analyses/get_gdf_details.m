@@ -232,6 +232,10 @@ out.cosi = cosi;
 metrics = get_pc_details(p);
 out.metrics = metrics;
 
+%% Get ad details
+ad = get_ad_details(p);
+out.ad = ad;
+
 %% Example plot
 if 0
     figure

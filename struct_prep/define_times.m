@@ -3,7 +3,7 @@ block = 60*30; % check every 30 minutes
 mini_block = 60*5; % 5 minute block every thirty minutes;
 
 %% Be very careful about changing this
-overwrite = 0; % overwrite if already exists? Would really screw up spike detections I already did
+overwrite = 1; % overwrite if already exists? Would really screw up spike detections I already did
 
 %% Get file locs
 locations = interictal_hub_locations;
@@ -27,12 +27,13 @@ for i = 1:length(whichPts)
         fprintf('\nDoing %s\n',name);
     end
     
-    
+    %{
     if isempty(pt(p).seizure_info)
         szs = [];
     else
         szs = pt(p).seizure_info.sz;
     end
+    %}
     
     
     if isempty(pt(p).ieeg), continue; end
@@ -42,6 +43,9 @@ for i = 1:length(whichPts)
 
         % get duration
         dur = pt(p).ieeg.file(f).duration;
+        
+        % Get seizure times
+        szs = all_sz_times_in_file(pt,p,f);
 
         % Split duration into chunks
         nblocks = ceil(dur/1e6/block); % 1e6 because duration is in microseconds
@@ -55,15 +59,17 @@ for i = 1:length(whichPts)
             pt(p).ieeg.file(f).block(b).end = be(b);
             pt(p).ieeg.file(f).block(b).spikes = [];
             
+            
             % See if the entire block is included in a seizure time, in
             % which case we need to skip the block!
             all_inside = 0;
-            [~,all_inside] = intersect_sz_time([bs(b) be(b)],szs);
+            %[~,all_inside] = intersect_sz_time([bs(b) be(b)],szs);
+            [~,all_inside] = new_intersect_sz_time([bs(b) be(b)],szs);
             if all_inside == 1
                 run = [];
             else
             
-                % pick a random minute in the ten-minute long block
+                % pick a random five minutes in the thirty-minute long block
                 while 1
                     s = randi([0 block-mini_block]);
 
@@ -73,7 +79,9 @@ for i = 1:length(whichPts)
                     run = [start_time,end_time];
 
                     % check if it intersects any of the seizure times
-                    int = intersect_sz_time(run,szs);
+                    %int = intersect_sz_time(run,szs);
+                    int = new_intersect_sz_time(run,szs);
+                    
                     if int == 0
                         break
                     end
