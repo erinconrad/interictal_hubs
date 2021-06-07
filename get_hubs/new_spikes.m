@@ -65,7 +65,7 @@ for i = 1:length(whichPts)
         
         %% Throw warning if there is missing seizure data
         all_missed = check_for_missing_szs(pt,p);
-        if all_missed == 1, fprintf('Missing seizure data, make sure you add this'); end
+        if all_missed == 1, error('Missing seizure data, make sure you add this'); end
 
         %% Load the existing spike structure if it exists
         if overwrite == 0 && exist([sp_folder,out_file],'file') ~= 0
