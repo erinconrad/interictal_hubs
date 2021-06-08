@@ -46,6 +46,8 @@ end
 %% Initialize things
 b_count = 0;
 all_ad = nan(length(unchanged),nb);
+bdur = pt(p).ieeg.file(1).block(1).end - pt(p).ieeg.file(1).block(1).start;
+bdur = bdur/3600; %convert to hours
 % Loop over files
 for f = 1:last_file
 
@@ -97,18 +99,49 @@ for f = 1:last_file
 
 end
 
-if 1
-    figure
-    tiledlayout(2,1)
-    nexttile
-    turn_nans_white(all_ad)
-    hold on
-    plot([change_block change_block],ylim,'r--','linewidth',3)
+times = 1:size(all_ad,2);
+times = times*bdur;
+change_block = change_block*bdur;
+
+if 0
     
-    nexttile
-    plot(nanmean(all_ad,1))
+    figure
+    set(gcf,'position',[100 100 1000 600])
+    tiledlayout(2,2)
+    
+    %% Alpha delta ratio
+    nexttile([1 2])
+    plot(times,nanmean(all_ad,1),'linewidth',2)
     hold on
     plot([change_block change_block],ylim,'r--','linewidth',3)
+    ylabel('Alpha-delta ratio')
+    xlabel('Hour');
+    
+    %% PSD
+    nexttile
+    mean_ad = nanmean(all_ad,1);
+    mean_ad(isnan(mean_ad)) = nanmedian(mean_ad);
+    mean_ad = mean_ad - mean(mean_ad);
+    X = mean_ad;
+    Y = fft(X);
+    P = abs(Y).^2;
+    fs = 1/bdur;
+    freqs = linspace(0,fs,length(P)+1);
+    freqs = freqs(1:end-1);
+    P = P(1:ceil(length(P)/2)); % Take first half
+    freqs = freqs(1:ceil(length(freqs)/2));
+    P = P(1./freqs<100);
+    freqs = freqs(1./freqs<100);
+    plot(1./freqs,P,'linewidth',2);
+    xlabel('Period (hours)')
+    ylabel('Power');
+    
+    %% Wavelet power
+    nexttile
+    [cfs,periods] = cwt(X,hours(bdur));
+    plot(periods,sqrt(nanmean((abs(cfs)).^2,2)),'linewidth',2)
+    xlabel('Period (hours)')
+    ylabel('Magnitude')
     pause
     close(gcf)
     
