@@ -1,4 +1,4 @@
-function ros_all_pts(whichPts,saved_out)
+function network_change(whichPts,saved_out)
 
 %{
 Generates Figure 2 for implant effect paper -> raster plot for a single
@@ -7,15 +7,10 @@ electrode for all patients
 %}
 
 %% Parameters
-surround = 24*1;
+surround = 24*2;
 do_save = 1;
 nb = 1e4;
-do_rel = 0;
-ex_p = 5;
-
-%% Decide whether to do this!!
-only_pre = 0; % for the MC analysis, compare to only the pre-revision times (in case the revision effect is delayed)
-
+%pl_surround = 48*3;
 
 %% Locations
 locations = interictal_hub_locations;
@@ -53,12 +48,12 @@ end
 
 %% Initialize figure
 figure
-set(gcf,'position',[100 100 800 700])
-tiledlayout(3,2,'TileSpacing','tight','padding','compact')
+set(gcf,'position',[100 100 1001 550])
+tiledlayout(3,2,'TileSpacing','compact','padding','compact')
 
 %% Example spike rate raster
 nexttile
-p = ex_p;
+p = 4;
 rate_raster = out(p).rate./out(p).run_dur;
 % Remove EKG and scalp electrodes
 ekg = identify_ekg_scalp(out(p).unchanged_labels);
@@ -71,42 +66,34 @@ xlim([0 curr_times(end)])
 hold on
 cp = plot([curr_change curr_change],ylim,'r--','linewidth',3);
 xlabel('Hour')
-%legend(cp,'Revision','fontsize',20,'location','southeast')
+legend(cp,'Revision','fontsize',20,'location','southeast')
 yticklabels([])
 ylabel('Electrode')
 set(gca,'fontsize',20)
-c = colorbar('location','northoutside');
+c = colorbar;
 ylabel(c,'Spikes/min','fontsize',20)
 
 %% Example node strength raster
 nexttile
-p = ex_p;
+p = 4;
 ns_raster = out(p).metrics.ns_norm;
-
-% Remove bad electrodes per ns
-rate_raster = out(p).rate;
-ns_raster(isnan(rate_raster)) = nan;
-
 % Remove EKG and scalp electrodes
 ekg = identify_ekg_scalp(out(p).unchanged_labels);
 ns_raster(ekg,:) = [];
-
-
-
 curr_times = (1:size(ns_raster,2)) * out(p).block_dur;
 curr_change = out(p).change_block*out(p).block_dur;
-h = turn_nans_white((ns_raster));
+h = turn_nans_white(ns_raster);
 set(h,'XData',[0:curr_times(end)]);
 xlim([0 curr_times(end)])
 hold on
 cp = plot([curr_change curr_change],ylim,'r--','linewidth',3);
 xlabel('Hour')
-%legend(cp,'Revision','fontsize',20,'location','southeast')
+legend(cp,'Revision','fontsize',20,'location','southeast')
 yticklabels([])
-%ylabel('Electrode')
+ylabel('Electrode')
 set(gca,'fontsize',20)
-c = colorbar('location','northoutside');
-ylabel(c,'Normalized NS','fontsize',20)
+c = colorbar;
+ylabel(c,'Normalized node strength','fontsize',20)
 
 %% Histogram of rate change for all electrodes, all patients
 nexttile
@@ -122,20 +109,15 @@ for i = 1:npts
     %post = cblock+1:cblock+surround;
     rate_pre = nanmean(rate(:,pre),2);
     rate_post = nanmean(rate(:,post),2);
-    if do_rel
-        rate_diff = (rate_post-rate_pre)./rate_pre;
-    else
-        rate_diff = rate_post-rate_pre;
-    end
+    rate_diff = rate_post-rate_pre;
     unchanged_labels = out(i).unchanged_labels;
     ekg = identify_ekg_scalp(unchanged_labels);
     rate_diff = rate_diff(~ekg);
     all_rate_diff = [all_rate_diff;rate_diff];
 end
 histogram(all_rate_diff);
-ylabel('# electrodes')
-xlabel('Spike rate change (spikes/min)')
-set(gca,'fontsize',20)
+ylabel('Number of electrodes')
+xlabel('Peri-revision spike rate change (spikes/min)')
 
 %% Histogram of node strength change for all electrodes, all patients
 nexttile
@@ -152,25 +134,20 @@ for i = 1:npts
     
     ns_pre = nanmean(ns(:,pre),2);
     ns_post = nanmean(ns(:,post),2);
-    if do_rel
-        ns_diff = (ns_post-ns_pre)./ns_pre;
-    else
-        ns_diff = ns_post-ns_pre;
-    end
+    ns_diff = ns_post-ns_pre;
     unchanged_labels = out(i).unchanged_labels;
     ekg = identify_ekg_scalp(unchanged_labels);
     ns_diff = ns_diff(~ekg);
     all_ns_diff = [all_ns_diff;ns_diff];
 end
 histogram(all_ns_diff);
-xlabel('NS change')
-%ylabel('Number of electrodes')
-set(gca,'fontsize',20)
+xlabel('Peri-revision node strength change')
+ylabel('Number of electrodes')
 
 %% Rate order stability
 nexttile
 
-% Get full surround time for plotting
+% Get full surround time
 max_time_before = 0;
 max_time_after = 0;
 for i = 1:length(whichPts)
@@ -203,10 +180,13 @@ for i = 1:length(whichPts)
     first_period = 1:cblock-1;
     first_rate = nanmean(rate(:,first_period),2);
     %nblocks = pl_surround*2+1;
-    
+       
+    % Get network diff
     ros = nan(size(rate,2),1);
     for h = 1:size(rate,2)
-        ros(h) = corr(first_rate,rate(:,h),'Type','Spearman','rows','pairwise');
+        rate_diff = first_rate - rate(:,h);
+        rate_diff(isnan(rate_diff)) = [];
+        ros(h) = vecnorm(rate_diff);
     end
     
     % Put it at the correct position in the larger array. If it's the one
@@ -218,7 +198,7 @@ for i = 1:length(whichPts)
     
     % do a ros permutation test to see whether the pre-post change is
     % larger than expected for randomly chosen times
-    pval_curr = compare_rhos(rate,cblock,surround,nb,only_pre);
+    pval_curr = compare_vecs(rate,cblock,surround,nb);
     all_ps(i) = pval_curr;
     
 end
@@ -242,7 +222,7 @@ st(~two_non_nans) = [];
 hold on
 set(gca,'fontsize',20)
 xlabel('Hours surrounding revision')
-ylabel('Spike stability')
+ylabel('Spike rate consistency')
 yl = get(gca,'ylim');
 ylim([yl(1) yl(1) + 1.11*(yl(2)-yl(1))])
 plot([0 0],[yl(1) yl(1)+0.98*(yl(2)-yl(1))],'r--','linewidth',3)
@@ -289,7 +269,9 @@ for i = 1:length(whichPts)
     
     ros = nan(size(ns,2),1);
     for h = 1:size(ns,2)
-        ros(h) = corr(first_ns,ns(:,h),'Type','Spearman','rows','pairwise');
+        ns_diff = first_ns - ns(:,h);
+        ns_diff(isnan(ns_diff)) = [];
+        ros(h) = vecnorm(ns_diff);
     end
 
     pos_off = mid_pos - cblock;
@@ -297,7 +279,7 @@ for i = 1:length(whichPts)
     
     % do a ros permutation test to see whether the pre-post change is
     % larger than expected for randomly chosen times
-    pval_curr = compare_rhos(ns,cblock,surround,nb,only_pre);
+    pval_curr = compare_vecs(ns,cblock,surround,nb);
     all_ps(i) = pval_curr;
     
 end
@@ -320,7 +302,7 @@ st(~two_non_nans) = [];
 hold on
 set(gca,'fontsize',20)
 xlabel('Hours surrounding revision')
-ylabel('NS stability')
+ylabel('Node strength consistency')
 yl = get(gca,'ylim');
 ylim([yl(1) yl(1) + 1.11*(yl(2)-yl(1))])
 plot([0 0],[yl(1) yl(1)+0.98*(yl(2)-yl(1))],'r--','linewidth',3)
@@ -389,16 +371,6 @@ text(0,1.03*(yl(2)-yl(1)),get_asterisks(sum_p,1),...
 xlim([times(1) times(end)])
 
 %}
-
-%% Add annotations
-annotation('textbox',[0 0.9 0.1 0.1],'String','A','fontsize',30,'linestyle','none')
-annotation('textbox',[0.53 0.9 0.1 0.1],'String','B','fontsize',30,'linestyle','none')
-annotation('textbox',[0 0.55 0.1 0.1],'String','C','fontsize',30,'linestyle','none')
-annotation('textbox',[0.53 0.55 0.1 0.1],'String','D','fontsize',30,'linestyle','none')
-annotation('textbox',[0 0.25 0.1 0.1],'String','E','fontsize',30,'linestyle','none')
-annotation('textbox',[0.53 0.25 0.1 0.1],'String','F','fontsize',30,'linestyle','none')
-
-
 
 if do_save == 1
     print(gcf,[main_spike_results,'Fig2'],'-dpng')

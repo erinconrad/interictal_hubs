@@ -1,4 +1,4 @@
-function out = get_gdf_details(p)
+function out = get_gdf_details(p,spikes)
 
 %% Parameters
 % probably should do
@@ -18,11 +18,14 @@ spike_folder = [results_folder,'new_spikes/'];
 %% Load pt file
 pt = load([data_folder,'pt.mat']);
 pt = pt.pt;
-name = pt(p).name;
-
 %% Load spike file
-spikes = load([spike_folder,sprintf('%s_spikes.mat',name)]);
-spikes = spikes.spikes;
+if nargin == 1
+    name = pt(p).name;
+    spikes = load([spike_folder,sprintf('%s_spikes.mat',name)]);
+    spikes = spikes.spikes;
+else
+    name = spikes.name;
+end
 
 %% Flip things that we think are bad to bad
 if clean_blocks
@@ -57,6 +60,15 @@ for c = nchanges % just do last one
     unchanged_labels = chLabels(unchanged_idx);
     added_labels = chLabels(added_idx);
 
+    
+    %% Anatomy
+    if ~isfield(pt(p).ieeg.file(change(c).files(2)),'anatomy')
+        unchanged_anatomy = cell(length(unchanged_labels),1);
+        added_anatomy = cell(length(added_labels),1);
+    else
+        unchanged_anatomy = pt(p).ieeg.file(change(c).files(2)).anatomy(unchanged_idx);
+        added_anatomy = pt(p).ieeg.file(change(c).files(2)).anatomy(added_idx);
+    end
 
     %% Get locs
     if ~isfield(pt(p).ieeg.file(change(c).files(2)),'locs')
@@ -87,6 +99,13 @@ for c = nchanges % just do last one
         chLabels = clean_labels_2(spikes.file(f).block(1).chLabels);
         nchs = length(chLabels);
         nblocks = length(spikes.file(f).block);
+        
+        % fix for hup136
+        if strcmp(name,'HUP136') && f == 1
+            last_good_block = fix_hup136;
+            nblocks = last_good_block;
+        end
+        
         rate = nan(nchs,nblocks); % default should be nans
         cos = nan(nchs,nblocks);
         un_cos = nan(nchs,nchs,nblocks);
@@ -94,6 +113,7 @@ for c = nchanges % just do last one
         
         sz_times = all_sz_times_in_file(pt,p,f);
 
+        
 
         % Loop over blocks
         for h = 1:nblocks
@@ -125,6 +145,7 @@ for c = nchanges % just do last one
                 %% Remove any spikes in sz
                 if rm_sz
                     [gdf,n_removed] = remove_spikes_in_sz(gdf,sz_times);
+                    
                 end
 
                 for ich = 1:nchs
@@ -219,6 +240,8 @@ out.bindices = bindices;
 out.fs = fs;
 out.block_dur = block_dur;
 out.run_dur = run_dur;
+out.unchanged_anatomy = unchanged_anatomy;
+out.added_anatomy = added_anatomy;
 
 %% Add cospike index
 % I am defining the co-spike index to be the number of times an unchanged

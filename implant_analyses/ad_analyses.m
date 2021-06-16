@@ -1,6 +1,11 @@
 function ad_analyses(whichPts,saved_out)
 
+%{
+A: normalize by power
+%}
+
 %% Parameters
+do_test = 0;
 surround = 48;
 prt = [10 50];
 ex = 10;
@@ -158,9 +163,9 @@ npts = length(whichPts);
 all_ad = nan(length(whichPts),2);
 for i = 1:length(whichPts)
     ad = nanmean(out(i).ad,1);
+    rate = out(i).rate;
     cblock = out(i).change_block;
-    pre = cblock-surround:cblock-1;
-    post = cblock+1:cblock+surround;
+    [pre,post] = get_surround_times(rate,cblock,surround);
     
     ad_pre = nanmean(ad(pre));
     ad_post = nanmean(ad(post));
@@ -240,8 +245,7 @@ nexttile
 % Get difference in rate between pre and post revision
 rate = out(ex).rate;
 cblock = out(ex).change_block;
-pre = cblock-surround:cblock-1;
-post = cblock+1:cblock+surround;
+[pre,post] = get_surround_times(rate,cblock,surround);
 rate_pre = nanmean(rate(:,pre),2);
 rate_post = nanmean(rate(:,post),2);
 re_diff_rate = rate_post - rate_pre;
@@ -267,7 +271,7 @@ plot(find(low_ad_idx),ad(low_ad_idx),'go')
 rate_high_ad = nanmean(rate(:,high_ad_idx),2);
 rate_low_ad = nanmean(rate(:,low_ad_idx),2);
 ad_diff_rate = rate_low_ad-rate_high_ad;
-
+mean_rate = nanmean(rate,2);
 
 
 % Throw out ekg and such
@@ -275,14 +279,23 @@ unchanged_labels = out(ex).unchanged_labels;
 ekg = identify_ekg_scalp(unchanged_labels);
 ad_diff_rate = ad_diff_rate(~ekg);
 re_diff_rate = re_diff_rate(~ekg);
+mean_rate = mean_rate(~ekg);
 unchanged_labels = unchanged_labels(~ekg);
 
 % Corr
-[r,p] = corr(ad_diff_rate,re_diff_rate,'rows','pairwise');
-plot(ad_diff_rate,re_diff_rate,'o','color',[1 1 1])
-text(ad_diff_rate,re_diff_rate,unchanged_labels,'horizontalalignment','center')
-xlabel('Low AD-High AD rate change')
-ylabel('Post-pre rate change')
+if do_test
+    [r,p] = corr(mean_rate,re_diff_rate,'rows','pairwise');
+    plot(mean_rate,re_diff_rate,'o','color',[1 1 1])
+    text(mean_rate,re_diff_rate,unchanged_labels,'horizontalalignment','center')
+    xlabel('Mean rate')
+    ylabel('Post-pre rate change')
+else
+    [r,p] = corr(ad_diff_rate,re_diff_rate,'rows','pairwise');
+    plot(ad_diff_rate,re_diff_rate,'o','color',[1 1 1])
+    text(ad_diff_rate,re_diff_rate,unchanged_labels,'horizontalalignment','center')
+    xlabel('Low AD-High AD rate change')
+    ylabel('Post-pre rate change')
+end
 xl = xlim;
 yl = ylim;
 text(xl(2),yl(2),sprintf('r = %1.2f\np = %1.3f',r,p),...
@@ -297,11 +310,13 @@ for i = 1:npts
     % Get difference in rate between pre and post revision
     rate = out(i).rate;
     cblock = out(i).change_block;
-    pre = cblock-surround:cblock-1;
-    post = cblock+1:cblock+surround;
+    [pre,post] = get_surround_times(rate,cblock,surround);
     rate_pre = nanmean(rate(:,pre),2);
     rate_post = nanmean(rate(:,post),2);
     re_diff_rate = rate_post - rate_pre;
+    
+    % mean rate
+    mean_rate = nanmean(rate,2);
 
     % Get high and low ad periods (remove periods in pre and post)
     ad = nanmean(out(i).ad,1);
@@ -319,10 +334,16 @@ for i = 1:npts
     ekg = identify_ekg_scalp(out(i).unchanged_labels);
     ad_diff_rate = ad_diff_rate(~ekg);
     re_diff_rate = re_diff_rate(~ekg);
-
+    mean_rate = mean_rate(~ekg);
+    
     % Corr
-    [r,p] = corr(ad_diff_rate,re_diff_rate,'rows','pairwise');
-    n = sum(~isnan(ad_diff_rate) & ~isnan(re_diff_rate));
+    if do_test
+        [r,p] = corr(re_diff_rate,mean_rate,'rows','pairwise');
+        n = sum(~isnan(re_diff_rate) & ~isnan(mean_rate));
+    else
+        [r,p] = corr(ad_diff_rate,re_diff_rate,'rows','pairwise');
+        n = sum(~isnan(ad_diff_rate) & ~isnan(re_diff_rate));
+    end
     [z,z_score,pval2] = fisher_transform(r,n);
     if abs(p-pval2) > 0.03
         error('oh nos');
@@ -346,7 +367,11 @@ plot(all_corr_info(:,1),'o','linewidth',2)
 hold on
 ylim([-1 1])
 plot(xlim,[0 0],'k--')
-ylabel('AD rate diff-revision rate diff correlation')
+if do_test
+    ylabel('Rate-revision rate diff correlation')
+else
+    ylabel('AD rate diff-revision rate diff correlation')
+end
 xlabel('Patient')
 xticklabels([])
 text(9.5,0.9,sprintf('Combined r = % 1.2f\np = %1.3f',r,pval),'horizontalalignment','right')

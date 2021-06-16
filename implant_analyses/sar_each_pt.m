@@ -1,10 +1,10 @@
 function sar_each_pt(whichPts,saved_out)
 
 %% Parameters
-surround = [];
+surround = 48;
 nb = 1e4;
-which_resp = 'ns';
-which_pred = 'ns';
+which_resp = 'abs_rate';
+which_pred = 'dist';
 which_sar = 'pc';
 
 %% Locations
@@ -64,8 +64,7 @@ for i = 1:length(whichPts)
         pre = 1:cblock-1;
         post = cblock+1:size(rate,2);
     else
-        pre = cblock-surround:cblock - 1;
-        post = cblock + 1: cblock+surround;
+        [pre,post] = get_surround_times(rate,cblock,surround);
     end
     
     ekg = identify_ekg_scalp(out(i).unchanged_labels);

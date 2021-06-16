@@ -1,8 +1,15 @@
 function rate_all_pts(whichPts,saved_out)
 
+%{
+This makes the rate figure and analysis
+%}
+
 %% Parameters
-surround = 48;
-nb = 1e4;
+surround = 48; % number of half hour segments surrounding implant
+nb = 1e4; 
+
+%% Decide whether to do this!!
+only_pre = 1; % for the MC analysis, compare to only the pre-revision times (in case the revision effect is delayed)
 
 %% Locations
 locations = interictal_hub_locations;
@@ -40,54 +47,77 @@ end
 
 %% Get overall rate and do significance testing
 for i = 1:length(whichPts)
-    out(i).overall_rate = nansum(out(i).rate,1);
+    out(i).overall_rate = nansum(out(i).rate,1); % sum across electrodes to get total number of spikes
     out(i).nan_blocks = find(isnan(nanmean(out(i).rate,1)));
     
     out(i).overall_rate_pval = mc_overall_rate(out(i).overall_rate,...
-        surround,out(i).change_block,nb);
+        surround,out(i).change_block,nb,only_pre);
 end
 
 %% Initialize figure
 figure
-set(gcf,'position',[252 547 1001 250])
-tiledlayout(1,2,'TileSpacing','compact','padding','compact')
+set(gcf,'position',[50 547 1200 600])
+tiledlayout(4,3,'TileSpacing','compact','padding','compact')
+tile_order = [1 2 4 5 7 8 10 11 3 6 9];
 
-%% Example rate
-nexttile
-p = 1;
+%% Example rates
+for p = 1:length(out)
+nexttile(tile_order(p))
 curr_rate = out(p).overall_rate /out(p).run_dur;
 curr_times = (1:length(curr_rate)) * out(p).block_dur;
 curr_change = out(p).change_block*out(p).block_dur;
-plot(curr_times,curr_rate,'k','linewidth',2)
+plot(curr_times,curr_rate,'k','linewidth',1)
 hold on
 nan_blocks = out(p).nan_blocks;
-
+[pre,post] = get_surround_times(out(p).overall_rate,out(p).change_block,surround);
+pre = pre*out(p).block_dur;
+post = post*out(p).block_dur;
 xlim([0 length(curr_rate)*out(p).block_dur]);
-ylabel('Spikes/min')
-xlabel('Hour')
+if ismember(tile_order(p) ,[1 4 7 10])
+    ylabel('Spikes/min')
+end
+if ismember(tile_order(p),[10 11])
+    xlabel('Hour')
+end
 title(sprintf('%Pt %d',p));
 set(gca,'fontsize',20)
+yl = ylim;
+new_yl = [yl(1) 1.1*(yl(2)-yl(1))];
+ylim(new_yl);
+yl = ylim;
+top = yl(1) + 0.75*(yl(2)-yl(1));
 for b = 1:length(nan_blocks)
     bidx = [max(nan_blocks(b) - 0.5,1) min(nan_blocks(b)+0.5,size(curr_rate,2))];
     bidx = bidx*out(p).block_dur;
-    yl = ylim;
+    
     ap = fill([bidx(1),bidx(2),bidx(2),bidx(1)],...
-        [yl(1),yl(1),yl(2),yl(2)],...
+        [yl(1),yl(1),top,top],...
         [0.7 0.7 0.7],'EdgeColor',[0.7 0.7 0.7]);
 end
-cp = plot([curr_change curr_change],ylim,'r--','linewidth',4);
-legend([cp ap],{'Revision','Data missing'},'fontsize',20,'location','northeast')
+cp = plot([curr_change curr_change],[yl(1) top],'r--','linewidth',4);
+plot([pre(1) post(end)],[yl(1) + 0.8*(yl(2)-yl(1)) yl(1) + 0.8*(yl(2)-yl(1))],...
+    'k-','linewidth',2);
+ast = get_asterisks(out(p).overall_rate_pval,length(out));
+text(curr_change,yl(1) + 0.9*(yl(2)-yl(1)),ast,...
+    'horizontalalignment','center','fontsize',20)
+%legend([cp ap],{'Revision','Data missing'},'fontsize',20,'location','northeast')
+end
 
-
-%% Change for each patient
-nexttile
+%% Rate change for all patients
+nexttile(tile_order(end),[2 1])
 all_pre = nan(length(whichPts),1);
 all_post = nan(length(whichPts),1);
 for i = 1:length(whichPts)
     rate = out(i).overall_rate/out(i).run_dur;
     cblock = out(i).change_block;
+    %{
     pre = cblock - surround:cblock -1;
     post = cblock + 1:cblock+surround;
+    %}
+    
+    % Get surround times, starting with first non nan
+    [pre,post] = get_surround_times(rate,cblock,surround);
+    
     pre_rate = nanmean(rate(pre));
     post_rate = nanmean(rate(post));
     %{
@@ -109,9 +139,9 @@ plot(2+0.05*rand(length(whichPts),1),all_post,'o','color',[0.8500, 0.3250, 0.098
 [~,pval] = ttest(all_pre,all_post);
 xlim([0.5 2.5])
 yl = ylim;
-ylim([yl(1) 1.10*(yl(2)-yl(1))])
-plot([1 2],[yl(1) + 0.95*(yl(2)-yl(1)) yl(1) + 0.95*(yl(2)-yl(1))],'k-')
-text(1.5,yl(1) + 1.02*(yl(2)-yl(1)),get_asterisks(pval,1),'horizontalalignment','center','fontsize',20)
+ylim([yl(1) 1.15*(yl(2)-yl(1))])
+plot([1 2],[yl(1) + 1*(yl(2)-yl(1)) yl(1) + 1*(yl(2)-yl(1))],'k-','linewidth',2)
+text(1.5,yl(1) + 1.07*(yl(2)-yl(1)),get_asterisks(pval,1),'horizontalalignment','center','fontsize',20)
 
 xticks([1 2])
 ylabel('Spikes/min')
@@ -129,8 +159,8 @@ end
 %}
 
 %% Add subtitle labels
-annotation('textbox',[0 0.93 0.1 0.1],'String','A','fontsize',30,'linestyle','none')
-annotation('textbox',[0.5 0.93 0.1 0.1],'String','B','fontsize',30,'linestyle','none')
+%annotation('textbox',[0 0.93 0.1 0.1],'String','A','fontsize',30,'linestyle','none')
+%annotation('textbox',[0.5 0.93 0.1 0.1],'String','B','fontsize',30,'linestyle','none')
 
 print(gcf,[main_spike_results,'Fig1'],'-depsc')
 print(gcf,[main_spike_results,'Fig1'],'-dpng')

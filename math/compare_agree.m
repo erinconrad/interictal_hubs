@@ -9,8 +9,10 @@ nantimes = isnan(nanmean(rate,1));
 spikiest(nantimes) = nan;
 
 %% Get the spikiest electrode pre-revision
-pre = change-surround:change-1;
-post = change+1:change+surround;
+%pre = change-surround:change-1;
+%post = change+1:change+surround;
+% Get surround times, starting with first non nan
+[pre,post] = get_surround_times(rate,change,surround);
 [~,spikiest_pre] = max(nanmean(rate(:,pre),2));
 
 %% For each time period, get the spikiest electrode and whether it agrees with the pre-revision

@@ -1,4 +1,4 @@
-function pval = compare_rhos(rate,change,surround,nb,only_pre)
+function pval = compare_vecs(rate,change,surround,nb)
 
 nblocks = size(rate,2);
 
@@ -9,18 +9,18 @@ nblocks = size(rate,2);
 %post = rate(:,change+1:change+surround);
 pre_mean = nanmean(rate(:,pre),2);
 post_mean = nanmean(rate(:,post),2);
-true_rho = corr(pre_mean,post_mean,'rows','pairwise');
+
+vec_diff = pre_mean-post_mean;
+vec_diff(isnan(vec_diff)) = [];
+true_rho = vecnorm(vec_diff);
 
 perm_rho = nan(nb,1);
 
 for ib = 1:nb
     
     % Make a fake change time
-    if only_pre
-        fchange = randi([surround+1,change-1]);
-    else
-        fchange = randi([surround+1,nblocks-surround]);
-    end
+    fchange = randi([surround+1,nblocks-surround]);
+    %fchange = randi([change,nblocks-surround]);
     
     [pre,post] = get_surround_times(rate,fchange,surround);
     
@@ -33,7 +33,9 @@ for ib = 1:nb
     fpre = rate(:,pre);
     fpost = rate(:,post);
     
-    perm_rho(ib) = corr(nanmean(fpre,2),nanmean(fpost,2),'rows','pairwise');
+    vec_diff = nanmean(fpre,2)-nanmean(fpost,2);
+    vec_diff(isnan(vec_diff)) = [];
+    perm_rho(ib) = vecnorm(vec_diff);
     
 end
 
@@ -41,7 +43,7 @@ end
 [sorted_perm_rho] = sort(perm_rho);
 
 % this is just a one-tailed test which I think is fair
-num_as_sig = sum(sorted_perm_rho<=true_rho);
+num_as_sig = sum(sorted_perm_rho>=true_rho);
 pval = (num_as_sig+1)/(nb+1);
 
 if isnan(true_rho)

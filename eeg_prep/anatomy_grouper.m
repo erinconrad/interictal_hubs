@@ -1,7 +1,13 @@
-function [lat,loc] = anatomy_grouper(anatomy)
+function [lat,loc,loc_names] = anatomy_grouper(anatomy)
 
 loc = cell(length(anatomy),1);
 lat = cell(length(anatomy),1);
+
+loc_names = {'Unspecified'...
+    'white matter',...
+    'mesial temporal',...
+    'temporal neocortical',...
+    'other'};
 
 for ich = 1:length(anatomy)
     curr = anatomy{ich};
