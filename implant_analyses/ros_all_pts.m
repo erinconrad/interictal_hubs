@@ -4,6 +4,7 @@ function ros_all_pts(whichPts,saved_out)
 Generates Figure 2 for implant effect paper -> raster plot for a single
 patient and rate order stability for all patients and stability of spikiest
 electrode for all patients
+
 %}
 
 %% Parameters
@@ -12,6 +13,8 @@ do_save = 1;
 nb = 1e4;
 do_rel = 0;
 ex_p = 5;
+do_vec = 0;
+type = 'Spearman';
 
 %% Decide whether to do this!!
 only_pre = 0; % for the MC analysis, compare to only the pre-revision times (in case the revision effect is delayed)
@@ -206,7 +209,7 @@ for i = 1:length(whichPts)
     
     ros = nan(size(rate,2),1);
     for h = 1:size(rate,2)
-        ros(h) = corr(first_rate,rate(:,h),'Type','Spearman','rows','pairwise');
+        ros(h) = corr(first_rate,rate(:,h),'Type',type,'rows','pairwise');
     end
     
     % Put it at the correct position in the larger array. If it's the one
@@ -218,7 +221,11 @@ for i = 1:length(whichPts)
     
     % do a ros permutation test to see whether the pre-post change is
     % larger than expected for randomly chosen times
-    pval_curr = compare_rhos(rate,cblock,surround,nb,only_pre);
+    if do_vec
+        pval_curr = compare_vecs(rate,cblock,surround,nb);
+    else
+        pval_curr = compare_rhos(rate,cblock,surround,nb,only_pre,type);
+    end
     all_ps(i) = pval_curr;
     
 end
@@ -289,7 +296,7 @@ for i = 1:length(whichPts)
     
     ros = nan(size(ns,2),1);
     for h = 1:size(ns,2)
-        ros(h) = corr(first_ns,ns(:,h),'Type','Spearman','rows','pairwise');
+        ros(h) = corr(first_ns,ns(:,h),'Type',type,'rows','pairwise');
     end
 
     pos_off = mid_pos - cblock;
@@ -297,7 +304,11 @@ for i = 1:length(whichPts)
     
     % do a ros permutation test to see whether the pre-post change is
     % larger than expected for randomly chosen times
-    pval_curr = compare_rhos(ns,cblock,surround,nb,only_pre);
+    if do_vec
+        pval_curr = compare_vecs(rate,cblock,surround,nb);
+    else
+        pval_curr = compare_rhos(rate,cblock,surround,nb,only_pre,type);
+    end
     all_ps(i) = pval_curr;
     
 end

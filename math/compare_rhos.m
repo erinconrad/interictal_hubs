@@ -1,4 +1,4 @@
-function pval = compare_rhos(rate,change,surround,nb,only_pre)
+function pval = compare_rhos(rate,change,surround,nb,only_pre,type)
 
 nblocks = size(rate,2);
 
@@ -9,7 +9,7 @@ nblocks = size(rate,2);
 %post = rate(:,change+1:change+surround);
 pre_mean = nanmean(rate(:,pre),2);
 post_mean = nanmean(rate(:,post),2);
-true_rho = corr(pre_mean,post_mean,'rows','pairwise');
+true_rho = corr(pre_mean,post_mean,'Type',type,'rows','pairwise');
 
 perm_rho = nan(nb,1);
 
@@ -33,7 +33,7 @@ for ib = 1:nb
     fpre = rate(:,pre);
     fpost = rate(:,post);
     
-    perm_rho(ib) = corr(nanmean(fpre,2),nanmean(fpost,2),'rows','pairwise');
+    perm_rho(ib) = corr(nanmean(fpre,2),nanmean(fpost,2),'Type',type,'rows','pairwise');
     
 end
 

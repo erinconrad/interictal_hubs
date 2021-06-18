@@ -225,6 +225,7 @@ for c = nchanges % just do last one
     
 end
 
+out.name = name;
 out.rate = all_rate;
 out.cos = all_cos;
 out.un_cos = all_un_cos;

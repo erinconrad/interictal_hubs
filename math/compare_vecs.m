@@ -5,8 +5,7 @@ nblocks = size(rate,2);
 %% Compare spike rate pre and post change
 % Get surround times, starting with first non nan
 [pre,post] = get_surround_times(rate,change,surround);
-%pre = rate(:,change-surround:change-1);
-%post = rate(:,change+1:change+surround);
+
 pre_mean = nanmean(rate(:,pre),2);
 post_mean = nanmean(rate(:,post),2);
 

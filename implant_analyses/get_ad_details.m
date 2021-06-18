@@ -40,7 +40,13 @@ unchanged = no_change_ever;%change(c).unchanged;
 %% Get total number of blocks
 nb = 0;
 for f = 1:last_file
-    nb = nb + length(ad.file(f).block);
+    nblocks_in_file = length(ad.file(f).block);
+    if strcmp(name,'HUP136') && f == 1
+        last_good_block = fix_hup136;
+        nblocks_in_file = last_good_block;
+    end
+    
+    nb = nb + nblocks_in_file;
 end
 
 %% Initialize things
@@ -52,6 +58,11 @@ bdur = bdur/3600; %convert to hours
 for f = 1:last_file
 
     nblocks = length(ad.file(f).block);
+    % fix for hup136
+    if strcmp(name,'HUP136') && f == 1
+        last_good_block = fix_hup136;
+        nblocks = last_good_block;
+    end
     
     % Loop over blocks
     for h = 1:nblocks
