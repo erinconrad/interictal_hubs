@@ -55,7 +55,7 @@ for i = 1:length(pt)
     for s = 1:length(pt(i).seizure_info.sz)
         all_sz = [all_sz;...
             pt(i).seizure_info.sz(s).EEC,...
-            pt(i).seizure_info.sz.End];
+            pt(i).seizure_info.sz(s).End];
     end
     
     % Loop over files
