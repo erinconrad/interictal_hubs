@@ -78,7 +78,11 @@ for i = 1:length(pt)
         end
     end
     spikes.n_removed_in_sz = all_n_removed;
-    fprintf('\n\nFor %s, removed %d spikes\n\n',name,all_n_removed)
+    spikes.sz_times = all_sz;
+    fprintf('\n\nFor %s, sz times are:\n',name);
+    all_sz
+    fprintf('\nFor %s, removed %d spikes\n\n',name,all_n_removed)
+    
     
     
     % Save
