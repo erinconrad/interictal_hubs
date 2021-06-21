@@ -53,9 +53,12 @@ for i = 1:length(pt)
     % Get seizure times
     all_sz = [];
     for s = 1:length(pt(i).seizure_info.sz)
-        all_sz = [all_sz;...
-            pt(i).seizure_info.sz(s).EEC,...
-            pt(i).seizure_info.sz(s).End];
+        eec = pt(i).seizure_info.sz(s).EEC;
+        sz_end = pt(i).seizure_info.sz(s).End;
+        if isempty(sz_end)
+            sz_end = eec + 5*60; % assume five minutes;
+        end
+        all_sz = [all_sz;eec sz_end];
     end
     
     % Loop over files
