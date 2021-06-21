@@ -14,6 +14,10 @@ sp_folder = [results_folder,'new_spikes_june6_2021/'];
 %sp_folder = [results_folder,'new_spikes/'];
 out_folder = [results_folder,'clean_atlas_spikes/'];
 
+if ~exist(out_folder,'dir')
+    mkdir(out_folder)
+end
+
 %% LOad pt
 pt = load([data_folder,'pt.mat']);
 pt = pt.pt;
