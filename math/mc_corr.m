@@ -2,7 +2,10 @@ function [true_rho,pval,mc_rho] = mc_corr(rate,ns,predictor,cblock,surround,nb,w
 
 %{
 This is the main statistical test for the correlation analysis of the
-implant effect paper. Essentially, I pick a random pseudo-revision time, I 
+implant effect paper. Essentially, I pick a random pseudo-revision time, I
+recalculate the correlation between the rate change and the distance, and I
+see how many pseudo-revision times yield as or more extreme a correlation
+as the true correlation.
 %}
 
 nblocks = size(rate,2);
