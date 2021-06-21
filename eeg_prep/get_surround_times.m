@@ -7,8 +7,8 @@ first_non_nan_post = [];
 %% Find the first non nan pre and post-cblock time
 % Pre
 for i = cblock-1:-1:1
-    if sum(~isnan(rate(:,i))) > 0
-        first_non_nan_pre = i;
+    if sum(~isnan(rate(:,i))) > 0 % if any electrodes are not nans
+        first_non_nan_pre = i; % this is the last non-nan time before the revision
         break
     end
 end
@@ -16,7 +16,7 @@ end
 % Post
 for i = cblock+1:size(rate,2)
     if sum(~isnan(rate(:,i))) > 0
-        first_non_nan_post = i;
+        first_non_nan_post = i; % first non-nan time after revision
         break
     end
 end

@@ -1,0 +1,55 @@
+function atlas_rm_sz_times
+
+%% Get file locs
+locations = interictal_hub_locations;
+results_folder = [locations.main_folder,'results/'];
+scripts_folder = locations.script_folder;
+data_folder = [scripts_folder,'data/'];
+addpath(genpath(scripts_folder));
+ieeg_folder = locations.ieeg_folder;
+addpath(genpath(ieeg_folder));
+pwfile = locations.ieeg_pw_file;
+login_name = locations.ieeg_login;
+%sp_folder = [results_folder,'new_spikes_june6_2021/'];
+sp_folder = [results_folder,'new_spikes/'];
+out_folder = [results_folder,'clean_atlas_spikes/'];
+
+%% LOad pt
+pt = load([data_folder,'pt.mat']);
+pt = pt.pt;
+
+%% Loop through pt file
+for i = 1:length(pt)
+    name = pt(i).name;
+    
+    % Find corresponding spike file
+    sp_file_name = [name,'_spikes.mat'];
+    sp_path = [sp_folder,sp_file_name];
+    
+    % see if it exists
+    if ~exist(sp_path,'file')
+        fprintf('\nDid not find %s, skipping...\n',name);
+        continue
+    end
+    
+    % Load it
+    spikes = load(sp_path);
+    spikes = spikes.spikes;
+    
+    clean_spikes = spikes;
+    
+    % Get seizure times
+    all_sz = [];
+    for s = 1:length(pt(i).seizure_info.sz)
+        all_sz = [all_sz;...
+            pt(i).seizure_info.sz(s).EEC,...
+            pt(i).seizure_info.sz.End];
+    end
+    
+    % Loop over files
+    for f = 1:length(clean_spikes.
+    
+    
+end
+
+end

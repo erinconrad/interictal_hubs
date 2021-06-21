@@ -8,16 +8,28 @@ electrode for all patients
 %}
 
 %% Parameters
-surround = 24*1;
-do_save = 1;
-nb = 1e4;
-do_rel = 0;
-ex_p = 5;
-do_vec = 0;
-type = 'Spearman';
 
-%% Decide whether to do this!!
-only_pre = 0; % for the MC analysis, compare to only the pre-revision times (in case the revision effect is delayed)
+% What is the pre- and post-revision period (in 30 minute blocks)
+surround = 24*1;
+
+% Should I add an additional buffer to the fake revision times
+% (acknowledging that the true revision time has more buffer of
+% non-recording time)?
+do_buffer = 0; 
+buffer = 12; % how much buffer (could instead do this for an individual patient level)
+
+% Should I compare vector distance (if 0, will do correlation instead of
+% vecnorm)
+do_vec = 0;
+type = 'Spearman'; % which correlation (Spearman or Pearson)
+
+nb = 1e4; % number of monte carlo iterations (should probably keep 10,000)
+
+do_save = 1;
+
+do_rel = 0;
+ex_p = 5; % example patient to plot raster
+
 
 
 %% Locations
@@ -190,9 +202,20 @@ for i = 1:length(whichPts)
 end
 
 %all_ros = nan(length(whichPts),pl_surround*2+1);
+
 all_ros = nan(length(whichPts),max_time_before+max_time_after+1);
 mid_pos = max_time_before+1;
 all_ps = nan(length(whichPts),1);
+
+% Initialize correlation stuff
+all_true_z = nan(length(whichPts),1);
+all_mc_z = nan(length(whichPts),nb);
+all_n = nan(length(whichPts),1);
+
+% Initialize vector stuff
+all_true_vec = nan(length(whichPts),1);
+all_mc_vec = nan(length(whichPts),nb);
+
 for i = 1:length(whichPts)
     rate = out(i).rate;
     cblock = out(i).change_block;
@@ -219,20 +242,66 @@ for i = 1:length(whichPts)
     pos_off = mid_pos - cblock;
     all_ros(i,1+pos_off:length(ros)+pos_off) = ros;
     
-    % do a ros permutation test to see whether the pre-post change is
-    % larger than expected for randomly chosen times
+
     if do_vec
-        pval_curr = compare_vecs(rate,cblock,surround,nb);
+        %% Euclidean distance between vectors
+        [pval_curr,true_vec,mc_vec] = compare_vecs(rate,cblock,surround,nb,buffer,do_buffer);
+        all_true_vec(i) = true_vec;
+        all_mc_vec(i,:) = mc_vec;
+        all_ps(i) = pval_curr;
     else
-        pval_curr = compare_rhos(rate,cblock,surround,nb,only_pre,type);
+        %% Correlation
+        [pval_curr,true_rho,mc_rho,n] = compare_rhos(rate,cblock,surround,nb,type,buffer,do_buffer);
+        
+        % Fisher's R to z transformation on the original rhos
+        true_z = fisher_transform(true_rho,n);
+
+        % mc rhos
+        mc_z = fisher_transform(mc_rho,n);
+
+        all_true_z(i) = true_z;
+        all_mc_z(i,:) = mc_z;
+        all_n(i) = n;
+        all_ps(i) = pval_curr;
+        
     end
-    all_ps(i) = pval_curr;
     
+ 
 end
 
-% Fisher test to combine pvalues
-X_2 = -2 * sum(log(all_ps));
-sum_p = 1-chi2cdf(X_2,2*length(all_ps));
+if do_vec
+    %% Vecnorm aggregate
+    % Just average the distance between vectors I guess
+    avg_true_vec = mean(all_true_vec);
+    avg_mc_vec = mean(all_mc_vec,1); % nb x 1
+
+    % count number of mc distances as or more extreme (large) than the true
+    % distance
+    num_more_sig = sum(avg_mc_vec >= avg_true_vec);
+    p_mc_agg = (num_more_sig + 1)/(nb+1);
+    
+    % Fisher test to combine pvalues (alternate p-value just combining p-values)
+    X_2 = -2 * sum(log(all_ps));
+    sum_p = 1-chi2cdf(X_2,2*length(all_ps));
+
+else
+    %% Correlation aggregate
+    % Convert true and MC z's back to r's
+    r = tanh(sum(all_true_z.*all_n)./sum(all_n)); % Take tanh of average weighted by number of electrodes
+    mc_r = nan(nb,1);
+    for b = 1:nb
+        mc_r(b) = tanh(sum(all_mc_z(:,b).*all_n)./sum(all_n));
+    end
+
+    % Count number of mc_r's as or more extreme (smaller) than true r
+    num_more_sig = sum((mc_r)<=(r)); % one-sided p-value (2 sided doesn't make sense)
+    p_mc_agg = (num_more_sig + 1)/(nb+1);
+
+    % Fisher test to combine pvalues (alternate p-value)
+    X_2 = -2 * sum(log(all_ps));
+    sum_p = 1-chi2cdf(X_2,2*length(all_ps));
+end
+
 
 % Find the times in which at least 2 are non nans
 m = nanmean(all_ros,1);

@@ -196,8 +196,7 @@ for r = 1:length(which_resps)
     plot(squeeze(all_all_r(s,r,p,:)),'o','markersize',20,'linewidth',2)
     hold on
     ylim([-1 1])
-    xlim([1:length(whichPts)])
-    plot(xlim,[0 0],'k--','linewidth',2)
+    plot(xlim,[0 0],'k--')
     yl = ylim;
     xl = xlim;
     text(xl(2),yl(2),...
@@ -230,10 +229,6 @@ for r = 1:length(which_resps)
         text(is,yl(1)+0.9*(yl(2)-yl(1)),get_asterisks(all_p_mc(is,r,p),1),...
         'horizontalalignment','center','fontsize',20)
     end
-    xticks(1:n_surrounds)
-    xticklabels(all_surrounds)
-    xlabel('Peri-revision period (hours)')
-    set(gca,'fontsize',20)
     
 end
 

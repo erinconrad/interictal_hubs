@@ -206,6 +206,7 @@ r = tanh(nansum(all_zs(:,1).*all_zs(:,5))./nansum(all_zs(:,5)));
 fprintf('\nCombined r = %1.2f, p = %1.3f\n',r,pval);
 
 %% Get r back for MC Zs
+%%%%%%% Is this wrong??????
 mc_r = nan(nb,1);
 for b = 1:nb
     mc_r(b) = tanh(sum(all_mc_z(:,b).*all_zs(:,5))./sum(all_zs(:,5)));

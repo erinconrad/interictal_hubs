@@ -1,4 +1,4 @@
-function pval = compare_vecs(rate,change,surround,nb)
+function [pval,true_rho,sorted_perm_rho] = compare_vecs(rate,change,surround,nb,buffer,do_buffer)
 
 nblocks = size(rate,2);
 
@@ -17,24 +17,35 @@ perm_rho = nan(nb,1);
 
 for ib = 1:nb
     
-    % Make a fake change time
-    fchange = randi([surround+1,nblocks-surround]);
-    %fchange = randi([change,nblocks-surround]);
-    
-    [pre,post] = get_surround_times(rate,fchange,surround);
-    
-    if length(pre) == 1 || length(post) == 1
-        perm_rho(ib) = nan;
-        continue
+    while 1
+        % Make a fake change time
+        fchange = randi([surround+1,nblocks-surround]);
+
+        if do_buffer
+            [pre,post] = get_surround_times(rate,fchange,surround + buffer);
+        else
+            [pre,post] = get_surround_times(rate,fchange,surround);
+        end
+
+        if length(pre) == 1 || length(post) == 1
+            continue % bad time, try another
+        end
+
+        % recalculate
+        fpre = rate(:,pre);
+        fpost = rate(:,post);
+
+        vec_diff = nanmean(fpre,2)-nanmean(fpost,2);
+        vec_diff(isnan(vec_diff)) = [];
+        
+        perm_rho_temp = vecnorm(vec_diff);
+        if isnan(perm_rho_temp)
+            continue % bad time, try another
+        else
+            break % if not a nan, cool, accept it
+        end
     end
-    
-    % recalculate
-    fpre = rate(:,pre);
-    fpost = rate(:,post);
-    
-    vec_diff = nanmean(fpre,2)-nanmean(fpost,2);
-    vec_diff(isnan(vec_diff)) = [];
-    perm_rho(ib) = vecnorm(vec_diff);
+    perm_rho(ib) = perm_rho_temp;
     
 end
 
@@ -46,8 +57,10 @@ num_as_sig = sum(sorted_perm_rho>=true_rho);
 pval = (num_as_sig+1)/(nb+1);
 
 if isnan(true_rho)
-    pval = nan;
+    error('why');
 end
+
+if sum(isnan(perm_rho)) > 0, error('why'); end
 
 if 0
     figure
