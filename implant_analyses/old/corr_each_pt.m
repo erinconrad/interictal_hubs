@@ -2,12 +2,12 @@ function corr_each_pt(whichPts,saved_out)
 
 
 %% Parameters
-surround = 24*1;
+surround = 24;
 nb = 1e4;
 which_resp = 'rel_rate';
 which_pred = 'dist';
 corr_type = 'Spearman';
-show_labels = 0;
+show_labels = 1;
 
 %% Decide whether to do this!!
 only_pre = 0; % for the MC analysis, compare to only the pre-revision times (in case the revision effect is delayed)
@@ -103,6 +103,13 @@ for i = 1:length(whichPts)
     end
     predictor(ekg) = [];
     
+    % Remove those with zero predictor
+    zero_dist = predictor == 0;
+    predictor(zero_dist) = [];
+    rate(zero_dist,:) = [];
+    ns(zero_dist,:) = [];
+    chLabels(zero_dist) = [];
+    
     % Calculate change in rate
     switch which_resp
         case 'abs_rate'
@@ -144,7 +151,7 @@ for i = 1:length(whichPts)
         pval = nan;
     else
         [rho,pval,mc_rho] = mc_corr(rate,ns,predictor,...
-            cblock,surround,nb,which_resp,corr_type,only_pre);
+            cblock,surround,nb,which_resp,corr_type);
     end
     
     % Fisher's R to z transformation on the original rhos
@@ -188,6 +195,16 @@ for i = 1:length(whichPts)
     
     if show_labels
         title(out(i).name)
+    end
+    
+    if 1
+        no_nans = ~isnan(predictor) & ~isnan(resp);
+        pred_no_nan = predictor(no_nans);
+        resp_no_nan = resp(no_nans);
+        chLabels_no_nan = chLabels(no_nans);
+        [~,I] = sort(pred_no_nan);
+        fprintf('\n%s\n',out(i).name)
+        table(chLabels_no_nan(I),pred_no_nan(I),resp_no_nan(I))
     end
 end
 

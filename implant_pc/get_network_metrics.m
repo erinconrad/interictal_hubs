@@ -7,6 +7,7 @@ nchs = (1+sqrt(1+8*size(net,1)))/2;
 
 %% initialize
 ns_norm = nan(nchs,nblocks);
+ns = nan(nchs,nblocks);
 ge = nan(1,nblocks);
 all_mat = nan(nchs,nchs,nblocks);
 
@@ -27,6 +28,11 @@ for ib = 1:nblocks
     ns_norm_temp = nanmean(mat,1);
     ns_norm(:,ib) = ns_norm_temp;
     
+    % Absolute node strength
+    ns_temp = nansum(mat,1);
+    ns_temp(isnan(nanmean(mat,1))) = nan; % turn things that are all nan into nan
+    ns(:,ib) = ns_temp;
+    
     % Global efficiency - I believe this is already normalized, need to
     % check!
     E = efficiency_wei(mat,0);
@@ -38,6 +44,7 @@ for ib = 1:nblocks
 end
 
 out.ns_norm = ns_norm;
+out.ns = ns;
 out.ge = ge;
 out.avg_mat = nanmean(all_mat,3);
 

@@ -1,4 +1,4 @@
-function pval = mc_overall_rate(rate,surround,change,nb,only_pre)
+function pval = mc_overall_rate(rate,surround,change,nb)
 
 nblocks = size(rate,2);
 
@@ -15,24 +15,33 @@ perm_diff = nan(nb,1);
 
 for ib = 1:nb
     
-    % Make a fake change time
-    if only_pre
-        fchange = randi([surround+1,change-1]);
-    else
+    while 1
+        % Make a fake change time
         fchange = randi([surround+1,nblocks-surround]);
+
+        [fpre,fpost] = get_surround_times(rate,fchange,surround);
+
+        fpre = rate(fpre);
+        fpost = rate(fpost);
+
+        perm_diff_temp = nanmean(fpost) - nanmean(fpre);
+        
+        if isnan(perm_diff_temp)
+            continue
+        else
+            break
+        end
     end
-    [fpre,fpost] = get_surround_times(rate,fchange,surround);
-    
-    fpre = rate(fpre);
-    fpost = rate(fpost);
-    
-    
-    perm_diff(ib) = nanmean(fpost) - nanmean(fpre);
+    perm_diff(ib) = perm_diff_temp;
     
 end
 
 %% sort the permutation results
 [sorted_perm_diff] = sort(perm_diff);
+
+if sum(isnan(perm_diff))>0
+    error('why');
+end
 
 % How many differences as big as true diff (negative or positive, two
 % tailed)

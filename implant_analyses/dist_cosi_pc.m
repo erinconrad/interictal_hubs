@@ -34,6 +34,11 @@ else
     save([main_spike_results,'out'],'out');
 end
 
+%% Colors
+cols = [0, 0.4470, 0.7410;...
+    0.8500, 0.3250, 0.0980;...
+    0.9290, 0.6940, 0.1250];
+
 %% Initialize figure
 figure
 set(gcf,'position',[29 100 1340 550])
@@ -47,7 +52,7 @@ pc = out(p).metrics.added_pc;
 
 % Correlate distance and co-spike index
 nexttile
-plot(dist,cosi,'o','linewidth',2)
+plot(dist,cosi,'o','linewidth',2,'color',cols(1,:))
 xlabel('Distance from added electrodes (mm)')
 ylabel('Co-spike index')
 set(gca,'fontsize',20)
@@ -55,7 +60,7 @@ set(gca,'fontsize',20)
 
 % Correlate distance and pearson correlation with added electrodes
 nexttile
-plot(dist,pc,'o','linewidth',2)
+plot(dist,pc,'o','linewidth',2,'color',cols(2,:))
 xlabel('Distance from added electrodes (mm)')
 ylabel('Functional connectivity')
 set(gca,'fontsize',20)
@@ -63,7 +68,7 @@ set(gca,'fontsize',20)
 
 % Correlate pearson correlation and co-spike index
 nexttile
-plot(pc,cosi,'o','linewidth',2)
+plot(pc,cosi,'o','linewidth',2,'color',cols(3,:))
 xlabel('Functional connectivity')
 ylabel('Co-spike index')
 set(gca,'fontsize',20)
@@ -115,7 +120,7 @@ cosi_pc_r = tanh(nanmean(all_cosi_pc(:,2)));
 
 % Plot dist_cosi for each patient
 nexttile
-plot(all_dist_cosi(:,1),'o','linewidth',2,'markersize',15)
+plot(all_dist_cosi(:,1),'o','linewidth',2,'markersize',15,'color',cols(1,:))
 hold on
 %plot(xlim,[dist_cosi_r dist_cosi_r],'linewidth',2);
 set(gca,'fontsize',20)
@@ -130,7 +135,7 @@ text(6,0.75,sprintf('Mean r = %1.2f\n%s',dist_cosi_r,get_p_text(dist_cosi_p)),'f
 
 % Plot dist_pc for each patient
 nexttile
-plot(all_dist_pc(:,1),'o','linewidth',2,'markersize',15)
+plot(all_dist_pc(:,1),'o','linewidth',2,'markersize',15,'color',cols(2,:))
 hold on
 %plot(xlim,[dist_pc_r dist_pc_r],'linewidth',2);
 set(gca,'fontsize',20)
@@ -144,7 +149,7 @@ text(6,0.75,sprintf('Mean r = %1.2f\n%s',dist_pc_r,get_p_text(dist_pc_p)),'fonts
 
 % Plot pc_cosi for each patient
 nexttile
-plot(all_cosi_pc(:,1),'o','linewidth',2,'markersize',15)
+plot(all_cosi_pc(:,1),'o','linewidth',2,'markersize',15,'color',cols(3,:))
 hold on
 %plot(xlim,[cosi_pc_r cosi_pc_r],'linewidth',2);
 set(gca,'fontsize',20)

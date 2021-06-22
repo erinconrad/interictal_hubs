@@ -5,11 +5,8 @@ This makes the rate figure and analysis
 %}
 
 %% Parameters
-surround = 48; % number of half hour segments surrounding implant
+all_surrounds = 12*[0.5,1,2,3,4,5,6,7,8,9,10]; % number of half hour segments surrounding implant
 nb = 1e4; 
-
-%% Decide whether to do this!!
-only_pre = 1; % for the MC analysis, compare to only the pre-revision times (in case the revision effect is delayed)
 
 %% Locations
 locations = interictal_hub_locations;
@@ -46,12 +43,13 @@ else
 end
 
 %% Get overall rate and do significance testing
+surround = all_surrounds(1);
 for i = 1:length(whichPts)
     out(i).overall_rate = nansum(out(i).rate,1); % sum across electrodes to get total number of spikes
     out(i).nan_blocks = find(isnan(nanmean(out(i).rate,1)));
     
     out(i).overall_rate_pval = mc_overall_rate(out(i).overall_rate,...
-        surround,out(i).change_block,nb,only_pre);
+        surround,out(i).change_block,nb);
 end
 
 %% Initialize figure
@@ -110,26 +108,17 @@ all_post = nan(length(whichPts),1);
 for i = 1:length(whichPts)
     rate = out(i).overall_rate/out(i).run_dur;
     cblock = out(i).change_block;
-    %{
-    pre = cblock - surround:cblock -1;
-    post = cblock + 1:cblock+surround;
-    %}
-    
+
     % Get surround times, starting with first non nan
     [pre,post] = get_surround_times(rate,cblock,surround);
     
     pre_rate = nanmean(rate(pre));
     post_rate = nanmean(rate(post));
-    %{
-    pr = plot([i-0.1],[pre_rate],'o','color',[0, 0.4470, 0.7410]);
-    hold on
-    ps = plot([i+0.1],[post_rate],'o','color',[0.8500, 0.3250, 0.098]);
-    %}
+
     all_pre(i) = pre_rate;
     all_post(i) = post_rate;
 end
-%xticks([1:length(whichPts)]);
-%xlabel('Patient ID')
+
 ylabel('Spikes/min')
 plot(1+0.05*rand(length(whichPts),1),all_pre,'o','color',[0, 0.4470, 0.7410],...
     'markersize',15,'linewidth',2)
@@ -147,16 +136,7 @@ xticks([1 2])
 ylabel('Spikes/min')
 xticklabels({'Pre-revision','Post-revision'})
 set(gca,'fontsize',20)
-%legend([pr ps],{'Pre-revision','Post-revision'},'fontsize',20);
-%{
-yl = ylim;
-for i = 1:length(whichPts)
-    pval = out(i).overall_rate_pval;
-    if pval < 0.05/length(whichPts)
-        text(i,yl(1)+1.05*(yl(2)-yl(1)),'*','horizontalalignment','center','fontsize',20)
-    end
-end
-%}
+
 
 %% Add subtitle labels
 %annotation('textbox',[0 0.93 0.1 0.1],'String','A','fontsize',30,'linestyle','none')
@@ -165,5 +145,47 @@ end
 print(gcf,[main_spike_results,'Fig1'],'-depsc')
 print(gcf,[main_spike_results,'Fig1'],'-dpng')
 
+%% Do a t-test for each surround so that I can get a table of p-values
+all_ps = nan(length(all_surrounds),7);
+for s = 1:length(all_surrounds)
+    surround = all_surrounds(s);
+    all_pre = nan(length(whichPts),1);
+    all_post = nan(length(whichPts),1);
+    for i = 1:length(whichPts)
+        rate = out(i).overall_rate/out(i).run_dur;
+        cblock = out(i).change_block;
+        
+        % Get surround times, starting with first non nan
+        [pre,post] = get_surround_times(rate,cblock,surround);
 
+        pre_rate = nanmean(rate(pre));
+        post_rate = nanmean(rate(post));
+        
+        all_pre(i) = pre_rate;
+        all_post(i) = post_rate;
+    end
+    [~,pval,~,stats] = ttest(all_pre,all_post);
+    tstat = stats.tstat;
+    df = stats.df;
+    all_ps(s,:) = [pval tstat df mean(all_pre) std(all_pre) mean(all_post) std(all_post)];
+end
+
+%% Save table of p-values and tstats
+ptext = arrayfun(@(x) sprintf('%1.3f',x),all_ps(:,1),...
+    'UniformOutput',false);
+ttext = arrayfun(@(x) sprintf('%1.2f',x),all_ps(:,2),...
+    'UniformOutput',false);
+T = table(ttext,ptext,...
+    'RowNames',arrayfun(@(x) sprintf('%d',x),all_surrounds,...
+    'UniformOutput',false),'VariableNames',{'t','p'});
+
+writetable(T,[main_spike_results,'rate.csv'],'WriteRowNames',true)  
+
+%% Results Sentence
+fprintf(['Aggregated across patients, there was no difference in the'...
+    ' pre- (M = %1.1f, SD = %1.1f spikes/min) and post-revision'...
+    ' (M = %1.1f, SD = %1.1f spikes/min) spike rate (paired t-test,'...
+    ' t(%d) = %1.1f, p = %1.2f)\n'],...
+    all_ps(1,4),all_ps(1,5),all_ps(1,6),all_ps(1,7),...
+    all_ps(1,3),all_ps(1,2),all_ps(1,1))
 end

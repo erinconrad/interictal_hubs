@@ -1,4 +1,4 @@
-function [true_rho,pval,mc_rho] = mc_corr(rate,ns,predictor,cblock,surround,nb,which_resp,corr_type,only_pre)
+function [true_rho,pval,mc_rho] = mc_corr(rate,ns,predictor,cblock,surround,nb,which_resp,corr_type)
 
 %{
 This is the main statistical test for the correlation analysis of the
@@ -12,7 +12,7 @@ nblocks = size(rate,2);
 
 %% Get true corr
 % Identify pre and post times
-[pre,post] = get_surround_times(rate,cblock,surround);
+[pre,post] = get_surround_times(rate,cblock,surround); % note that this uses spike data
 
 % Calculate change in rate
 switch which_resp
@@ -20,11 +20,16 @@ switch which_resp
         resp = (nanmean(rate(:,post),2) - nanmean(rate(:,pre),2))./nanmean(rate(:,pre),2);
     case 'ns_rel'
         resp = (nanmean(ns(:,post),2) - nanmean(ns(:,pre),2))./nanmean(ns(:,pre),2);
+    case 'abs_rate'
+        resp = (nanmean(rate(:,post),2) - nanmean(rate(:,pre),2));
 end
 
+% True correlation
 true_rho = corr(resp,predictor,'Type',corr_type,'rows','pairwise');
 
 mc_rho = nan(nb,1);
+
+% MC iterations
 for ib = 1:nb
     
     % I wrap this in a while loop because some choices of times result in
@@ -34,11 +39,8 @@ for ib = 1:nb
     while 1
         
         % Make a fake change time
-        if only_pre
-            fchange = randi([surround+1,cblock-1]);
-        else
-            fchange = randi([surround+1,nblocks-surround]);
-        end
+        fchange = randi([surround+1,nblocks-surround]);
+        
 
         % recalculate change around this time
         [fpre,fpost] = get_surround_times(rate,fchange,surround);
@@ -53,6 +55,8 @@ for ib = 1:nb
                 resp = (nanmean(rate(:,fpost),2) - nanmean(rate(:,fpre),2))./nanmean(rate(:,fpre),2);
             case 'ns_rel'
                 resp = (nanmean(ns(:,fpost),2) - nanmean(ns(:,fpre),2))./nanmean(ns(:,fpre),2);
+            case 'abs_rate'
+                resp = (nanmean(rate(:,fpost),2) - nanmean(rate(:,fpre),2));
         end
 
         mc_rho_temp = corr(resp,predictor,'Type',corr_type,'rows','pairwise');
@@ -84,10 +88,9 @@ if isnan(true_rho)
     error('why');
 end
 
-[sortedmc,I] = sort(mc_rho);
-
 
 if 0
+    [sortedmc,I] = sort(mc_rho);
     figure
     plot(sortedmc)
     hold on

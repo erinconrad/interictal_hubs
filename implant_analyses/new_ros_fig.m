@@ -2,9 +2,10 @@ function new_ros_fig(whichPts,saved_out)
 
 %% User change parameters
 all_surrounds = 12*[0.5,1,2,3,4,5,6,7,8,9,10];
-%all_surrounds = 12*[0.5,1,2];
+%all_surrounds = 12*[0.5,1];
 nb = 1e4; % number of monte carlo iterations (should probably keep 10,000)
 ex_p = 5;
+do_norm = 0; % doesn't seem to make much difference so I will keep 0 for simplicity
 
 %% Other info
 n_surrounds = length(all_surrounds);
@@ -78,7 +79,11 @@ for im = 1:n_metrics
                 case 'rate'
                     rate = out(i).rate;
                 case 'ns'
-                    rate = out(i).metrics.ns_norm;
+                    if do_norm
+                        rate = out(i).metrics.ns_norm;
+                    else
+                        rate = out(i).metrics.ns;
+                    end
             end
             
             
@@ -110,8 +115,8 @@ end
 
 
 figure
-set(gcf,'position',[100 100 800 1000])
-tiledlayout(4,2,'TileSpacing','tight','Padding','compact')
+set(gcf,'position',[100 87 733 710])
+tiledlayout(4,2,'TileSpacing','tight','Padding','tight')
 tileorder = [1,3,5,7,2,4,6,8];
 count = 0;
 
@@ -129,10 +134,14 @@ for im = 1:n_metrics
     switch metric
         case 'rate'
             rate = out(ex_p).rate./out(ex_p).run_dur;
-            rtext = 'Spikes/min';
+            rtext = 'Spikes';
         case 'ns'
-            rate = out(ex_p).metrics.ns_norm;
-            rtext = 'NS';
+            if do_norm
+                rate = out(ex_p).metrics.ns_norm;
+            else
+                rate = out(ex_p).metrics.ns;
+            end
+            rtext = 'Node strength';
     end
     ekg = identify_ekg_scalp(out(ex_p).unchanged_labels);
     rate(ekg,:) = [];
@@ -143,25 +152,34 @@ for im = 1:n_metrics
     xlim([0 curr_times(end)])
     hold on
     cp = plot([curr_change curr_change],ylim,'r--','linewidth',3);
-    xticks([0 100 200 300])
-    xticklabels({'0 h','100 h','200 h','300 h'})
+    %xticks([0 100 200 300])
+    %xticklabels({'0 h','100 h','200 h','300 h'})
+    xlabel('Hour')
     yticklabels([])
-    %ylabel('Electrode')
+    if im == 1
+        ylabel('Electrode')
+    end
     set(gca,'fontsize',15)
-    c = colorbar('location','westoutside');
-    ylabel(c,rtext,'fontsize',15)
+    %c = colorbar('location','westoutside');
+    %ylabel(c,rtext,'fontsize',15)
+    title(rtext,'fontweight','normal')
     
     %% Histogram
     count = count+1;
     nexttile(tileorder(count))
     all_rate_diff = [];
+    surround = all_surrounds(1);
     for i = 1:npts
         switch metric
             case 'rate'
                 rate = out(i).rate./out(i).run_dur;
                 rtext = 'Rate change (spikes/min)';
             case 'ns'
-                rate = out(i).metrics.ns_norm;
+                if do_norm
+                    rate = out(i).metrics.ns_norm;
+                else
+                    rate = out(i).metrics.ns;
+                end
                 rtext = 'NS change';
         end
         cblock = out(i).change_block;
@@ -174,12 +192,16 @@ for im = 1:n_metrics
         all_rate_diff = [all_rate_diff;rate_diff];
     end
     histogram(all_rate_diff);
+    %{
     if im == 1
         legend('# electrodes','fontsize',15,'location','northwest')
     else
         legend('# electrodes','fontsize',15,'location','northwest')
     end
-    %ylabel('# electrodes')
+    %}
+    if im == 1
+        ylabel('# Electrodes')
+    end
     xlabel(rtext)
     set(gca,'fontsize',15)
     
@@ -260,11 +282,16 @@ annotation('textbox',[0.5 0.17 0.1 0.1],'String','H','fontsize',20,'linestyle','
 print(gcf,[main_spike_results,'new_ros'],'-dpng')
 
 %% Save table of p-values
-spike_T = cell2table(arrayfun(@(x) sprintf('%1.3f',x),all_all_all_p(:,:,1)',...
+names = ['all';names];
+all_spike = [all_all_p(:,1)';all_all_all_p(:,:,1)'];
+all_ns = [all_all_p(:,2)';all_all_all_p(:,:,2)'];
+
+
+spike_T = cell2table(arrayfun(@(x) sprintf('%1.3f',x),all_spike,...
     'UniformOutput',false),...
     'VariableNames',arrayfun(@(x) sprintf('%d',x),all_surrounds,...
     'UniformOutput',false),'RowNames',names);
-ns_T = cell2table(arrayfun(@(x) sprintf('%1.3f',x),all_all_all_p(:,:,2)',...
+ns_T = cell2table(arrayfun(@(x) sprintf('%1.3f',x),all_ns,...
     'UniformOutput',false),...
     'VariableNames',arrayfun(@(x) sprintf('%d',x),all_surrounds,...
     'UniformOutput',false),'RowNames',names);

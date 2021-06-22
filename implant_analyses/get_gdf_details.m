@@ -164,7 +164,7 @@ for c = nchanges % just do last one
                     [cos(:,h),un_cos(:,:,h)] = co_spiking(gdf,fs,added_labels,chLabels);
 
                 end
-            else
+            else % if it's empty
                 for ich = 1:nchs
                     % If the channel was marked as bad or skip, keep it
                     % a nan
@@ -173,7 +173,7 @@ for c = nchanges % just do last one
                         rate(ich,h) = nan;
                         continue
                     end
-                    rate(ich,h) = 0;
+                    rate(ich,h) = 0; % otherwise, say there are truly no spikes
                 end
             end
 

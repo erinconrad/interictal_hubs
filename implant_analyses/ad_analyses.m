@@ -2,11 +2,11 @@ function ad_analyses(whichPts,saved_out)
 
 
 %% Parameters
-do_test = 0;
-surround = 48;
-prt = [10 50];
+all_surrounds = 12*[0.5,1,2,3,4,5,6,7,8,9,10];
 ex = 10;
-do_additional = 0;
+
+%% Other info
+n_surrounds = length(all_surrounds);
 
 %% Locations
 locations = interictal_hub_locations;
@@ -45,13 +45,10 @@ end
 %% initialize figure
 figure
 
-if do_additional
-    set(gcf,'position',[100 100 1200 600])
-    tiledlayout(2,3,'TileSpacing','compact','Padding','tight')
-else
-    set(gcf,'position',[100 100 800 650])
-    tiledlayout(2,2,'TileSpacing','compact','Padding','compact')
-end
+
+set(gcf,'position',[100 100 800 650])
+tiledlayout(2,2,'TileSpacing','compact','Padding','compact')
+
 
 
 %% Power spectrum of AD
@@ -70,14 +67,14 @@ end
 all_P = nan(length(out),ceil(longest/2));
 for i = 1:length(out)
     ad = out(i).ad;
-    X = nanmean(ad,1);
-    X(isnan(X)) = nanmedian(X);
-    X = X-nanmean(X); % substract dc
-    X(end+1:end+longest-length(X)) = 0;
-    bdur = out(i).block_dur;
-    Y = fft(X);
-    P = (abs(Y)).^2;
-    fs = 1/bdur;
+    X = nanmean(ad,1); % average across electrodes
+    X(isnan(X)) = nanmedian(X); % set nans to median
+    X = X-nanmean(X); % substract dc component
+    X(end+1:end+longest-length(X)) = 0; % set things beyond duration of run to zero
+    bdur = out(i).block_dur; % 0.5 hours
+    Y = fft(X); % fft
+    P = (abs(Y)).^2; % power
+    fs = 1/bdur; % a freq of 2/hour
     freqs = linspace(0,fs,length(P)+1);
     freqs = freqs(1:end-1);
     % Take first half
@@ -86,7 +83,7 @@ for i = 1:length(out)
     
     all_P(i,:) = P/sum(P); % normalize by total power
     if i >1
-        if ~isequal(freqs,curr_freqs)
+        if ~isequal(freqs,curr_freqs) % all pts should have same freqs
             error('oh no');
         end
     end
@@ -142,11 +139,6 @@ set(gca,'fontsize',20);
 xlabel('Hours')
 ax = findobj(h.NodeChildren, 'Type','Axes');
 set(ax, 'YTick', []);
-%{
-plot(times,ad,'linewidth',2)
-hold on
-plot(times,sr,'linewidth',2)
-%}
 
 %% All pts correlation between AD and SR
 nexttile
@@ -165,10 +157,15 @@ for i = 1:length(out)
 end
 
 % Stouffer's Z-score
+%{
 if sum(sum(isnan(all_corr_info)))>0, error('what'); end
 z = sum(all_corr_info(:,3))/sqrt(length(out));
 % get two sided p-value from the combined z score
 pval = 2*normcdf(-abs(z));
+%}
+all_zs = all_corr_info(:,2);
+% two sided unpaired ttest
+[~,pval] = ttest(all_zs);
 
 % get r back by averaging the z's and z-to-r transforming. Do weighted
 % average by sample size
@@ -197,21 +194,34 @@ set(gca,'fontsize',20)
 
 %
 %% AD pre- and post-revision (stats for next graph)
-npts = length(whichPts);
-all_ad = nan(length(whichPts),2);
-for i = 1:length(whichPts)
-    ad = nanmean(out(i).ad,1);
-    rate = out(i).rate;
-    cblock = out(i).change_block;
-    [pre,post] = get_surround_times(rate,cblock,surround);
-    
-    ad_pre = nanmean(ad(pre));
-    ad_post = nanmean(ad(post));
-    all_ad(i,:) = [ad_pre ad_post];
+all_p = nan(n_surrounds,1);
+for s = 1:n_surrounds
+    surround = all_surrounds(s);
+    all_ad = nan(length(whichPts),2);
+    for i = 1:length(whichPts)
+        ad = nanmean(out(i).ad,1);
+        rate = out(i).rate;
+        cblock = out(i).change_block;
+        [pre,post] = get_surround_times(rate,cblock,surround);
+
+        ad_pre = nanmean(ad(pre));
+        ad_post = nanmean(ad(post));
+        all_ad(i,:) = [ad_pre ad_post];
+    end
+
+    % Paired ttest
+    [~,pval,~,stats] = ttest(all_ad(:,1),all_ad(:,2));
+    all_p(s) = pval;
 end
 
-% Paired ttest
-[~,pval,~,stats] = ttest(all_ad(:,1),all_ad(:,2));
+pval = all_p(1); % define first surround to be the one for the plot
+
+%% Save table of other p-values
+adT = cell2table(arrayfun(@(x) sprintf('%1.3f',x),all_p,...
+    'UniformOutput',false),...
+    'RowNames',arrayfun(@(x) sprintf('%d',x),all_surrounds,...
+    'UniformOutput',false));
+writetable(adT,[main_spike_results,'ad.csv'],'WriteRowNames',true)  
 %{
 plot(ones(npts,1)+0.05*rand(npts,1),all_ad(:,1),'o')
 hold on
@@ -241,7 +251,6 @@ end
 
 all_ad = nan(length(whichPts),max_time_before+max_time_after+1);
 mid_pos = max_time_before+1;
-all_ps = nan(length(whichPts),1);
 for i = 1:length(whichPts)
     ad = nanmean(out(i).ad,1);
     cblock = out(i).change_block;
@@ -268,7 +277,7 @@ plot([0 0],[yl(1) 0.85],'r--','linewidth',3)
 xlim([-24*8 24*8])
 ylabel('AD')
 xlabel('Hours relative to revision')
-plot([-24 24],[0.87 0.87],'k-','linewidth',2)
+plot([-all_surrounds(1)/2 all_surrounds(1)/2],[0.87 0.87],'k-','linewidth',2)
 if pval < 0.05
     text(0,0.94,sprintf('p = %1.3f',pval),'horizontalalignment','center');
 else
@@ -276,145 +285,6 @@ else
 end
 set(gca,'fontsize',20)
 
-%% High AD - to - low AD, single patient
-if do_additional 
-    nexttile
-
-
-    % Get difference in rate between pre and post revision
-    rate = out(ex).rate;
-    cblock = out(ex).change_block;
-    [pre,post] = get_surround_times(rate,cblock,surround);
-    rate_pre = nanmean(rate(:,pre),2);
-    rate_post = nanmean(rate(:,post),2);
-    re_diff_rate = rate_post - rate_pre;
-
-    % Get high and low ad periods (remove periods in pre and post)
-    ad = nanmean(out(ex).ad,1);
-    idx = 1:size(ad,2);
-    Y = prctile(ad,prt); % get 10th and 90th %ile AD values
-    high_ad_idx = ad > Y(2) & ~ismember(idx,pre) & ~ismember(idx,post);
-    low_ad_idx = ad < Y(1) & ~ismember(idx,pre) & ~ismember(idx,post);
-
-
-    %{
-    plot(ad)
-    hold on
-    plot(find(high_ad_idx),ad(high_ad_idx),'ro')
-    plot(find(low_ad_idx),ad(low_ad_idx),'go')
-    %}
-
-
-
-    % Get difference in rate between high and low ad
-    rate_high_ad = nanmean(rate(:,high_ad_idx),2);
-    rate_low_ad = nanmean(rate(:,low_ad_idx),2);
-    ad_diff_rate = rate_low_ad-rate_high_ad;
-    mean_rate = nanmean(rate,2);
-
-
-    % Throw out ekg and such
-    unchanged_labels = out(ex).unchanged_labels;
-    ekg = identify_ekg_scalp(unchanged_labels);
-    ad_diff_rate = ad_diff_rate(~ekg);
-    re_diff_rate = re_diff_rate(~ekg);
-    mean_rate = mean_rate(~ekg);
-    unchanged_labels = unchanged_labels(~ekg);
-
-    % Corr
-    if do_test
-        [r,p] = corr(mean_rate,re_diff_rate,'rows','pairwise');
-        plot(mean_rate,re_diff_rate,'o','color',[1 1 1])
-        text(mean_rate,re_diff_rate,unchanged_labels,'horizontalalignment','center')
-        xlabel('Mean rate')
-        ylabel('Post-pre rate change')
-    else
-        [r,p] = corr(ad_diff_rate,re_diff_rate,'rows','pairwise');
-        plot(ad_diff_rate,re_diff_rate,'o','color',[1 1 1])
-        text(ad_diff_rate,re_diff_rate,unchanged_labels,'horizontalalignment','center')
-        xlabel('Low AD-High AD rate change')
-        ylabel('Post-pre rate change')
-    end
-    xl = xlim;
-    yl = ylim;
-    text(xl(2),yl(2),sprintf('r = %1.2f\np = %1.3f',r,p),...
-        'horizontalalignment','right','VerticalAlignment','top')
-
-    %% Corr all patients
-    nexttile
-    all_corr_info = nan(length(out),5);
-    npts = length(out);
-    for i = 1:npts
-
-        % Get difference in rate between pre and post revision
-        rate = out(i).rate;
-        cblock = out(i).change_block;
-        [pre,post] = get_surround_times(rate,cblock,surround);
-        rate_pre = nanmean(rate(:,pre),2);
-        rate_post = nanmean(rate(:,post),2);
-        re_diff_rate = rate_post - rate_pre;
-
-        % mean rate
-        mean_rate = nanmean(rate,2);
-
-        % Get high and low ad periods (remove periods in pre and post)
-        ad = nanmean(out(i).ad,1);
-        idx = 1:size(ad,2);
-        Y = prctile(ad,prt); % get 10th and 90th %ile AD values
-        high_ad_idx = ad > Y(2) & ~ismember(idx,pre) & ~ismember(idx,post);
-        low_ad_idx = ad < Y(1) & ~ismember(idx,pre) & ~ismember(idx,post);
-
-        % Get difference in rate between high and low ad
-        rate_high_ad = nanmean(rate(:,high_ad_idx),2);
-        rate_low_ad = nanmean(rate(:,low_ad_idx),2);
-        ad_diff_rate = rate_low_ad-rate_high_ad;
-
-        % Throw out ekg and such
-        ekg = identify_ekg_scalp(out(i).unchanged_labels);
-        ad_diff_rate = ad_diff_rate(~ekg);
-        re_diff_rate = re_diff_rate(~ekg);
-        mean_rate = mean_rate(~ekg);
-
-        % Corr
-        if do_test
-            [r,p] = corr(re_diff_rate,mean_rate,'rows','pairwise');
-            n = sum(~isnan(re_diff_rate) & ~isnan(mean_rate));
-        else
-            [r,p] = corr(ad_diff_rate,re_diff_rate,'rows','pairwise');
-            n = sum(~isnan(ad_diff_rate) & ~isnan(re_diff_rate));
-        end
-        [z,z_score,pval2] = fisher_transform(r,n);
-        if abs(p-pval2) > 0.03
-            error('oh nos');
-        end
-        all_corr_info(i,:) = [r z z_score n p];
-
-    end
-
-    % Stouffer's Z-score
-    if sum(sum(isnan(all_corr_info)))>0, error('what'); end
-    z = sum(all_corr_info(:,3))/sqrt(length(out));
-    % get two sided p-value from the combined z score
-    pval = 2*normcdf(-abs(z));
-
-    % get r back by averaging the z's and z-to-r transforming. Do weighted
-    % average by sample size
-    r = tanh(nansum(all_corr_info(:,2).*all_corr_info(:,4))./nansum(all_corr_info(:,4)));
-
-    % Plot
-    plot(all_corr_info(:,1),'o','linewidth',2)
-    hold on
-    ylim([-1 1])
-    plot(xlim,[0 0],'k--')
-    if do_test
-        ylabel('Rate-revision rate diff correlation')
-    else
-        ylabel('AD rate diff-revision rate diff correlation')
-    end
-    xlabel('Patient')
-    xticklabels([])
-    text(9.5,0.9,sprintf('Combined r = % 1.2f\np = %1.3f',r,pval),'horizontalalignment','right')
-end
 
 annotation('textbox',[0 0.9 0.1 0.1],'String','A','fontsize',30,'linestyle','none')
 annotation('textbox',[0.53 0.9 0.1 0.1],'String','B','fontsize',30,'linestyle','none')
