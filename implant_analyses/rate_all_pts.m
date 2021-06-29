@@ -6,7 +6,10 @@ This makes the rate figure and analysis
 
 %% Parameters
 all_surrounds = 12*[0.5,1,2,3,4,5,6,7,8,9,10]; % number of half hour segments surrounding implant
+%all_surrounds = 12*2;
+main_surround = 3;
 nb = 1e4; 
+
 
 %% Locations
 locations = interictal_hub_locations;
@@ -43,7 +46,7 @@ else
 end
 
 %% Get overall rate and do significance testing
-surround = all_surrounds(1);
+surround = all_surrounds(main_surround);
 for i = 1:length(whichPts)
     out(i).overall_rate = nansum(out(i).rate,1); % sum across electrodes to get total number of spikes
     out(i).nan_blocks = find(isnan(nanmean(out(i).rate,1)));
@@ -71,16 +74,16 @@ nan_blocks = out(p).nan_blocks;
 pre = pre*out(p).block_dur;
 post = post*out(p).block_dur;
 xlim([0 length(curr_rate)*out(p).block_dur]);
-if ismember(tile_order(p) ,[1 4 7 10])
+%if ismember(tile_order(p) ,[1 4 7 10])
     ylabel('Spikes/min')
-end
-if ismember(tile_order(p),[10 11])
+%end
+%if ismember(tile_order(p),[10 11])
     xlabel('Hour')
-end
-title(sprintf('%Pt %d',p));
-set(gca,'fontsize',20)
+%end
+
+set(gca,'fontsize',15)
 yl = ylim;
-new_yl = [yl(1) 1.1*(yl(2)-yl(1))];
+new_yl = [yl(1) 1.15*(yl(2)-yl(1))];
 ylim(new_yl);
 yl = ylim;
 top = yl(1) + 0.75*(yl(2)-yl(1));
@@ -97,8 +100,11 @@ plot([pre(1) post(end)],[yl(1) + 0.8*(yl(2)-yl(1)) yl(1) + 0.8*(yl(2)-yl(1))],..
     'k-','linewidth',2);
 ast = get_asterisks(out(p).overall_rate_pval,length(out));
 text(curr_change,yl(1) + 0.9*(yl(2)-yl(1)),ast,...
-    'horizontalalignment','center','fontsize',20)
+    'horizontalalignment','center','fontsize',15)
 %legend([cp ap],{'Revision','Data missing'},'fontsize',20,'location','northeast')
+xl = xlim;
+yl = ylim;
+text(xl(1),yl(2),sprintf('Patient %d',p),'fontsize',15,'VerticalAlignment','Top')
 end
 
 %% Rate change for all patients
@@ -130,12 +136,15 @@ xlim([0.5 2.5])
 yl = ylim;
 ylim([yl(1) 1.15*(yl(2)-yl(1))])
 plot([1 2],[yl(1) + 1*(yl(2)-yl(1)) yl(1) + 1*(yl(2)-yl(1))],'k-','linewidth',2)
-text(1.5,yl(1) + 1.07*(yl(2)-yl(1)),get_asterisks(pval,1),'horizontalalignment','center','fontsize',20)
+text(1.5,yl(1) + 1.07*(yl(2)-yl(1)),get_asterisks(pval,1),'horizontalalignment','center','fontsize',15)
+yl = ylim;
+xl = xlim;
+text(xl(1),yl(2),'All patients','verticalalignment','top','fontsize',15)
 
 xticks([1 2])
 ylabel('Spikes/min')
 xticklabels({'Pre-revision','Post-revision'})
-set(gca,'fontsize',20)
+set(gca,'fontsize',15)
 
 
 %% Add subtitle labels

@@ -27,5 +27,23 @@ plot([cblock cblock],ylim,'r--','linewidth',4)
 yticks(1:length(chLabels))
 yticklabels(chLabels)
 
+%{
+while 1
+    try
+        [x,y] = ginput;
+    catch
+        break
+    end
+    chLab = chLabels{round(y(end))};
+    fidx = f;
+    bidx = bindices(round(x(end)/dur));
+    fprintf('\nShowing spikes for %s ch %s file %d block %d (hour %d)\n',...
+        name,chLab,fidx,bidx,round(bidx*dur));
+
+    plot_spikes_by_ch(p,chLab,fidx,bidx,spikes)
+
+end
+%}
+
 
 end

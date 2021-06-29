@@ -55,7 +55,7 @@ nexttile
 plot(dist,cosi,'o','linewidth',2,'color',cols(1,:))
 xlabel('Distance from added electrodes (mm)')
 ylabel('Co-spike index')
-set(gca,'fontsize',20)
+set(gca,'fontsize',15)
 
 
 % Correlate distance and pearson correlation with added electrodes
@@ -63,7 +63,7 @@ nexttile
 plot(dist,pc,'o','linewidth',2,'color',cols(2,:))
 xlabel('Distance from added electrodes (mm)')
 ylabel('Functional connectivity')
-set(gca,'fontsize',20)
+set(gca,'fontsize',15)
 
 
 % Correlate pearson correlation and co-spike index
@@ -71,7 +71,7 @@ nexttile
 plot(pc,cosi,'o','linewidth',2,'color',cols(3,:))
 xlabel('Functional connectivity')
 ylabel('Co-spike index')
-set(gca,'fontsize',20)
+set(gca,'fontsize',15)
 
 %% Second row is aggregate patient data
 all_dist_cosi = [];
@@ -123,14 +123,17 @@ nexttile
 plot(all_dist_cosi(:,1),'o','linewidth',2,'markersize',15,'color',cols(1,:))
 hold on
 %plot(xlim,[dist_cosi_r dist_cosi_r],'linewidth',2);
-set(gca,'fontsize',20)
+set(gca,'fontsize',15)
 ylim([-1 1])
 xlim([1 length(whichPts)])
 plot(xlim,[0 0],'k--')
 xticklabels([])
 xlabel('Patient')
 ylabel('Distance-CSI correlation')
-text(6,0.75,sprintf('Mean r = %1.2f\n%s',dist_cosi_r,get_p_text(dist_cosi_p)),'fontsize',20)
+xl = xlim;
+yl = ylim;
+text(xl(2),yl(2),sprintf('Mean r = %1.2f\n%s',dist_cosi_r,get_p_text(dist_cosi_p)),...
+    'fontsize',15,'horizontalalignment','right','verticalalignment','top')
 
 
 % Plot dist_pc for each patient
@@ -138,28 +141,41 @@ nexttile
 plot(all_dist_pc(:,1),'o','linewidth',2,'markersize',15,'color',cols(2,:))
 hold on
 %plot(xlim,[dist_pc_r dist_pc_r],'linewidth',2);
-set(gca,'fontsize',20)
+set(gca,'fontsize',15)
 ylim([-1 1])
 xlim([1 length(whichPts)])
 plot(xlim,[0 0],'k--')
 xticklabels([])
 xlabel('Patient')
 ylabel('Distance-FC correlation')
-text(6,0.75,sprintf('Mean r = %1.2f\n%s',dist_pc_r,get_p_text(dist_pc_p)),'fontsize',20)
+xl = xlim;
+yl = ylim;
+text(xl(2),yl(2),sprintf('Mean r = %1.2f\n%s',dist_pc_r,get_p_text(dist_pc_p)),...
+    'fontsize',15,'horizontalalignment','right','verticalalignment','top')
 
 % Plot pc_cosi for each patient
 nexttile
 plot(all_cosi_pc(:,1),'o','linewidth',2,'markersize',15,'color',cols(3,:))
 hold on
 %plot(xlim,[cosi_pc_r cosi_pc_r],'linewidth',2);
-set(gca,'fontsize',20)
+set(gca,'fontsize',15)
 xlim([1 length(whichPts)])
 ylim([-1 1])
 plot(xlim,[0 0],'k--')
 xticklabels([])
 xlabel('Patient')
 ylabel('FC-CSI correlation')
-text(6,-0.75,sprintf('Mean r = %1.2f\n%s',cosi_pc_r,get_p_text(cosi_pc_p)),'fontsize',20)
+xl = xlim;
+yl = ylim;
+text(xl(2),yl(2),sprintf('Mean r = %1.2f\n%s',cosi_pc_r,get_p_text(cosi_pc_p)),...
+    'fontsize',15,'horizontalalignment','right','verticalalignment','top')
+
+annotation('textbox',[0 0.91 0.1 0.1],'String','A','fontsize',20,'linestyle','none')
+annotation('textbox',[0.33 0.91 0.1 0.1],'String','B','fontsize',20,'linestyle','none')
+annotation('textbox',[0.67 0.91 0.1 0.1],'String','C','fontsize',20,'linestyle','none')
+annotation('textbox',[0 0.42 0.1 0.1],'String','D','fontsize',20,'linestyle','none')
+annotation('textbox',[0.33 0.42 0.1 0.1],'String','E','fontsize',20,'linestyle','none')
+annotation('textbox',[0.67 0.42 0.1 0.1],'String','F','fontsize',20,'linestyle','none')
 
 print(gcf,[main_spike_results,'dist_cosi_pc_corr'],'-dpng');
 

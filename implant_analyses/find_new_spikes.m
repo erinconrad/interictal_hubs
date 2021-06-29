@@ -1,8 +1,8 @@
 function find_new_spikes(whichPts,saved_out)
 
 %% Parameters
-max_pre = 0.01;% in units of spikes/min
-min_post = 5;
+max_pre = 1/60;% in units of spikes/min (and so 1/60 is at least once per hour)
+min_post = 1;
 
 %% Decide whether to do this!!
 only_pre = 0; % for the MC analysis, compare to only the pre-revision times (in case the revision effect is delayed)

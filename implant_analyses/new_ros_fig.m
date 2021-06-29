@@ -3,6 +3,7 @@ function new_ros_fig(whichPts,saved_out)
 %% User change parameters
 all_surrounds = 12*[0.5,1,2,3,4,5,6,7,8,9,10];
 %all_surrounds = 12*[0.5,1];
+main_surround = 1;
 nb = 1e4; % number of monte carlo iterations (should probably keep 10,000)
 ex_p = 5;
 do_norm = 0; % doesn't seem to make much difference so I will keep 0 for simplicity
@@ -63,7 +64,9 @@ all_all_mc_r = nan(n_surrounds,length(whichPts),nb,n_metrics);
 all_all_p = nan(n_surrounds,n_metrics);
 all_all_all_p = nan(n_surrounds,length(whichPts),n_metrics);
 
+
 for im = 1:n_metrics
+    allcatlist = [];
     metric = all_metrics{im};
     
     for is = 1:n_surrounds
@@ -102,6 +105,27 @@ for im = 1:n_metrics
             all_all_all_p(is,i,im) = pval_curr;
             all_ps(i) = pval_curr;
 
+             %% CAT analysis
+            if is == main_surround
+                % pre and post
+                [pre,post] = get_surround_times(rate,cblock,surround);
+                pre_mean = nanmean(rate(:,pre),2);
+                post_mean = nanmean(rate(:,post),2);
+                catlist = cat_plot(pre_mean,post_mean);
+                length_diff = length(catlist) - size(allcatlist,1);
+
+                if length_diff > 0 % new one longer
+                    % pad old with nans
+                    allcatlist = [allcatlist;nan(length_diff,size(allcatlist,2))];
+                elseif length_diff < 0 % old one older
+                    % pad new with nans
+                    catlist = [catlist;nan(-length_diff,1)];
+                end
+
+         
+                % add to the full patient list
+                allcatlist = [allcatlist,catlist];
+            end
 
         end
 
@@ -110,7 +134,16 @@ for im = 1:n_metrics
         sum_p = 1-chi2cdf(X_2,2*length(all_ps));
 
         all_all_p(is,im) = sum_p;
+        
+       
+        
     end
+    
+    if im == 1
+        all_cat_list = nan(size(allcatlist,1),size(allcatlist,2),2);
+    end
+    all_cat_list(:,:,im) = allcatlist;
+    
 end
 
 
@@ -127,6 +160,7 @@ for im = 1:n_metrics
     
     metric = all_metrics{im};
     
+    if 0
     %% Raster
     count = count+1;
     nexttile(tileorder(count))
@@ -163,6 +197,7 @@ for im = 1:n_metrics
     %c = colorbar('location','westoutside');
     %ylabel(c,rtext,'fontsize',15)
     title(rtext,'fontweight','normal')
+    end
     
     %% Histogram
     count = count+1;
@@ -267,17 +302,39 @@ for im = 1:n_metrics
         ylabel({'NS stability'})
     end
     set(gca,'fontsize',15)
+    
+    %% CAT analysis
+    if 1
+        count = count + 1;
+        nexttile(tileorder(count));
+        
+        % Average over patients
+        mean_cat = squeeze(nanmean(all_cat_list(:,:,im),2));
+        std_cat = squeeze(nanstd(all_cat_list(:,:,im),[],2));
+        
+        % Plot
+        shaded_error_bars(1:length(mean_cat),mean_cat,std_cat,[])
+        xlabel('Number of electrodes')
+        if im == 1
+            ylabel('Spike stability')
+        else
+            ylabel('NS stability')
+        end
+        xlim([1 100])
+        set(gca,'fontsize',15);
+        
+    end
 end
 
 %% Annotations
 annotation('textbox',[0 0.90 0.1 0.1],'String','A','fontsize',20,'linestyle','none')
 annotation('textbox',[0.5 0.90 0.1 0.1],'String','B','fontsize',20,'linestyle','none')
 annotation('textbox',[0 0.67 0.1 0.1],'String','C','fontsize',20,'linestyle','none')
-annotation('textbox',[0.5 0.66 0.1 0.1],'String','D','fontsize',20,'linestyle','none')
-annotation('textbox',[0 0.41 0.1 0.1],'String','E','fontsize',20,'linestyle','none')
-annotation('textbox',[0.5 0.41 0.1 0.1],'String','F','fontsize',20,'linestyle','none')
-annotation('textbox',[0 0.17 0.1 0.1],'String','G','fontsize',20,'linestyle','none')
-annotation('textbox',[0.5 0.17 0.1 0.1],'String','H','fontsize',20,'linestyle','none')
+annotation('textbox',[0.5 0.67 0.1 0.1],'String','D','fontsize',20,'linestyle','none')
+annotation('textbox',[0 0.42 0.1 0.1],'String','E','fontsize',20,'linestyle','none')
+annotation('textbox',[0.5 0.42 0.1 0.1],'String','F','fontsize',20,'linestyle','none')
+annotation('textbox',[0 0.18 0.1 0.1],'String','G','fontsize',20,'linestyle','none')
+annotation('textbox',[0.5 0.18 0.1 0.1],'String','H','fontsize',20,'linestyle','none')
 
 print(gcf,[main_spike_results,'new_ros'],'-dpng')
 

@@ -2,7 +2,10 @@ function all_corrs(whichPts,saved_out)
 
 %% Parameters
 all_surrounds = 12*[0.5,1,2,3,4,5,6,7,8,9,10];
-%all_surrounds = 12*[0.5];
+%all_surrounds = 12*[0.5,1];
+main_surround = 3;
+main_pred = 1;
+main_resp = 1;
 nb = 1e4;
 ex = 1;
 
@@ -15,8 +18,8 @@ do_fisher = 0;
 
 n_surrounds = length(all_surrounds);
 which_resps = {'rel_rate','ns_rel'};
-%which_preds = {'dist','ns','cosi'};
-which_preds = {'dist'};
+which_preds = {'dist','ns','cosi'};
+%which_preds = {'dist'};
 
 %% Locations
 locations = interictal_hub_locations;
@@ -68,6 +71,12 @@ all_all_r = nan(length(all_surrounds),length(which_resps),length(which_preds),le
 all_all_mc_r = nan(length(all_surrounds),length(which_resps),length(which_preds),length(whichPts));
 all_all_p = nan(length(all_surrounds),length(which_resps),length(which_preds),length(whichPts));
 
+%% Prep supplemental figure
+figure
+set(gcf,'position',[608 175 1371 514])
+tiledlayout(2,5,'Padding','compact','tilespacing','compact')
+
+
 % Loop over surrounds
 for s = 1:length(all_surrounds)
     surround = all_surrounds(s);
@@ -108,7 +117,7 @@ for s = 1:length(all_surrounds)
                 switch which_pred
                     case 'dist'
                         predictor = out(i).dist;
-                        ptext = 'distance';  
+                        ptext = 'Distance';  
                     case 'ns'
                         predictor = out(i).metrics.added_pc;
                         ptext = 'FC';  
@@ -138,13 +147,20 @@ for s = 1:length(all_surrounds)
 
 
                 % Monte carlo test
-                [rho,pval,mc_rho] = mc_corr(rate,ns,predictor,...
-                cblock,surround,nb,which_resp,'Spearman');
+                if p == main_pred
+                    [rho,pval,mc_rho] = mc_corr(rate,ns,predictor,...
+                    cblock,surround,nb,which_resp,'Spearman');
+                else
+                    rho = nan;
+                    pval = nan;
+                    mc_rho = nan;
+                end
+                
 
                 % Fisher's R to z transformation on the original rhos
                 n = sum(~isnan(resp) & ~isnan(predictor));
                 [z,z_score,pval2] = fisher_transform(rho,n);
-                [~,alt_pval2] = corr(resp,predictor,'Type','Spearman','rows','pairwise');
+                [rho,alt_pval2] = corr(resp,predictor,'Type','Spearman','rows','pairwise');
 
                 % Also get the fisher transformed r-to-z for each mc rho
                 mc_z = fisher_transform(mc_rho,n);
@@ -154,14 +170,41 @@ for s = 1:length(all_surrounds)
 
                 % this is to make sure I am getting a reasonable z-score from my fisher
                 % transformation.
-                if abs(pval2-alt_pval2) > 0.05
-                    error('oh nos');
+                if p == main_pred
+                    if abs(pval2-alt_pval2) > 0.05
+                        error('oh nos');
+                    end
                 end
 
                 % Fill up all z's with info
                 all_zs(i,:) = [z,z_score,rho,pval,n,pval2,alt_pval2];
                 
                 all_all_p(s,r,p,i) = pval; % these are the MC p values for individual patients
+                
+                %% Make supplemental figure
+                if p == main_pred && s == main_surround && r == main_resp
+                    
+                    if alt_pval2 < 0.001
+                        pvaltext = '< 0.001';
+                    else
+                        pvaltext = sprintf('= %1.3f',alt_pval2);
+                    end
+                    
+                    nexttile
+                    plot(predictor,resp,'o','linewidth',2)
+                    ylabel(rtext)
+                    xlabel(ptext)     
+                    set(gca,'fontsize',15)
+                    pause(0.2)
+                    xl = xlim;
+                    yl = ylim;
+                    pause(0.2)
+                    text(xl(2),yl(2),sprintf('Pt %d \\rho = %1.2f, p %s\nMC p = %1.3f',...
+                        i,rho,pvaltext,pval),...
+                        'HorizontalAlignment','Right','VerticalAlignment','Top',...
+                        'fontsize',15)
+                    
+                end
 
             end
 
@@ -221,13 +264,22 @@ for s = 1:length(all_surrounds)
     end
 end
 
+% Save the supplemental figure
+print(gcf,[main_spike_results,sprintf('supp_fig1_surround_%d',all_surrounds(main_surround))],'-dpng')
+
+
 figure
-set(gcf,'position',[50 547 700 800])
+%set(gcf,'position',[50 547 700 800])
+set(gcf,'position',[50 329 687 468])
+%{
 tt = tiledlayout(3,2,'TileSpacing','compact','padding','compact');
 tile_order = [1 3 5 2 4 6];
+%}
+tt = tiledlayout(2,2,'TileSpacing','compact','padding','compact');
+tile_order = [1 3 2 4];
 
-p = 1; % distance
-s = 1; % first surround
+p = main_pred ; % distance
+s = main_surround; 
 count = 0;
 for r = 1:length(which_resps)
     which_resp = which_resps{r};
@@ -288,6 +340,7 @@ for r = 1:length(which_resps)
     predictor(ekg) = [];
     
     % Plot the correlation
+    %{
     count = count+1;
     nexttile(tile_order(count));
     plot(predictor,resp,'o','markersize',10,'linewidth',2)
@@ -296,17 +349,16 @@ for r = 1:length(which_resps)
     yl = ylim;
     xl = xlim;
     set(gca,'fontsize',15)
-    pause
+    %pause
     text(xl(2),yl(2),...
         sprintf('r = %1.2f\nMC p = %1.2f',...
         (all_all_r(s,r,p,ex)),all_all_p(s,r,p,ex)),'fontsize',15,...
         'horizontalalignment','right',...
             'verticalalignment','top')
     
-    
+    %}
 
     %% Plot aggregate statistics
-    s = 1;
     count = count+1;
     nexttile(tile_order(count));
     plot(1+0.05*rand(length(whichPts),1),squeeze(all_all_r(s,r,p,:)),'o','markersize',10,'linewidth',2)
@@ -376,6 +428,7 @@ for r = 1:length(which_resps)
     xticks(1:n_surrounds)
     xticklabels(all_surrounds)
     xlabel('Peri-revision period (hours)')
+    ylabel(sprintf('%s-%s\ncorrelation',rtext,ptext))
     set(gca,'fontsize',15)
     
 end
@@ -383,15 +436,18 @@ end
 %% Annotations
 annotation('textbox',[0 0.9 0.1 0.1],'String','A','fontsize',20,'linestyle','none')
 annotation('textbox',[0.51 0.9 0.1 0.1],'String','B','fontsize',20,'linestyle','none')
-annotation('textbox',[0 0.58 0.1 0.1],'String','C','fontsize',20,'linestyle','none')
-annotation('textbox',[0.51 0.58 0.1 0.1],'String','D','fontsize',20,'linestyle','none')
-annotation('textbox',[0 0.24 0.1 0.1],'String','E','fontsize',20,'linestyle','none')
-annotation('textbox',[0.51 0.24 0.1 0.1],'String','F','fontsize',20,'linestyle','none')
+annotation('textbox',[0 0.46 0.1 0.1],'String','C','fontsize',20,'linestyle','none')
+annotation('textbox',[0.51 0.46 0.1 0.1],'String','D','fontsize',20,'linestyle','none')
+%annotation('textbox',[0 0.58 0.1 0.1],'String','C','fontsize',20,'linestyle','none')
+%annotation('textbox',[0.51 0.58 0.1 0.1],'String','D','fontsize',20,'linestyle','none')
+%annotation('textbox',[0 0.24 0.1 0.1],'String','E','fontsize',20,'linestyle','none')
+%annotation('textbox',[0.51 0.24 0.1 0.1],'String','F','fontsize',20,'linestyle','none')
 
 
-print(gcf,[main_spike_results,sprintf('all_corrs_surround_%d',all_surrounds(1))],'-dpng')
+print(gcf,[main_spike_results,sprintf('all_corrs_surround_%d',all_surrounds(main_surround))],'-dpng')
 
 %% Save table of p-values
+%{
 p = 1;
 names = ['all';names];
 if do_fisher
@@ -416,23 +472,22 @@ Tns = cell2table(arrayfun(@(x) sprintf('%1.3f',x),all_all_ns,'UniformOutput',fal
 dtext = which_preds{1};
 writetable(Tspike,[main_spike_results,'spike_',dtext,'.csv'],'WriteRowNames',true)  
 writetable(Tns,[main_spike_results,'ns_',dtext,'.csv'],'WriteRowNames',true)  
+%}
 
 %% Also table of simple p-values
-
-spike_p_simp = squeeze(all_p_simp(:,1,p,1));
-ns_p_simp = squeeze(all_p_simp(:,2,p,1));
+spike_p_simp = squeeze(all_p_simp(:,1,:,1));
+ns_p_simp = squeeze(all_p_simp(:,2,:,1));
 
 Tspike_simp = cell2table(arrayfun(@(x) sprintf('%1.3f',x),spike_p_simp,'UniformOutput',false),...
     'RowNames',arrayfun(@(x) sprintf('%d',x),all_surrounds,...
-    'UniformOutput',false));
+    'UniformOutput',false),'VariableNames',which_preds);
 
 Tns_simp = cell2table(arrayfun(@(x) sprintf('%1.3f',x),ns_p_simp,'UniformOutput',false),...
     'RowNames',arrayfun(@(x) sprintf('%d',x),all_surrounds,...
-    'UniformOutput',false));
+    'UniformOutput',false),'VariableNames',which_preds);
 
-dtext = which_preds{p};
-writetable(Tspike_simp,[main_spike_results,'spike_simp_',dtext,'.csv'],'WriteRowNames',true)  
-writetable(Tns_simp,[main_spike_results,'ns_simp_',dtext,'.csv'],'WriteRowNames',true)  
+writetable(Tspike_simp,[main_spike_results,'spike_simp_','.csv'],'WriteRowNames',true)  
+writetable(Tns_simp,[main_spike_results,'ns_simp_','.csv'],'WriteRowNames',true)  
 
 %% Sentences
 fprintf(['\n\nOn a group level, the average correlation between relative spike rate change '...
@@ -440,8 +495,17 @@ fprintf(['\n\nOn a group level, the average correlation between relative spike r
     'less than zero (t(%d) = %1.1f, p = %1.3f). Furthermore, this correlation '...
     'was stronger than expected for randomly chosen pseudo-revision times '...
     '(Monte Carlo p = %1.3f)\n'],...
-    mean(all_all_r(1,1,1,:)),all_p_simp(1,1,1,3),...
-    all_p_simp(1,1,1,2),all_p_simp(1,1,1,1),...
-    all_p_mc_rho(1,1,1))
+    mean(all_all_r(main_surround,1,main_pred,:)),all_p_simp(main_surround,1,main_pred,3),...
+    all_p_simp(main_surround,1,main_pred,2),all_p_simp(main_surround,1,main_pred,1),...
+    all_p_mc_rho(main_surround,1,main_pred))
+
+fprintf(['\n\nOn a group level, the average correlation between relative node strength change '...
+    'and distance from the revision site was %1.2f, which was not significant '...
+    't(%d) = %1.1f, p = %1.3f). This correlation '...
+    'was not stronger than expected for randomly chosen pseudo-revision times '...
+    '(Monte Carlo p = %1.3f)\n'],...
+    mean(all_all_r(main_surround,2,main_pred,:)),all_p_simp(main_surround,2,main_pred,3),...
+    all_p_simp(main_surround,2,main_pred,2),all_p_simp(main_surround,2,main_pred,1),...
+    all_p_mc_rho(main_surround,2,main_pred))
 
 end
