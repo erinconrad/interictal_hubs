@@ -42,7 +42,7 @@ cols = [0, 0.4470, 0.7410;...
 %% Initialize figure
 figure
 set(gcf,'position',[29 100 1340 550])
-tiledlayout(2,3,'TileSpacing','loose','padding','tight')
+tiledlayout(2,3,'TileSpacing','tight','padding','tight')
 
 %% First row is example plots for a single patient
 p = 1;
@@ -125,7 +125,7 @@ hold on
 %plot(xlim,[dist_cosi_r dist_cosi_r],'linewidth',2);
 set(gca,'fontsize',15)
 ylim([-1 1])
-xlim([1 length(whichPts)])
+xlim([0.5 length(whichPts)+0.5])
 plot(xlim,[0 0],'k--')
 xticklabels([])
 xlabel('Patient')
@@ -143,7 +143,8 @@ hold on
 %plot(xlim,[dist_pc_r dist_pc_r],'linewidth',2);
 set(gca,'fontsize',15)
 ylim([-1 1])
-xlim([1 length(whichPts)])
+xlim([0.5 length(whichPts)+0.5])
+
 plot(xlim,[0 0],'k--')
 xticklabels([])
 xlabel('Patient')
@@ -159,7 +160,8 @@ plot(all_cosi_pc(:,1),'o','linewidth',2,'markersize',15,'color',cols(3,:))
 hold on
 %plot(xlim,[cosi_pc_r cosi_pc_r],'linewidth',2);
 set(gca,'fontsize',15)
-xlim([1 length(whichPts)])
+xlim([0.5 length(whichPts)+0.5])
+
 ylim([-1 1])
 plot(xlim,[0 0],'k--')
 xticklabels([])

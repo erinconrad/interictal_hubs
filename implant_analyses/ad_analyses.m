@@ -3,6 +3,7 @@ function ad_analyses(whichPts,saved_out)
 
 %% Parameters
 all_surrounds = 12*[0.5,1,2,3,4,5,6,7,8,9,10];
+main_surround = 3;
 ex = 10;
 
 %% Other info
@@ -195,6 +196,8 @@ set(gca,'fontsize',20)
 %
 %% AD pre- and post-revision (stats for next graph)
 all_p = nan(n_surrounds,1);
+all_df = nan(n_surrounds,1);
+all_t = nan(n_surrounds,1);
 for s = 1:n_surrounds
     surround = all_surrounds(s);
     all_ad = nan(length(whichPts),2);
@@ -212,12 +215,14 @@ for s = 1:n_surrounds
     % Paired ttest
     [~,pval,~,stats] = ttest(all_ad(:,1),all_ad(:,2));
     all_p(s) = pval;
+    all_df(s) = stats.df;
+    all_t(s) = stats.tstat;
 end
 
-pval = all_p(1); % define first surround to be the one for the plot
+pval = all_p(main_surround); % which one to use for plot
 
 %% Save table of other p-values
-adT = cell2table(arrayfun(@(x) sprintf('%1.3f',x),all_p,...
+adT = cell2table(arrayfun(@(x,y,z) sprintf('t(%d) = %1.2f, p = %1.3f',x,y,z),all_df,all_t,all_p,...
     'UniformOutput',false),...
     'RowNames',arrayfun(@(x) sprintf('%d',x),all_surrounds,...
     'UniformOutput',false));
@@ -277,7 +282,7 @@ plot([0 0],[yl(1) 0.85],'r--','linewidth',3)
 xlim([-24*8 24*8])
 ylabel('AD')
 xlabel('Hours relative to revision')
-plot([-all_surrounds(1)/2 all_surrounds(1)/2],[0.87 0.87],'k-','linewidth',2)
+plot([-all_surrounds(main_surround)/2 all_surrounds(main_surround)/2],[0.87 0.87],'k-','linewidth',2)
 if pval < 0.05
     text(0,0.94,sprintf('p = %1.3f',pval),'horizontalalignment','center');
 else

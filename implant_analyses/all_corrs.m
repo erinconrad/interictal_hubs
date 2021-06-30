@@ -138,10 +138,10 @@ for s = 1:length(all_surrounds)
                 % Define response
                 switch which_resp
                     case 'rel_rate'
-                        resp = (nanmean(rate(:,post),2) - nanmean(rate(:,pre),2))./nanmean(rate(:,pre),2);
+                        resp = (nanmean(rate(:,post),2) - nanmean(rate(:,pre),2))./abs(nanmean(rate(:,pre),2));
                         rtext = 'Rate change';
                     case 'ns_rel'
-                        resp = (nanmean(ns(:,post),2) - nanmean(ns(:,pre),2))./nanmean(ns(:,pre),2);
+                        resp = (nanmean(ns(:,post),2) - nanmean(ns(:,pre),2))./abs(nanmean(ns(:,pre),2));
                         rtext = 'NS change';
                 end
 

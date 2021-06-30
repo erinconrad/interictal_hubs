@@ -3,7 +3,7 @@ function new_ros_fig(whichPts,saved_out)
 %% User change parameters
 all_surrounds = 12*[0.5,1,2,3,4,5,6,7,8,9,10];
 %all_surrounds = 12*[0.5,1];
-main_surround = 1;
+main_surround = 3;
 nb = 1e4; % number of monte carlo iterations (should probably keep 10,000)
 ex_p = 5;
 do_norm = 0; % doesn't seem to make much difference so I will keep 0 for simplicity
@@ -160,7 +160,7 @@ for im = 1:n_metrics
     
     metric = all_metrics{im};
     
-    if 0
+    if 1
     %% Raster
     count = count+1;
     nexttile(tileorder(count))
@@ -304,7 +304,7 @@ for im = 1:n_metrics
     set(gca,'fontsize',15)
     
     %% CAT analysis
-    if 1
+    if 0
         count = count + 1;
         nexttile(tileorder(count));
         

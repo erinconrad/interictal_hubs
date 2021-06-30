@@ -17,9 +17,9 @@ nblocks = size(rate,2);
 % Calculate change in rate
 switch which_resp
     case 'rel_rate'
-        resp = (nanmean(rate(:,post),2) - nanmean(rate(:,pre),2))./nanmean(rate(:,pre),2);
+        resp = (nanmean(rate(:,post),2) - nanmean(rate(:,pre),2))./abs(nanmean(rate(:,pre),2));
     case 'ns_rel'
-        resp = (nanmean(ns(:,post),2) - nanmean(ns(:,pre),2))./nanmean(ns(:,pre),2);
+        resp = (nanmean(ns(:,post),2) - nanmean(ns(:,pre),2))./abs(nanmean(ns(:,pre),2));
     case 'abs_rate'
         resp = (nanmean(rate(:,post),2) - nanmean(rate(:,pre),2));
 end
@@ -52,9 +52,9 @@ for ib = 1:nb
     
         switch which_resp
             case 'rel_rate'
-                resp = (nanmean(rate(:,fpost),2) - nanmean(rate(:,fpre),2))./nanmean(rate(:,fpre),2);
+                resp = (nanmean(rate(:,fpost),2) - nanmean(rate(:,fpre),2))./abs(nanmean(rate(:,fpre),2));
             case 'ns_rel'
-                resp = (nanmean(ns(:,fpost),2) - nanmean(ns(:,fpre),2))./nanmean(ns(:,fpre),2);
+                resp = (nanmean(ns(:,fpost),2) - nanmean(ns(:,fpre),2))./abs(nanmean(ns(:,fpre),2));
             case 'abs_rate'
                 resp = (nanmean(rate(:,fpost),2) - nanmean(rate(:,fpre),2));
         end
@@ -68,7 +68,7 @@ for ib = 1:nb
         end
     
     end
-    
+     
     mc_rho(ib) = mc_rho_temp;
 end
 
