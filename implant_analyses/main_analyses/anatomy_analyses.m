@@ -53,7 +53,7 @@ end
 
 %% Prep final table
 final_array = cell(length(all_metrics),n_surrounds);
-
+loc_nums = zeros(n_metrics,n_surrounds,length(whichPts),length(loc_names));
 
 for im = 1:n_metrics
     
@@ -109,6 +109,10 @@ for im = 1:n_metrics
             rates_table = [];
             loc_table = {};
 
+            %% Get numbers in each group
+            for k = 1:length(loc_names)
+                loc_nums(im,is,i,k) = sum(strcmp(ana_loc,loc_names{k}));
+            end
 
             % loop through anatomy groups
             for j = 1:nLocs
@@ -150,21 +154,20 @@ for im = 1:n_metrics
         
         % Show full result if main surround
         if is == main_surround
-            fprintf(['\nWhen the peri-implant surround period was defined to'...
-                ' be %d hours, the mean (std) relative %s change was %1.1f (%1.1f)'...
-                ' for %s, %1.1f (%1.1f) for %s, %1.1f (%1.1f) for %s, and %1.1f (%1.1f) for %s.'...
+            fprintf(['\nThe mean (std) relative %s change in the %d-hour peri-implant surround period was %1.1f (%1.1f)'...
+                ' for %s, %1.1f (%1.1f) for %s, %1.1f (%1.1f) for %s, and %1.1f (%1.1f) for %s regions.'...
                 ' The difference between groups was not significant (Skillings-Mack %s)\n'],...
-                all_surrounds(is),all_metrics{im},...
-                nanmean(all_locs_array(:,1)),nanstd(all_locs_array(:,1)),loc_names{2},...
-                nanmean(all_locs_array(:,2)),nanstd(all_locs_array(:,2)),loc_names{3},...
-                nanmean(all_locs_array(:,3)),nanstd(all_locs_array(:,3)),loc_names{4},...
-                nanmean(all_locs_array(:,4)),nanstd(all_locs_array(:,4)),loc_names{5},...
+                all_metrics{im},all_surrounds(is),...
+                nanmean(all_locs_minus_unspecified(:,1)),nanstd(all_locs_minus_unspecified(:,1)),loc_names{2},...
+                nanmean(all_locs_minus_unspecified(:,2)),nanstd(all_locs_minus_unspecified(:,2)),loc_names{3},...
+                nanmean(all_locs_minus_unspecified(:,3)),nanstd(all_locs_minus_unspecified(:,3)),loc_names{4},...
+                nanmean(all_locs_minus_unspecified(:,4)),nanstd(all_locs_minus_unspecified(:,4)),loc_names{5},...
                 curr_string);
             
             % Plot it for my own understanding
             figure
-            for k = 1:size(all_locs_array,2)
-                plot(k+rand(size(all_locs_array,1),1)*0.05,all_locs_array(:,k),'o')
+            for k = 1:size(all_locs_minus_unspecified,2)
+                plot(k+rand(size(all_locs_minus_unspecified,1),1)*0.05,all_locs_minus_unspecified(:,k),'o')
                 hold on
 
             end
@@ -174,12 +177,41 @@ for im = 1:n_metrics
     end
 end
 
-final_table = cell2table(final_array,...
-    'VariableNames',arrayfun(@(x) sprintf('%d',x),all_surrounds,...
-    'UniformOutput',false),'RowNames',all_metrics);
+%% show numbers
+s = main_surround;
+im = 1;
+    
+curr_loc_nums = squeeze(loc_nums(im,s,:,:));
+
+% Remove unspecified
+curr_loc_nums(:,1) = [];
+
+% sum across patients
+summed_loc_nums = sum(curr_loc_nums,1);
+total_num = sum(summed_loc_nums);
+
+% Count number of electrodes in each category
+fprintf(['\nAcross all patients, %d (%1.1f%%) of electrode contacts were in %s,'...
+    ' %d (%1.1f%%) were in %s regions, %d (%1.1f%%) were in %s regions,'...
+    ' and %d (%1.1f%%) were in %s locations.\n'],...
+    summed_loc_nums(1),summed_loc_nums(1)/total_num*100,loc_names{2},...
+    summed_loc_nums(2),summed_loc_nums(2)/total_num*100,loc_names{3},...
+    summed_loc_nums(3),summed_loc_nums(3)/total_num*100,loc_names{4},...
+    summed_loc_nums(4),summed_loc_nums(4)/total_num*100,loc_names{5});
+
+numT = array2table(curr_loc_nums,'VariableNames',loc_names(2:5));
+    
+
+
+final_table = cell2table(final_array',...
+    'RowNames',arrayfun(@(x) sprintf('%d',x),all_surrounds,...
+    'UniformOutput',false),'VariableNames',all_metrics);
 
 
 writetable(final_table,[main_spike_results,'anatomy.csv'],'WriteRowNames',true)  
+
+%% Also add to main supplemental table
+writetable(final_table,[main_spike_results,'Supplemental Table 1.xlsx'],'Range','H2:I12','WriteVariableNames',false)
 
 
 end

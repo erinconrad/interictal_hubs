@@ -2,19 +2,16 @@ function all_corrs(whichPts,saved_out)
 
 %% Parameters
 all_surrounds = 12*[0.5,1,2,3,4,5,6,7,8,9,10];
-%all_surrounds = 12*[0.5,1];
-main_surround = 3;
+%all_surrounds = 12*[1 2];
+main_surround = 3; %*******
 main_pred = 1;
 main_resp = 1;
 nb = 1e4;
 ex = 1;
+do_save = 1;
 
-% Do fisher transformation on data? I set this to zero because of the
-% potentially non-applicable assumptions of the transform. I get similar
-% results either way and I don't think it is necessary given that my
-% ultimate test for significance is a MC test. I keep it out for
-% simplicity.
-do_fisher = 0;
+% Do fisher transformation on data?
+do_fisher = 1;
 
 n_surrounds = length(all_surrounds);
 which_resps = {'rel_rate','ns_rel'};
@@ -151,7 +148,7 @@ for s = 1:length(all_surrounds)
                     [rho,pval,mc_rho] = mc_corr(rate,ns,predictor,...
                     cblock,surround,nb,which_resp,'Spearman');
                 else
-                    rho = nan;
+                    rho = corr(resp,predictor,'Type','Spearman','rows','pairwise');
                     pval = nan;
                     mc_rho = nan;
                 end
@@ -211,7 +208,15 @@ for s = 1:length(all_surrounds)
             %% Fisher transform combo
             % Get r back
             rho = tanh(nansum(all_zs(:,1).*all_zs(:,5))./nansum(all_zs(:,5)));
-            [~,simp_p,~,stats] = ttest(all_zs(:,3));
+            
+            %% Get simple (non-MC) group stats
+            if do_fisher
+                % One sample t-test on the z's
+                [~,simp_p,~,stats] = ttest(all_zs(:,1));
+            else
+                % One sample t-test on the rho's
+                [~,simp_p,~,stats] = ttest(all_zs(:,3));
+            end
             tstat = stats.tstat;
             df = stats.df;
 
@@ -222,7 +227,8 @@ for s = 1:length(all_surrounds)
                 mc_r(b) = tanh(nansum(all_mc_z(:,b).*all_zs(:,5))./nansum(all_zs(:,5)));
             end
 
-            % Count number of mc_r's as or more extreme than true r
+            % Count number of mc_r's as or more extreme than true r -
+            % group MC analysis (with fisher transform)
             num_more_sig = sum(abs(mc_r)>=abs(rho));
             p_mc_agg = (num_more_sig + 1)/(nb+1);
             
@@ -265,7 +271,9 @@ for s = 1:length(all_surrounds)
 end
 
 % Save the supplemental figure
-print(gcf,[main_spike_results,sprintf('supp_fig1_surround_%d',all_surrounds(main_surround))],'-dpng')
+if do_save
+    print(gcf,[main_spike_results,sprintf('supp_fig1_surround_%d',all_surrounds(main_surround))],'-dpng')
+end
 
 
 figure
@@ -373,7 +381,7 @@ for r = 1:length(which_resps)
     plot([1 2],[yl(1)+0.7*(yl(2)-yl(1)) yl(1)+0.7*(yl(2)-yl(1))],...
             'k','linewidth',2)
     if do_fisher
-        text(1.5,yl(1)+0.8*(yl(2)-yl(1)),get_asterisks(all_p_mc(1,r,p),1),...
+        text(1.5,yl(1)+0.8*(yl(2)-yl(1)),get_asterisks(all_p_mc(s,r,p),1),...
         'horizontalalignment','center','fontsize',20)
         text(xl(2),yl(2),...
             sprintf('Combined r = %1.2f\nMC p = %1.3f',...
@@ -381,7 +389,7 @@ for r = 1:length(which_resps)
             'horizontalalignment','right',...
                 'verticalalignment','top')
     else
-        text(1.5,yl(1)+0.8*(yl(2)-yl(1)),get_asterisks(all_p_mc_rho(1,r,p),1),...
+        text(1.5,yl(1)+0.8*(yl(2)-yl(1)),get_asterisks(all_p_mc_rho(s,r,p),1),...
         'horizontalalignment','center','fontsize',20)
     
         text(xl(2),yl(2),...
@@ -443,8 +451,9 @@ annotation('textbox',[0.51 0.46 0.1 0.1],'String','D','fontsize',20,'linestyle',
 %annotation('textbox',[0 0.24 0.1 0.1],'String','E','fontsize',20,'linestyle','none')
 %annotation('textbox',[0.51 0.24 0.1 0.1],'String','F','fontsize',20,'linestyle','none')
 
-
-print(gcf,[main_spike_results,sprintf('all_corrs_surround_%d',all_surrounds(main_surround))],'-dpng')
+if do_save 
+    print(gcf,[main_spike_results,sprintf('all_corrs_surround_%d',all_surrounds(main_surround))],'-dpng')
+end
 
 %% Save table of p-values
 %{
@@ -478,16 +487,42 @@ writetable(Tns,[main_spike_results,'ns_',dtext,'.csv'],'WriteRowNames',true)
 spike_p_simp = squeeze(all_p_simp(:,1,:,1));
 ns_p_simp = squeeze(all_p_simp(:,2,:,1));
 
-Tspike_simp = cell2table(arrayfun(@(x) sprintf('%1.3f',x),spike_p_simp,'UniformOutput',false),...
+if do_save 
+Tspike_simp = cell2table(arrayfun(@(x) sprintf('MC p = %1.3f',x),spike_p_simp,'UniformOutput',false),...
     'RowNames',arrayfun(@(x) sprintf('%d',x),all_surrounds,...
     'UniformOutput',false),'VariableNames',which_preds);
 
-Tns_simp = cell2table(arrayfun(@(x) sprintf('%1.3f',x),ns_p_simp,'UniformOutput',false),...
+Tns_simp = cell2table(arrayfun(@(x) sprintf('MC p = %1.3f',x),ns_p_simp,'UniformOutput',false),...
     'RowNames',arrayfun(@(x) sprintf('%d',x),all_surrounds,...
     'UniformOutput',false),'VariableNames',which_preds);
 
-writetable(Tspike_simp,[main_spike_results,'spike_simp_','.csv'],'WriteRowNames',true)  
-writetable(Tns_simp,[main_spike_results,'ns_simp_','.csv'],'WriteRowNames',true)  
+
+    writetable(Tspike_simp,[main_spike_results,'spike_simp_','.csv'],'WriteRowNames',true)  
+    writetable(Tns_simp,[main_spike_results,'ns_simp_','.csv'],'WriteRowNames',true)  
+end
+
+%% Also table of MC p-values
+spike_p_MC = squeeze(all_p_mc(:,1,main_pred));
+ns_p_MC = squeeze(all_p_mc(:,2,main_pred));
+
+if do_save 
+Tspike_MC = cell2table(arrayfun(@(x) sprintf('MC %s',pretty_p_text(x)),spike_p_MC,'UniformOutput',false),...
+    'RowNames',arrayfun(@(x) sprintf('%d',x),all_surrounds,...
+    'UniformOutput',false));
+
+Tns_MC = cell2table(arrayfun(@(x) sprintf('MC %s',pretty_p_text(x)),ns_p_MC,'UniformOutput',false),...
+    'RowNames',arrayfun(@(x) sprintf('%d',x),all_surrounds,...
+    'UniformOutput',false));
+
+
+    writetable(Tspike_MC,[main_spike_results,'spike_MC','.csv'],'WriteRowNames',true)  
+    writetable(Tns_MC,[main_spike_results,'ns_MC','.csv'],'WriteRowNames',true)  
+    
+    %% Also add to main supplemental table
+    writetable(Tspike_MC,[main_spike_results,'Supplemental Table 1.xlsx'],'Range','E2:E12','WriteVariableNames',false)
+    writetable(Tns_MC,[main_spike_results,'Supplemental Table 1.xlsx'],'Range','F2:F12','WriteVariableNames',false)
+
+end
 
 %% Sentences
 fprintf(['\n\nOn a group level, the average correlation between relative spike rate change '...
@@ -507,5 +542,24 @@ fprintf(['\n\nOn a group level, the average correlation between relative node st
     mean(all_all_r(main_surround,2,main_pred,:)),all_p_simp(main_surround,2,main_pred,3),...
     all_p_simp(main_surround,2,main_pred,2),all_p_simp(main_surround,2,main_pred,1),...
     all_p_mc_rho(main_surround,2,main_pred))
+
+
+fprintf(['\n\nExamining other measures of proximity to the revision site,'...
+    ' on a group level there was no significant correlation between relative spike rate'...
+    ' change and either functional connectivity (average rho = %1.2f, t(%d) = %1.1f, p = %1.2f)'...
+    ' or co-spike index (average rho = %1.2f, t(%d) = %1.1f, p = %1.2f) with the revision site\n\n'],...
+    mean(all_all_r(main_surround,1,2,:)),all_p_simp(main_surround,1,2,3),...
+    all_p_simp(main_surround,1,2,2),all_p_simp(main_surround,1,2,1),...
+     mean(all_all_r(main_surround,1,3,:)),all_p_simp(main_surround,1,3,3),...
+    all_p_simp(main_surround,1,3,2),all_p_simp(main_surround,1,3,1));
+
+fprintf(['\n\nExamining other measures of proximity to the revision site,'...
+    ' on a group level there was no significant correlation between relative node strength'...
+    ' change and either functional connectivity (average rho = %1.2f, t(%d) = %1.1f, p = %1.2f)'...
+    ' or co-spike index (average rho = %1.2f, t(%d) = %1.1f, p = %1.2f) with the revision site\n\n'],...
+    mean(all_all_r(main_surround,2,2,:)),all_p_simp(main_surround,2,2,3),...
+    all_p_simp(main_surround,2,2,2),all_p_simp(main_surround,2,2,1),...
+     mean(all_all_r(main_surround,2,3,:)),all_p_simp(main_surround,2,3,3),...
+    all_p_simp(main_surround,2,3,2),all_p_simp(main_surround,2,3,1));
 
 end

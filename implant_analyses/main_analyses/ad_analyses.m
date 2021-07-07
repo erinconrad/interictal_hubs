@@ -166,7 +166,9 @@ pval = 2*normcdf(-abs(z));
 %}
 all_zs = all_corr_info(:,2);
 % two sided unpaired ttest
-[~,pval] = ttest(all_zs);
+[~,pval,~,stats] = ttest(all_zs);
+rate_t = stats.tstat;
+rate_df = stats.df;
 
 % get r back by averaging the z's and z-to-r transforming. Do weighted
 % average by sample size
@@ -214,6 +216,10 @@ for s = 1:n_surrounds
 
     % Paired ttest
     [~,pval,~,stats] = ttest(all_ad(:,1),all_ad(:,2));
+    if s == main_surround
+        pre_main = all_ad(:,1);
+        post_main = all_ad(:,2);
+    end
     all_p(s) = pval;
     all_df(s) = stats.df;
     all_t(s) = stats.tstat;
@@ -222,7 +228,7 @@ end
 pval = all_p(main_surround); % which one to use for plot
 
 %% Save table of other p-values
-adT = cell2table(arrayfun(@(x,y,z) sprintf('t(%d) = %1.2f, p = %1.3f',x,y,z),all_df,all_t,all_p,...
+adT = cell2table(arrayfun(@(x,y,z) sprintf('t(%d) = %1.2f, %s',x,y,pretty_p_text(z)),all_df,all_t,all_p,...
     'UniformOutput',false),...
     'RowNames',arrayfun(@(x) sprintf('%d',x),all_surrounds,...
     'UniformOutput',false));
@@ -233,6 +239,10 @@ hold on
 plot(2*ones(npts,1)+0.05*rand(npts,1),all_ad(:,2),'o')
 xlim([0.5 2.5])
 %}
+
+%% Also add to main supplemental table
+writetable(adT,[main_spike_results,'Supplemental Table 1.xlsx'],'Range','G2:G12','WriteVariableNames',false)
+
 
 %
 %% AD over time all patients on graph, showing implant time in middle
@@ -299,5 +309,16 @@ annotation('textbox',[0.53 0.42 0.1 0.1],'String','D','fontsize',30,'linestyle',
 
 print(gcf,[main_spike_results,'AD'],'-dpng')
 print(gcf,[main_spike_results,'AD'],'-depsc')
+
+%% text
+fprintf(['\n\nThe group-average Fisher-transformed correlation between the'...
+    ' alpha-delta ratio and spike rate was rho = %1.2f, which was significantly '...
+    'less than zero (t(%d) = %1.1f, %s).\n\n'],r,rate_df,rate_t,ptext);
+
+fprintf(['\n\nAcross patients, there was no difference in the alpha-delta '...
+    'ratio in the pre- and post-revision periods (pre-revision mean (std) = '...
+    '%1.2f (%1.2f), post-revision mean (std) = %1.2f (%1.2f), t(%d) = %1.1f,'...
+    ' p = %1.2f).\n'],mean(pre_main),std(pre_main),mean(post_main),std(post_main),...
+    all_df(main_surround),all_t(main_surround),all_p(main_surround));
 
 end

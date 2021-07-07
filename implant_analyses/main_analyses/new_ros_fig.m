@@ -2,7 +2,7 @@ function new_ros_fig(whichPts,saved_out)
 
 %% User change parameters
 all_surrounds = 12*[0.5,1,2,3,4,5,6,7,8,9,10];
-%all_surrounds = 12*[0.5,1];
+%all_surrounds = 12*[2];
 main_surround = 3;
 nb = 1e4; % number of monte carlo iterations (should probably keep 10,000)
 ex_p = 5;
@@ -243,7 +243,7 @@ for im = 1:n_metrics
     %% First surround corr
     count = count+1;
     nexttile(tileorder(count))
-    is = 1;
+    is = main_surround;
     true_r = squeeze(all_all_true_r(is,:,im));
     mc_r = squeeze(all_all_mc_r(is,:,:,im));
     p = all_all_p(is,im);
@@ -344,16 +344,32 @@ all_spike = [all_all_p(:,1)';all_all_all_p(:,:,1)'];
 all_ns = [all_all_p(:,2)';all_all_all_p(:,:,2)'];
 
 
-spike_T = cell2table(arrayfun(@(x) sprintf('%1.3f',x),all_spike,...
+spike_T = cell2table(arrayfun(@(x) sprintf('MC p = %1.3f',x),all_spike,...
     'UniformOutput',false),...
     'VariableNames',arrayfun(@(x) sprintf('%d',x),all_surrounds,...
     'UniformOutput',false),'RowNames',names);
-ns_T = cell2table(arrayfun(@(x) sprintf('%1.3f',x),all_ns,...
+ns_T = cell2table(arrayfun(@(x) sprintf('MC p = %1.3f',x),all_ns,...
     'UniformOutput',false),...
     'VariableNames',arrayfun(@(x) sprintf('%d',x),all_surrounds,...
     'UniformOutput',false),'RowNames',names);
-
+%{
 writetable(spike_T,[main_spike_results,'spike_ros.csv'],'WriteRowNames',true)  
 writetable(ns_T,[main_spike_results,'ns_ros.csv'],'WriteRowNames',true)  
+    %}
+
+%% Also save these to a specific range in the Supplemental Table 1
+agg_spike_T = cell2table(arrayfun(@(x) sprintf('MC %s',pretty_p_text(x)),all_all_p(:,1),...
+    'UniformOutput',false),...
+    'RowNames',arrayfun(@(x) sprintf('%d',x),all_surrounds,...
+    'UniformOutput',false));
+agg_ns_T = cell2table(arrayfun(@(x) sprintf('MC %s',pretty_p_text(x)),all_all_p(:,2),...
+    'UniformOutput',false),...
+    'RowNames',arrayfun(@(x) sprintf('%d',x),all_surrounds,...
+    'UniformOutput',false));
+writetable(agg_spike_T,[main_spike_results,'spike_ros.csv'],'WriteRowNames',true)  
+writetable(agg_ns_T,[main_spike_results,'ns_ros.csv'],'WriteRowNames',true)  
+
+writetable(agg_spike_T,[main_spike_results,'Supplemental Table 1.xlsx'],'Range','C2:C12','WriteVariableNames',false)
+writetable(agg_ns_T,[main_spike_results,'Supplemental Table 1.xlsx'],'Range','D2:D12','WriteVariableNames',false)
 
 end
