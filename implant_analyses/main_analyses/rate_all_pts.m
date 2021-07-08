@@ -59,7 +59,7 @@ end
 figure
 set(gcf,'position',[50 547 1200 600])
 tiledlayout(4,3,'TileSpacing','compact','padding','compact')
-tile_order = [1 2 4 5 7 8 10 11 3 6 9];
+tile_order = [1 2 3 4 5 6 7 8 10 11 9];
 
 %% Example rates
 for p = 1:length(out)
