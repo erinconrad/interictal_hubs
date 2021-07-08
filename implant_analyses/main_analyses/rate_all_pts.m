@@ -1,14 +1,15 @@
 function rate_all_pts(whichPts,saved_out)
 
 %{
-This makes the rate figure and analysis
+This performs the analysis associated with Figure 2 in the implant effect
+paper. It compares the overall spike rate pre- and post-revision.
 %}
 
 %% Parameters
 all_surrounds = 12*[0.5,1,2,3,4,5,6,7,8,9,10]; % number of half hour segments surrounding implant
 %all_surrounds = 12*2;
-main_surround = 3;
-nb = 1e4; 
+main_surround = 3; % 24 hour surround duration (24 30-minute blocks pre and 24 blocks post)
+nb = 1e4; % number of MC iterations
 
 
 %% Locations
@@ -45,14 +46,14 @@ else
     save([main_spike_results,'out'],'out');
 end
 
-%% Get overall rate and do significance testing
+%% Get overall rate and do significance testing (for main surround)
 surround = all_surrounds(main_surround);
 for i = 1:length(whichPts)
     out(i).overall_rate = nansum(out(i).rate,1); % sum across electrodes to get total number of spikes
     out(i).nan_blocks = find(isnan(nanmean(out(i).rate,1)));
-    
+    % MC analysis (in the math folder)
     out(i).overall_rate_pval = mc_overall_rate(out(i).overall_rate,...
-        surround,out(i).change_block,nb);
+        surround,out(i).change_block,nb,out(i).rate);
 end
 
 %% Initialize figure
@@ -64,13 +65,13 @@ tile_order = [1 2 3 4 5 6 7 8 10 11 9];
 %% Example rates
 for p = 1:length(out)
 nexttile(tile_order(p))
-curr_rate = out(p).overall_rate /out(p).run_dur;
-curr_times = (1:length(curr_rate)) * out(p).block_dur;
-curr_change = out(p).change_block*out(p).block_dur;
+curr_rate = out(p).overall_rate /out(p).run_dur; % get the # spikes in each block and divide by the number of minutes sampled (5) to get the average # spikes/min
+curr_times = (1:length(curr_rate)) * out(p).block_dur; % multiply block by 0.5 hours to get into hours
+curr_change = out(p).change_block*out(p).block_dur; % same with change block
 plot(curr_times,curr_rate,'k','linewidth',1)
 hold on
 nan_blocks = out(p).nan_blocks;
-[pre,post] = get_surround_times(out(p).overall_rate,out(p).change_block,surround);
+[pre,post] = get_surround_times(out(p).rate,out(p).change_block,surround);
 pre = pre*out(p).block_dur;
 post = post*out(p).block_dur;
 xlim([0 length(curr_rate)*out(p).block_dur]);
@@ -98,7 +99,7 @@ end
 cp = plot([curr_change curr_change],[yl(1) top],'r--','linewidth',4);
 plot([pre(1) post(end)],[yl(1) + 0.8*(yl(2)-yl(1)) yl(1) + 0.8*(yl(2)-yl(1))],...
     'k-','linewidth',2);
-ast = get_asterisks(out(p).overall_rate_pval,length(out));
+ast = get_asterisks(out(p).overall_rate_pval,length(out)); % bonferroni correct
 text(curr_change,yl(1) + 0.9*(yl(2)-yl(1)),ast,...
     'horizontalalignment','center','fontsize',15)
 %legend([cp ap],{'Revision','Data missing'},'fontsize',20,'location','northeast')
@@ -116,7 +117,7 @@ for i = 1:length(whichPts)
     cblock = out(i).change_block;
 
     % Get surround times, starting with first non nan
-    [pre,post] = get_surround_times(rate,cblock,surround);
+    [pre,post] = get_surround_times(out(i).rate,cblock,surround);
     
     pre_rate = nanmean(rate(pre));
     post_rate = nanmean(rate(post));
@@ -131,7 +132,7 @@ plot(1+0.05*rand(length(whichPts),1),all_pre,'o','color',[0, 0.4470, 0.7410],...
 hold on
 plot(2+0.05*rand(length(whichPts),1),all_post,'o','color',[0.8500, 0.3250, 0.098],...
     'markersize',15,'linewidth',2)
-[~,pval] = ttest(all_pre,all_post);
+[~,pval] = ttest(all_pre,all_post); % paired t-test
 xlim([0.5 2.5])
 yl = ylim;
 ylim([yl(1) 1.15*(yl(2)-yl(1))])
@@ -165,7 +166,7 @@ for s = 1:length(all_surrounds)
         cblock = out(i).change_block;
         
         % Get surround times, starting with first non nan
-        [pre,post] = get_surround_times(rate,cblock,surround);
+        [pre,post] = get_surround_times(out(i).rate,cblock,surround);
 
         pre_rate = nanmean(rate(pre));
         post_rate = nanmean(rate(post));

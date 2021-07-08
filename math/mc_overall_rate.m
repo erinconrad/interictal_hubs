@@ -1,9 +1,9 @@
-function pval = mc_overall_rate(rate,surround,change,nb)
+function pval = mc_overall_rate(rate,surround,change,nb,full_rate)
 
 nblocks = size(rate,2);
 
 %% Compare spike rate pre and post change
-[pre,post] = get_surround_times(rate,change,surround);
+[pre,post] = get_surround_times(full_rate,change,surround);
 pre = rate(pre);
 post = rate(post);
 
@@ -19,8 +19,10 @@ for ib = 1:nb
         % Make a fake change time
         fchange = randi([surround+1,nblocks-surround]);
 
-        [fpre,fpost] = get_surround_times(rate,fchange,surround);
+        [fpre,fpost] = get_surround_times(full_rate,fchange,surround);
 
+        if isnan(fpre), continue; end
+        
         fpre = rate(fpre);
         fpost = rate(fpost);
 
