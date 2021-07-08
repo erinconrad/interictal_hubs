@@ -10,8 +10,9 @@ nb = 1e4;
 ex = 1;
 do_save = 1;
 
-% Do fisher transformation on data?
-do_fisher = 1;
+
+do_fisher = 1; % Do fisher transformation on data?
+weighted_avg = 1; % weight by n-3
 
 n_surrounds = length(all_surrounds);
 which_resps = {'rel_rate','ns_rel'};
@@ -58,14 +59,24 @@ for i = 1:length(whichPts)
     names{i} = out(i).name;
 end
 
-% Initialize stuff
+%% Initialize stuff
+% Group MC p-value (Fisher transformed or not)
 all_p_mc = nan(length(all_surrounds),length(which_resps),length(which_preds));
-all_p_mc_rho = nan(length(all_surrounds),length(which_resps),length(which_preds));
 
+% Group simple group p-values and associated stats
 all_p_simp = nan(length(all_surrounds),length(which_resps),length(which_preds),3);
+
+% Group rhos (either fisher tranformed or not)
 all_r = nan(length(all_surrounds),length(which_resps),length(which_preds));
+
+% Group MC rhos (either fisher transformed or not), 1 for each MC iteration
+% and each patient
+all_all_mc_r = nan(length(all_surrounds),length(which_resps),length(which_preds),length(whichPts),nb);
+
+% individual rhos (not fisher transformed), 1 for each patient
 all_all_r = nan(length(all_surrounds),length(which_resps),length(which_preds),length(whichPts));
-all_all_mc_r = nan(length(all_surrounds),length(which_resps),length(which_preds),length(whichPts));
+
+% Individual pt MC p-values
 all_all_p = nan(length(all_surrounds),length(which_resps),length(which_preds),length(whichPts));
 
 %% Prep supplemental figure
@@ -143,7 +154,8 @@ for s = 1:length(all_surrounds)
                 end
 
 
-                % Monte carlo test
+                % Monte carlo test (I only do this for the distance
+                % analysis)
                 if p == main_pred
                     [rho,pval,mc_rho] = mc_corr(rate,ns,predictor,...
                     cblock,surround,nb,which_resp,'Spearman');
@@ -155,22 +167,28 @@ for s = 1:length(all_surrounds)
                 
 
                 % Fisher's R to z transformation on the original rhos
-                n = sum(~isnan(resp) & ~isnan(predictor));
+                %n = sum(~isnan(resp) & ~isnan(predictor));
+                n = length(chLabels);
                 [z,z_score,pval2] = fisher_transform(rho,n);
                 [rho,alt_pval2] = corr(resp,predictor,'Type','Spearman','rows','pairwise');
 
                 % Also get the fisher transformed r-to-z for each mc rho
+                % The n is not exactly the same, right? Doesn't matter
+                % because I don't use it to get z, only the z-score (which
+                % I don't use)
                 mc_z = fisher_transform(mc_rho,n);
-                all_mc_z(i,:) = mc_z;
+                all_mc_z(i,:) = mc_z; % MC fisher r-to-z transformation
                 all_mc_r(i,:) = mc_rho; % this is the MC rho I keep for main analysis
-                all_true_r(i,:) = rho; % this is the true rho I keep for main analysis
+                all_true_r(i) = rho; % this is the true rho I keep for main analysis
 
                 % this is to make sure I am getting a reasonable z-score from my fisher
                 % transformation.
                 if p == main_pred
+                    %{
                     if abs(pval2-alt_pval2) > 0.05
                         error('oh nos');
                     end
+                    %}
                 end
 
                 % Fill up all z's with info
@@ -205,9 +223,7 @@ for s = 1:length(all_surrounds)
 
             end
 
-            %% Fisher transform combo
-            % Get r back
-            rho = tanh(nansum(all_zs(:,1).*all_zs(:,5))./nansum(all_zs(:,5)));
+            
             
             %% Get simple (non-MC) group stats
             if do_fisher
@@ -215,56 +231,68 @@ for s = 1:length(all_surrounds)
                 [~,simp_p,~,stats] = ttest(all_zs(:,1));
             else
                 % One sample t-test on the rho's
-                [~,simp_p,~,stats] = ttest(all_zs(:,3));
+                [~,simp_p,~,stats] = ttest(all_true_r);
             end
             tstat = stats.tstat;
             df = stats.df;
+            
+            
+            %% Get MC stats
+            if do_fisher
+                % Fisher transform combo analysis
+                % Get r back
+                if weighted_avg
+                    rho = tanh(nansum(all_zs(:,1).*(all_zs(:,5)-3))./nansum((all_zs(:,5)-3)));
+                else
+                    rho = tanh(nanmean(all_zs(:,1)));
+                end
 
 
-            % Get r back for MC Zs
-            mc_r = nan(nb,1);
-            for b = 1:nb
-                mc_r(b) = tanh(nansum(all_mc_z(:,b).*all_zs(:,5))./nansum(all_zs(:,5)));
+                % Get r back for MC Zs
+                mc_r = nan(nb,1);
+                for b = 1:nb
+                    if weighted_avg
+                        mc_r(b) = tanh(nansum(all_mc_z(:,b).*(all_zs(:,5)-3))./nansum((all_zs(:,5)-3)));
+                    else
+                        mc_r(b) = tanh(nanmean(all_mc_z(:,b)));
+                    end
+                end
+
+                
+                                
+            else
+                %Non fisher transform combo analysis
+                
+                % Average true and MC rhos across patients (no fisher
+                % transform)
+                rho = mean(all_zs(:,3));
+                mc_r = (mean(all_mc_r,1));
+                
             end
-
+            
             % Count number of mc_r's as or more extreme than true r -
-            % group MC analysis (with fisher transform)
+            % group MC analysis
             num_more_sig = sum(abs(mc_r)>=abs(rho));
             p_mc_agg = (num_more_sig + 1)/(nb+1);
             
             
-            %% non fisher combo
-            
-            % Average true and MC rhos across patients (no fisher
-            % transform)
-            mean_true_rho = mean(all_true_r);
-            mean_mc_rho = (mean(all_mc_r,1));
-            
-            % count how many MC rhos are as or more extreme
-            num_more_sig_rho = sum(abs(mean_mc_rho)>=abs(mean_true_rho));
-            p_mc_agg_rho = (num_more_sig_rho+1)/(nb+1);
             
             if 0
                 figure
                 plot(sort(mc_r),'o')
                 hold on
                 plot(xlim,[rho rho])
-                if do_fisher == 1  
-                    title(sprintf('p = %1.3f',p_mc_agg))
-                else
-                    title(sprintf('p = %1.3f',p_mc_agg_rho))
-                end
+                title(sprintf('p = %1.3f',p_mc_agg))
                 pause
                 close(gcf)
             end
 
             % Fill up array
-            all_p_mc(s,r,p) = p_mc_agg;
-            all_p_mc_rho(s,r,p) = p_mc_agg_rho; % this is the one I keep for main analysi
-            all_p_simp(s,r,p,:) = [simp_p tstat df];
-            all_r(s,r,p) = rho;
-            all_all_r(s,r,p,:) = all_zs(:,3); % individual pt rhos
-            all_all_mc_r(s,r,p,:) = mean(all_mc_r,2); % individual pt mean mc rhos
+            all_p_mc(s,r,p) = p_mc_agg; % mc analysis
+            all_p_simp(s,r,p,:) = [simp_p tstat df]; % simple analysis
+            all_r(s,r,p) = rho; % group rho (fisher or not)
+            all_all_r(s,r,p,:) = all_zs(:,3); % individual pt rhos (not transformed)
+            all_all_mc_r(s,r,p,:,:) = all_mc_r; % individual mc rhos, all iterations
             
         end
     end
@@ -287,7 +315,7 @@ tt = tiledlayout(2,2,'TileSpacing','compact','padding','compact');
 tile_order = [1 3 2 4];
 
 p = main_pred ; % distance
-s = main_surround; 
+s = main_surround; % 24 hours
 count = 0;
 for r = 1:length(which_resps)
     which_resp = which_resps{r};
@@ -309,6 +337,7 @@ for r = 1:length(which_resps)
     end
     
     %% Plot single pt example
+    %{
     labels = out(ex).unchanged_labels;
     cblock = out(ex).change_block;
     rate = out(ex).rate;
@@ -348,7 +377,7 @@ for r = 1:length(which_resps)
     predictor(ekg) = [];
     
     % Plot the correlation
-    %{
+    
     count = count+1;
     nexttile(tile_order(count));
     plot(predictor,resp,'o','markersize',10,'linewidth',2)
@@ -369,9 +398,12 @@ for r = 1:length(which_resps)
     %% Plot aggregate statistics
     count = count+1;
     nexttile(tile_order(count));
+    % Plot the individual patient rho's (not transformed)
     plot(1+0.05*rand(length(whichPts),1),squeeze(all_all_r(s,r,p,:)),'o','markersize',10,'linewidth',2)
     hold on
-    plot(2+0.05*rand(length(whichPts),1),(squeeze(all_all_mc_r(s,r,p,:))),'o','markersize',10,'linewidth',2)
+    % plot the mean individual patient MCs (not transformed), averaged over
+    % iterations
+    plot(2+0.05*rand(length(whichPts),1),(squeeze(mean(all_all_mc_r(s,r,p,:,:),5))),'o','markersize',10,'linewidth',2)
     ylim([-1 1])
     xlim([0.5 2.5])
     yl = ylim;
@@ -380,28 +412,13 @@ for r = 1:length(which_resps)
     xl = xlim;
     plot([1 2],[yl(1)+0.7*(yl(2)-yl(1)) yl(1)+0.7*(yl(2)-yl(1))],...
             'k','linewidth',2)
-    if do_fisher
-        text(1.5,yl(1)+0.8*(yl(2)-yl(1)),get_asterisks(all_p_mc(s,r,p),1),...
-        'horizontalalignment','center','fontsize',20)
-        text(xl(2),yl(2),...
-            sprintf('Combined r = %1.2f\nMC p = %1.3f',...
-            all_r(s,r,p),all_p_mc(s,r,p)),'fontsize',15,...
-            'horizontalalignment','right',...
-                'verticalalignment','top')
-    else
-        text(1.5,yl(1)+0.8*(yl(2)-yl(1)),get_asterisks(all_p_mc_rho(s,r,p),1),...
-        'horizontalalignment','center','fontsize',20)
-    
-        text(xl(2),yl(2),...
+    text(1.5,yl(1)+0.8*(yl(2)-yl(1)),get_asterisks(all_p_mc(s,r,p),1),...
+    'horizontalalignment','center','fontsize',20)
+    text(xl(2),yl(2),...
         sprintf('Combined r = %1.2f\nMC p = %1.3f',...
-        mean(all_all_r(s,r,p,:),4),all_p_mc_rho(s,r,p)),'fontsize',15,...
+        all_r(s,r,p),all_p_mc(s,r,p)),'fontsize',15,...
         'horizontalalignment','right',...
             'verticalalignment','top')
-    end
-    
-    %
-    
-    %}
     xticks([1 2])
     xticklabels({'True','Monte Carlo'})
     ylabel(sprintf('%s-%s\ncorrelation',rtext,ptext))
@@ -414,7 +431,7 @@ for r = 1:length(which_resps)
     th = errorbar((1:n_surrounds)'-0.2,mean(all_all_r(:,r,p,:),4),std(all_all_r(:,r,p,:),[],4),...
     'o','linewidth',2,'markersize',10);
     hold on
-    mch = errorbar((1:n_surrounds)'+0.2,mean(all_all_mc_r(:,r,p,:),4),std(all_all_mc_r(:,r,p,:),[],4),...
+    mch = errorbar((1:n_surrounds)'+0.2,mean(all_all_mc_r(:,r,p,:),[4 5]),std(all_all_mc_r(:,r,p,:,:),[],[4 5]),...
         'o','linewidth',2,'markersize',10);
         
     
@@ -425,13 +442,10 @@ for r = 1:length(which_resps)
     for is = 1:n_surrounds
         plot([is-0.2,is+0.2],[yl(1)+0.8*(yl(2)-yl(1)) yl(1)+0.8*(yl(2)-yl(1))],...
             'k','linewidth',2)
-        if do_fisher
-            text(is,yl(1)+0.9*(yl(2)-yl(1)),get_asterisks(all_p_mc(is,r,p),1),...
-            'horizontalalignment','center','fontsize',15)
-        else
-            text(is,yl(1)+0.9*(yl(2)-yl(1)),get_asterisks(all_p_mc_rho(is,r,p),1),...
-            'horizontalalignment','center','fontsize',15)
-        end
+        
+        text(is,yl(1)+0.9*(yl(2)-yl(1)),get_asterisks(all_p_mc(is,r,p),1),...
+        'horizontalalignment','center','fontsize',15)
+        
     end
     xticks(1:n_surrounds)
     xticklabels(all_surrounds)
@@ -532,7 +546,7 @@ fprintf(['\n\nOn a group level, the average correlation between relative spike r
     '(Monte Carlo p = %1.3f)\n'],...
     mean(all_all_r(main_surround,1,main_pred,:)),all_p_simp(main_surround,1,main_pred,3),...
     all_p_simp(main_surround,1,main_pred,2),all_p_simp(main_surround,1,main_pred,1),...
-    all_p_mc_rho(main_surround,1,main_pred))
+    all_p_mc(main_surround,1,main_pred))
 
 fprintf(['\n\nOn a group level, the average correlation between relative node strength change '...
     'and distance from the revision site was %1.2f, which was not significant '...
@@ -541,7 +555,7 @@ fprintf(['\n\nOn a group level, the average correlation between relative node st
     '(Monte Carlo p = %1.3f)\n'],...
     mean(all_all_r(main_surround,2,main_pred,:)),all_p_simp(main_surround,2,main_pred,3),...
     all_p_simp(main_surround,2,main_pred,2),all_p_simp(main_surround,2,main_pred,1),...
-    all_p_mc_rho(main_surround,2,main_pred))
+    all_p_mc(main_surround,2,main_pred))
 
 
 fprintf(['\n\nExamining other measures of proximity to the revision site,'...

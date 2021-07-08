@@ -12,7 +12,7 @@ nblocks = size(rate,2);
 
 %% Get true corr
 % Identify pre and post times
-[pre,post] = get_surround_times(rate,cblock,surround); % note that this uses spike data
+[pre,post] = get_surround_times(rate,cblock,surround); % note that this uses spike data to identify bad periods
 
 % Calculate change in rate
 switch which_resp
@@ -20,8 +20,6 @@ switch which_resp
         resp = (nanmean(rate(:,post),2) - nanmean(rate(:,pre),2))./abs(nanmean(rate(:,pre),2));
     case 'ns_rel'
         resp = (nanmean(ns(:,post),2) - nanmean(ns(:,pre),2))./abs(nanmean(ns(:,pre),2));
-    case 'abs_rate'
-        resp = (nanmean(rate(:,post),2) - nanmean(rate(:,pre),2));
 end
 
 % True correlation
@@ -55,8 +53,6 @@ for ib = 1:nb
                 resp = (nanmean(rate(:,fpost),2) - nanmean(rate(:,fpre),2))./abs(nanmean(rate(:,fpre),2));
             case 'ns_rel'
                 resp = (nanmean(ns(:,fpost),2) - nanmean(ns(:,fpre),2))./abs(nanmean(ns(:,fpre),2));
-            case 'abs_rate'
-                resp = (nanmean(rate(:,fpost),2) - nanmean(rate(:,fpre),2));
         end
 
         mc_rho_temp = corr(resp,predictor,'Type',corr_type,'rows','pairwise');

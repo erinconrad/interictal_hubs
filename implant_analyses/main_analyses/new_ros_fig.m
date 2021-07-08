@@ -1,12 +1,20 @@
 function new_ros_fig(whichPts,saved_out)
 
+%{
+This is used to perform the analysis associated with Figure 3 of the
+implant effect paper. It calculates spike and node strength stability from
+pre-to-post revision and determines if the stability is lower than that
+expected from random pseudo-revision times.
+%}
+
 %% User change parameters
 all_surrounds = 12*[0.5,1,2,3,4,5,6,7,8,9,10];
 %all_surrounds = 12*[2];
-main_surround = 3;
-nb = 1e4; % number of monte carlo iterations (should probably keep 10,000)
+main_surround = 3; %24 hour peri-revision surround
+nb = 1e4; % number of monte carlo iterations 
 ex_p = 5;
-do_norm = 0; % doesn't seem to make much difference so I will keep 0 for simplicity
+do_norm = 0; % doesn't seem to make much difference so I will keep 0 for simplicity (a node strength thign)
+do_cat = 0;
 
 %% Other info
 n_surrounds = length(all_surrounds);
@@ -64,11 +72,12 @@ all_all_mc_r = nan(n_surrounds,length(whichPts),nb,n_metrics);
 all_all_p = nan(n_surrounds,n_metrics);
 all_all_all_p = nan(n_surrounds,length(whichPts),n_metrics);
 
-
+% Loop over metrics
 for im = 1:n_metrics
     allcatlist = [];
     metric = all_metrics{im};
     
+    % Loop over surround times
     for is = 1:n_surrounds
 
         surround = all_surrounds(is);
@@ -96,16 +105,17 @@ for im = 1:n_metrics
             ekg = identify_ekg_scalp(out(i).unchanged_labels);
             rate(ekg,:) = [];
 
-            % Get rho and statistics
+            % Get rho and statistics (in the math folder)
             [pval_curr,true_rho,mc_rho] = ...
-                compare_rhos(rate,cblock,surround,nb,'Spearman',[],0);
+                compare_rhos(rate,cblock,surround,nb,'Spearman',[],0,out(i).rate);
 
             all_all_mc_r(is,i,:,im) = mc_rho;
             all_all_true_r(is,i,im) = true_rho;
             all_all_all_p(is,i,im) = pval_curr;
             all_ps(i) = pval_curr;
 
-             %% CAT analysis
+             %% CAT analysis (I don't end up using this)
+            if do_cat
             if is == main_surround
                 % pre and post
                 [pre,post] = get_surround_times(rate,cblock,surround);
@@ -126,10 +136,12 @@ for im = 1:n_metrics
                 % add to the full patient list
                 allcatlist = [allcatlist,catlist];
             end
+            end
 
         end
 
         % Fisher test to combine pvalues
+        if sum(isnan(all_ps)) > 0, error('why'); end
         X_2 = -2 * sum(log(all_ps));
         sum_p = 1-chi2cdf(X_2,2*length(all_ps));
 
@@ -139,10 +151,12 @@ for im = 1:n_metrics
         
     end
     
-    if im == 1
-        all_cat_list = nan(size(allcatlist,1),size(allcatlist,2),2);
+    if do_cat
+        if im == 1
+            all_cat_list = nan(size(allcatlist,1),size(allcatlist,2),2);
+        end
+        all_cat_list(:,:,im) = allcatlist;
     end
-    all_cat_list(:,:,im) = allcatlist;
     
 end
 
@@ -161,7 +175,7 @@ for im = 1:n_metrics
     metric = all_metrics{im};
     
     if 1
-    %% Raster
+    %% Raster example patient
     count = count+1;
     nexttile(tileorder(count))
     
@@ -248,11 +262,6 @@ for im = 1:n_metrics
     mc_r = squeeze(all_all_mc_r(is,:,:,im));
     p = all_all_p(is,im);
 
-    % Get 95% CI for MC_r
-    y = prctile(mc_r,[5 95],2);
-    yl = mean(mc_r,2) - y(1);
-    yu = y(2) - mean(mc_r,2);
-
     plot(1+0.05*rand(npts,1),true_r,'o','markersize',15,'linewidth',2)
     hold on
     plot(2+0.05*rand(npts,1),mean(mc_r,2),'o','markersize',15,'linewidth',2)
@@ -315,7 +324,7 @@ for im = 1:n_metrics
     set(gca,'fontsize',15)
     
     %% CAT analysis
-    if 0
+    if do_cat
         count = count + 1;
         nexttile(tileorder(count));
         

@@ -21,7 +21,7 @@ for ib = 1:nb
 
         [fpre,fpost] = get_surround_times(full_rate,fchange,surround);
 
-        if isnan(fpre), continue; end
+        if length(fpre) == 1 || length(fpost) == 1, continue; end
         
         fpre = rate(fpre);
         fpost = rate(fpost);
