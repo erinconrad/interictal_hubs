@@ -25,7 +25,11 @@ end
 % True correlation
 true_rho = corr(resp,predictor,'Type',corr_type,'rows','pairwise');
 
+% Initialize array of Monte Carlo correlations
 mc_rho = nan(nb,1);
+
+% initialize array of random times (for plotting validation purposes)
+rand_times = nan(nb,1);
 
 % MC iterations
 for ib = 1:nb
@@ -39,7 +43,6 @@ for ib = 1:nb
         % Make a fake change time
         fchange = randi([surround+1,nblocks-surround]);
         
-
         % recalculate change around this time
         [fpre,fpost] = get_surround_times(rate,fchange,surround);
     
@@ -60,6 +63,7 @@ for ib = 1:nb
         if isnan(mc_rho_temp)
             continue % bad time, try another
         else
+            rand_times(ib) = fchange;
             break % if not a nan, cool, accept it
         end
     
@@ -88,6 +92,14 @@ end
 if 0
     [sortedmc,I] = sort(mc_rho);
     figure
+    tiledlayout(2,1)
+    nexttile
+    %plot(rand_times,ones(length(rand_times),1),'o')
+    histogram(rand_times)
+    title(sprintf('%d blocks',nblocks))
+    %xlim([0 nblocks]);
+    
+    nexttile
     plot(sortedmc)
     hold on
     if true_rho < 0

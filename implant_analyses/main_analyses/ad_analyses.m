@@ -123,6 +123,7 @@ cblock = out(ex).change_block;
 sr = nansum(out(ex).rate,1)/out(ex).run_dur; % sum of all spikes across electrodes in the five minute detection period/divided by 5 minutes to get rate per minute
 bdur = out(ex).block_dur;
 times = (1:length(sr))*bdur;
+nan_blocks = find(isnan(nanmean(out(ex).rate,1)));
 ylabels = {'AD','Spikes/min'};
 myColours = [0, 0.4470, 0.7410;...
     0.8500, 0.3250, 0.0980];
@@ -143,27 +144,30 @@ set(ax, 'YTick', []);
 
 %% All pts correlation between AD and SR
 nexttile
-all_corr_info = nan(length(out),4);
+all_corr_info = nan(length(out),2);
 for i = 1:length(out)
     ad = nanmean(out(i).ad,1);
     sr = nansum(out(i).rate,1);
+    
+    % set nans in rate to zero
+    nan_blocks = find(isnan(nanmean(out(i).rate,1)));
+    sr(nan_blocks) = nan;
+    ad(nan_blocks) = nan;
+    
     [r,p] = corr(ad',sr','rows','pairwise');
-    n = sum(~isnan(ad) & ~isnan(sr));
-    [z,z_score,pval2] = fisher_transform(r,n);
-    if abs(p-pval2) > 0.03
-        error('oh nos');
-    end
-    all_corr_info(i,:) = [r z z_score n];
+    
+    % Get n
+    chLabels = out(i).unchanged_labels;
+    ekg = identify_ekg_scalp(out(i).unchanged_labels);
+    chLabels(ekg) = []; 
+    n = length(chLabels);
+    
+    [z,~,~] = fisher_transform(r,n);
+    all_corr_info(i,:) = [r z];
     
 end
 
-% Stouffer's Z-score
-%{
-if sum(sum(isnan(all_corr_info)))>0, error('what'); end
-z = sum(all_corr_info(:,3))/sqrt(length(out));
-% get two sided p-value from the combined z score
-pval = 2*normcdf(-abs(z));
-%}
+
 all_zs = all_corr_info(:,2);
 % two sided unpaired ttest
 [~,pval,~,stats] = ttest(all_zs);
@@ -172,10 +176,10 @@ rate_df = stats.df;
 
 % get r back by averaging the z's and z-to-r transforming. Do weighted
 % average by sample size
-r = tanh(nansum(all_corr_info(:,2).*all_corr_info(:,4))./nansum(all_corr_info(:,4)));
+%r = tanh(nansum(all_corr_info(:,2).*all_corr_info(:,4))./nansum(all_corr_info(:,4)));
 
 % Plot
-plot(all_corr_info(:,1),'o','linewidth',2,'markersize',10)
+plot(all_corr_info(:,1),'o','linewidth',2,'markersize',10) % plot r's
 hold on
 ylim([-1 1])
 xlim([0.5 10.5])
@@ -190,7 +194,7 @@ if pval < 0.001
 else
     ptext = sprintf('p = %1.3f',pval);
 end
-text(xl(2),yl(2),sprintf('Combined r = % 1.2f\n%s',r,ptext),...
+text(xl(2),yl(2),sprintf('Mean r = % 1.2f\n%s',mean(all_corr_info(:,1)),ptext),...
     'horizontalalignment','right',...
     'verticalalignment','top','fontsize',20)
 set(gca,'fontsize',20)
@@ -311,13 +315,13 @@ print(gcf,[main_spike_results,'AD'],'-dpng')
 print(gcf,[main_spike_results,'AD'],'-depsc')
 
 %% text
-fprintf(['\n\nThe group-average Fisher-transformed correlation between the'...
+fprintf(['\n\nThe average correlation between the'...
     ' alpha-delta ratio and spike rate was rho = %1.2f, which was significantly '...
-    'less than zero (t(%d) = %1.1f, %s).\n\n'],r,rate_df,rate_t,ptext);
+    'less than zero (t(%d) = %1.1f, %s).\n\n'],mean(all_corr_info(:,1)),rate_df,rate_t,ptext);
 
 fprintf(['\n\nAcross patients, there was no difference in the alpha-delta '...
-    'ratio in the pre- and post-revision periods (pre-revision mean (std) = '...
-    '%1.2f (%1.2f), post-revision mean (std) = %1.2f (%1.2f), t(%d) = %1.1f,'...
+    'ratio in the pre- and post-revision periods (pre-revision mean (SD) = '...
+    '%1.2f (%1.2f), post-revision mean (SD) = %1.2f (%1.2f), t(%d) = %1.1f,'...
     ' p = %1.2f).\n'],mean(pre_main),std(pre_main),mean(post_main),std(post_main),...
     all_df(main_surround),all_t(main_surround),all_p(main_surround));
 

@@ -10,7 +10,7 @@ nb = 1e4;
 ex = 1;
 do_save = 1;
 
-
+%% Fisher parameters (should both be 1)
 do_fisher = 1; % Do fisher transformation on data?
 weighted_avg = 1; % weight by n-3
 
@@ -167,55 +167,47 @@ for s = 1:length(all_surrounds)
                 
 
                 % Fisher's R to z transformation on the original rhos
-                %n = sum(~isnan(resp) & ~isnan(predictor));
-                n = length(chLabels);
-                [z,z_score,pval2] = fisher_transform(rho,n);
+                n = length(chLabels); 
+                % this n isn't exactly the number involved in the
+                % correlation because some electrodes have nans in some
+                % blocks, but this number changes throughout the time
+                % periods and so this is a fair approximation for the
+                % purpose of weighting across patients
+                
+                [z,~,~] = fisher_transform(rho,n);
                 [rho,alt_pval2] = corr(resp,predictor,'Type','Spearman','rows','pairwise');
 
                 % Also get the fisher transformed r-to-z for each mc rho
-                % The n is not exactly the same, right? Doesn't matter
-                % because I don't use it to get z, only the z-score (which
-                % I don't use)
                 mc_z = fisher_transform(mc_rho,n);
-                all_mc_z(i,:) = mc_z; % MC fisher r-to-z transformation
-                all_mc_r(i,:) = mc_rho; % this is the MC rho I keep for main analysis
-                all_true_r(i) = rho; % this is the true rho I keep for main analysis
-
-                % this is to make sure I am getting a reasonable z-score from my fisher
-                % transformation.
-                if p == main_pred
-                    %{
-                    if abs(pval2-alt_pval2) > 0.05
-                        error('oh nos');
-                    end
-                    %}
-                end
+                all_mc_z(i,:) = mc_z; % MC fisher r-to-z transformation (which I will compare against true z)
+                all_mc_r(i,:) = mc_rho; % MC rho 
+                all_true_r(i) = rho; % True rho
 
                 % Fill up all z's with info
-                all_zs(i,:) = [z,z_score,rho,pval,n,pval2,alt_pval2];
+                all_zs(i,:) = [z,nan,rho,pval,n,nan,alt_pval2];
                 
                 all_all_p(s,r,p,i) = pval; % these are the MC p values for individual patients
                 
-                %% Make supplemental figure
+                %% Make supplemental figure for primary conditions
+                % This shows individual patient correlations
                 if p == main_pred && s == main_surround && r == main_resp
                     
-                    if alt_pval2 < 0.001
-                        pvaltext = '< 0.001';
-                    else
-                        pvaltext = sprintf('= %1.3f',alt_pval2);
-                    end
+                    % alt_pval2 is the non MC p value for the individual
+                    % patient correlation
+                    pvaltext = pretty_p_text(alt_pval2);
+                    mcpvaltext = pretty_p_text(pval);
                     
                     nexttile
                     plot(predictor,resp,'o','linewidth',2)
                     ylabel(rtext)
                     xlabel(ptext)     
                     set(gca,'fontsize',15)
-                    pause(0.2)
+                    pause(0.2) % delete at your own risk
                     xl = xlim;
                     yl = ylim;
                     pause(0.2)
-                    text(xl(2),yl(2),sprintf('Pt %d \\rho = %1.2f, p %s\nMC p = %1.3f',...
-                        i,rho,pvaltext,pval),...
+                    text(xl(2),yl(2),sprintf('Pt %d \\rho = %1.2f, %s\nMC %s',...
+                        i,rho,pvaltext,mcpvaltext),...
                         'HorizontalAlignment','Right','VerticalAlignment','Top',...
                         'fontsize',15)
                     
@@ -242,6 +234,7 @@ for s = 1:length(all_surrounds)
                 % Fisher transform combo analysis
                 % Get r back
                 if weighted_avg
+                    % this is tanh(sum(z*(n-3))/sum(n-3))
                     rho = tanh(nansum(all_zs(:,1).*(all_zs(:,5)-3))./nansum((all_zs(:,5)-3)));
                 else
                     rho = tanh(nanmean(all_zs(:,1)));
@@ -252,6 +245,7 @@ for s = 1:length(all_surrounds)
                 mc_r = nan(nb,1);
                 for b = 1:nb
                     if weighted_avg
+                        % same n's
                         mc_r(b) = tanh(nansum(all_mc_z(:,b).*(all_zs(:,5)-3))./nansum((all_zs(:,5)-3)));
                     else
                         mc_r(b) = tanh(nanmean(all_mc_z(:,b)));
@@ -274,8 +268,7 @@ for s = 1:length(all_surrounds)
             % group MC analysis
             num_more_sig = sum(abs(mc_r)>=abs(rho));
             p_mc_agg = (num_more_sig + 1)/(nb+1);
-            
-            
+                      
             
             if 0
                 figure
@@ -304,6 +297,7 @@ if do_save
 end
 
 
+%% initialize main figure
 figure
 %set(gcf,'position',[50 547 700 800])
 set(gcf,'position',[50 329 687 468])
@@ -314,9 +308,11 @@ tile_order = [1 3 5 2 4 6];
 tt = tiledlayout(2,2,'TileSpacing','compact','padding','compact');
 tile_order = [1 3 2 4];
 
+% set predictor and surround
 p = main_pred ; % distance
 s = main_surround; % 24 hours
 count = 0;
+% Loop over rate and node strength
 for r = 1:length(which_resps)
     which_resp = which_resps{r};
     if r == 1
@@ -431,7 +427,7 @@ for r = 1:length(which_resps)
     th = errorbar((1:n_surrounds)'-0.2,mean(all_all_r(:,r,p,:),4),std(all_all_r(:,r,p,:),[],4),...
     'o','linewidth',2,'markersize',10);
     hold on
-    mch = errorbar((1:n_surrounds)'+0.2,mean(all_all_mc_r(:,r,p,:),[4 5]),std(all_all_mc_r(:,r,p,:,:),[],[4 5]),...
+    mch = errorbar((1:n_surrounds)'+0.2,mean(all_all_mc_r(:,r,p,:,:),[4 5]),std(all_all_mc_r(:,r,p,:,:),[],[4 5]),...
         'o','linewidth',2,'markersize',10);
         
     
@@ -558,6 +554,12 @@ fprintf(['\n\nOn a group level, the average correlation between relative node st
     all_p_mc(main_surround,2,main_pred))
 
 
+% all_all_r has dimensions n_surround x n_response x n_predictor x
+% n_patients
+% and so all_all_r(main_surround,1,2,:) is main surround, spike rate, FC,
+% all patients
+% all_all_r(main_surround,1,3,:) is main surround, spike rate, cosi, all
+% patients
 fprintf(['\n\nExamining other measures of proximity to the revision site,'...
     ' on a group level there was no significant correlation between relative spike rate'...
     ' change and either functional connectivity (average rho = %1.2f, t(%d) = %1.1f, p = %1.2f)'...
@@ -567,6 +569,8 @@ fprintf(['\n\nExamining other measures of proximity to the revision site,'...
      mean(all_all_r(main_surround,1,3,:)),all_p_simp(main_surround,1,3,3),...
     all_p_simp(main_surround,1,3,2),all_p_simp(main_surround,1,3,1));
 
+% all_all_r(main_surround,2,2,:) is main surorund, node strength, FC, all
+% patients
 fprintf(['\n\nExamining other measures of proximity to the revision site,'...
     ' on a group level there was no significant correlation between relative node strength'...
     ' change and either functional connectivity (average rho = %1.2f, t(%d) = %1.1f, p = %1.2f)'...
