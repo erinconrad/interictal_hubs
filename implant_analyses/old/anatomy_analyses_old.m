@@ -1,4 +1,4 @@
-function anatomy_analyses(whichPts,saved_out)
+function anatomy_analyses_old(whichPts,saved_out)
 
 %% Parameters
 all_surrounds = 12*[0.5,1,2,3,4,5,6,7,8,9,10];
@@ -100,32 +100,40 @@ for im = 1:n_metrics
 
             %% Group by localization
             [~,ana_loc] = anatomy_grouper(unchanged_anatomy);
-            
-            if 0
-                % show result of anatomy grouper
-                fprintf('\n%s:\n',out(i).name)
-                table(unchanged_anatomy,ana_loc)
-                pause
-                
+            % group groups
+            [ana_loc_groups,~,ic] = unique(ana_loc);
+            nLocs = length(ana_loc_groups);
+            grouped_resp_loc = cell(nLocs,1);
+            resp_table = [];
+            loc_table = {};
+
+            %% Get numbers in each group
+            for k = 1:length(loc_names)
+                loc_nums(im,is,i,k) = sum(strcmp(ana_loc,loc_names{k}));
             end
 
             % loop through anatomy groups
-            for j = 1:length(loc_names)
+            for j = 1:nLocs
 
                 % get the channels corresponding to that anatomy group
-                chs = (strcmp(ana_loc,loc_names{j}));
-                
-                % get number of channels corresponding to that group
-                loc_nums(im,is,i,j) = sum(chs);
+                chs = find(ic == j);
 
                 % Get the average rate change for those chs
-                avg_change = nanmean(resp_change(chs));
-                
-                % add to locs table
-                all_locs(i,j) = num2cell(avg_change);
+                grouped_resp_loc{j} = (resp_change(chs));
+                resp_table = [resp_table;resp_change(chs)];
+                loc_table = [loc_table;ana_loc(chs)];
             end
 
-            
+            %% Get mean rate for each group
+            for j = 1:length(loc_names)
+
+                % Get the indices with that group
+                curr_idx = strcmp(ana_loc,loc_names{j});
+
+                % Mean rate change for that
+                all_locs.(loc_names{j})(i) = nanmean(resp_change(curr_idx));
+
+            end
 
         end
         
@@ -134,70 +142,17 @@ for im = 1:n_metrics
         
         % for Friedman, remove unspecified category
         all_locs_minus_unspecified = all_locs_array(:,[2:end]);
-        
-        % revmoe missing pt
-        missing = nansum(all_locs_minus_unspecified,2) == 0;
-        all_locs_minus_unspecified(missing,:) = [];
-        
         [p stats] = skillmack(all_locs_minus_unspecified,1);
         chi2 = stats.T;
         df = stats.df;
         
         % make a string out of this
-        curr_string = sprintf('chi^2(%d) = %1.1f, %s',df,chi2,pretty_p_text(p));
+        curr_string = sprintf('chi^2(%d) = %1.1f, p = %1.2f',df,chi2,p);
         final_array{im,is} = (curr_string);
-        
-        % Do between group analysis if p < 0.05
-        if p < 0.05
-            
-            if 0
-                figure
-                for k = 1:size(all_locs_minus_unspecified,2)
-                    plot(k+rand(size(all_locs_minus_unspecified,1),1)*0.05,all_locs_minus_unspecified(:,k),'o')
-                    hold on
-
-                end
-                xticks(1:size(all_locs_minus_unspecified,2))
-                xticklabels(loc_names(2:end))
-                title(all_metrics{im})
-            end
-            
-            alpha_adjust = nchoosek(4,2); %6
-            fprintf('\nFor a surround duration of %d:\n',all_surrounds(is));
-
-            
-            % loop over non-unspecified anatomy locs
-            for j = 1:4
-                
-                % loop over the other anatomy locs
-                for k = 1:j-1
-                    
-                    % perform a sign rank test (non parametric paired test)
-                    % with alpha = 0.05/alpha_adjust (which is 6) to
-                    % compare the two subgroups
-                    alpha = 0.05/alpha_adjust;
-                    psub = signrank(all_locs_minus_unspecified(:,j),all_locs_minus_unspecified(:,k));
-                    if psub < alpha
-                        fprintf(['\nPost-hoc analyses demonstrated a significant difference in relative %s change between '...
-                            '%s (M (SD) %1.1f (%1.1f)) and %s (M (SD) %1.1f (%1.1f)) '...
-                            '(Wilcoxon sign-rank, %s).\n'],all_metrics{im},...
-                            loc_names{j+1},nanmean(all_locs_minus_unspecified(:,j)),...
-                            nanstd(all_locs_minus_unspecified(:,j)),...
-                            loc_names{k+1},nanmean(all_locs_minus_unspecified(:,k)),...
-                            nanstd(all_locs_minus_unspecified(:,k)),pretty_p_text(psub));
-                    else
-                        fprintf(['\nThere was no significant difference between '...
-                            '%s and %s'],loc_names{j+1},loc_names{k+1});
-                    end
-                    
-                end
-                
-            end
-        end
         
         % Show full result if main surround
         if is == main_surround
-            fprintf(['\nThe mean (SD) relative %s change in the %d-hour peri-implant surround period was %1.1f (%1.1f)'...
+            fprintf(['\nThe mean (std) relative %s change in the %d-hour peri-implant surround period was %1.1f (%1.1f)'...
                 ' for %s, %1.1f (%1.1f) for %s, %1.1f (%1.1f) for %s, and %1.1f (%1.1f) for %s regions.'...
                 ' The difference between groups was not significant (Skillings-Mack %s)\n'],...
                 all_metrics{im},all_surrounds(is),...
@@ -208,7 +163,6 @@ for im = 1:n_metrics
                 curr_string);
             
             % Plot it for my own understanding
-            if 0
             figure
             for k = 1:size(all_locs_minus_unspecified,2)
                 plot(k+rand(size(all_locs_minus_unspecified,1),1)*0.05,all_locs_minus_unspecified(:,k),'o')
@@ -216,7 +170,6 @@ for im = 1:n_metrics
 
             end
             title(all_metrics{im})
-            end
         end
         
     end
@@ -228,25 +181,23 @@ im = 1;
     
 curr_loc_nums = squeeze(loc_nums(im,s,:,:));
 
-% Remove missing patient
-curr_loc_nums(sum(curr_loc_nums(:,2:end),2)==0,:) = [];
-%curr_loc_nums(:,1) = [];
+% Remove unspecified
+curr_loc_nums(:,1) = [];
 
 % sum across patients
 summed_loc_nums = sum(curr_loc_nums,1);
 total_num = sum(summed_loc_nums);
 
 % Count number of electrodes in each category
-fprintf(['\n\nAcross all patients, %d (%1.1f%%) of electrode contacts were in %s,'...
+fprintf(['\nAcross all patients, %d (%1.1f%%) of electrode contacts were in %s,'...
     ' %d (%1.1f%%) were in %s regions, %d (%1.1f%%) were in %s regions,'...
-    ' and %d (%1.1f%%) were in %s locations. %d (%1.1f%%) had an unspecified location.\n'],...
-    summed_loc_nums(2),summed_loc_nums(2)/total_num*100,loc_names{2},...
-    summed_loc_nums(3),summed_loc_nums(3)/total_num*100,loc_names{3},...
-    summed_loc_nums(4),summed_loc_nums(4)/total_num*100,loc_names{4},...
-    summed_loc_nums(5),summed_loc_nums(5)/total_num*100,loc_names{5},...
-    summed_loc_nums(1),summed_loc_nums(1)/total_num*100);
+    ' and %d (%1.1f%%) were in %s locations.\n'],...
+    summed_loc_nums(1),summed_loc_nums(1)/total_num*100,loc_names{2},...
+    summed_loc_nums(2),summed_loc_nums(2)/total_num*100,loc_names{3},...
+    summed_loc_nums(3),summed_loc_nums(3)/total_num*100,loc_names{4},...
+    summed_loc_nums(4),summed_loc_nums(4)/total_num*100,loc_names{5});
 
-numT = array2table(curr_loc_nums,'VariableNames',loc_names(1:5));
+numT = array2table(curr_loc_nums,'VariableNames',loc_names(2:5));
     
 
 
