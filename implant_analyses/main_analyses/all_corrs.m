@@ -17,7 +17,6 @@ weighted_avg = 1; % weight by n-3
 n_surrounds = length(all_surrounds);
 which_resps = {'rel_rate','ns_rel'};
 which_preds = {'dist','ns','cosi'};
-%which_preds = {'dist'};
 
 %% Locations
 locations = interictal_hub_locations;
@@ -150,6 +149,12 @@ for s = 1:length(all_surrounds)
                         rtext = 'Rate change';
                     case 'ns_rel'
                         resp = (nanmean(ns(:,post),2) - nanmean(ns(:,pre),2))./abs(nanmean(ns(:,pre),2));
+                        rtext = 'NS change';
+                    case 'abs_rate'
+                        resp = (nanmean(rate(:,post),2) - nanmean(rate(:,pre),2));
+                        rtext = 'Rate change';
+                    case 'ns_abs'
+                        resp = (nanmean(ns(:,post),2) - nanmean(ns(:,pre),2));
                         rtext = 'NS change';
                 end
 
