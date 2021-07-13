@@ -140,6 +140,12 @@ for im = 1:n_metrics
         all_locs_minus_unspecified(missing,:) = [];
         
         [p stats] = skillmack(all_locs_minus_unspecified,1);
+        if sum(isnan(all_locs_minus_unspecified)) == 0
+            pf = friedman(all_locs_minus_unspecified,1,'off');
+            if abs(p-pf) > 0.01
+                error('what');
+            end
+        end
         chi2 = stats.T;
         df = stats.df;
         

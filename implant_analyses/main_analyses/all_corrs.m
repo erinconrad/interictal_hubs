@@ -3,7 +3,7 @@ function all_corrs(whichPts,saved_out)
 %% Parameters
 all_surrounds = 12*[0.5,1,2,3,4,5,6,7,8,9,10];
 %all_surrounds = 12*[1 2];
-main_surround = 3; %*******
+main_surround = 3; %*******24 hours
 main_pred = 1;
 main_resp = 1;
 nb = 1e4;
@@ -82,7 +82,7 @@ all_all_p = nan(length(all_surrounds),length(which_resps),length(which_preds),le
 figure
 set(gcf,'position',[608 175 1371 514])
 tiledlayout(2,5,'Padding','compact','tilespacing','compact')
-
+tilecount = 0;
 
 % Loop over surrounds
 for s = 1:length(all_surrounds)
@@ -203,19 +203,47 @@ for s = 1:length(all_surrounds)
                     mcpvaltext = pretty_p_text(pval);
                     
                     nexttile
+                    tilecount = tilecount + 1;
                     plot(predictor,resp,'o','linewidth',2)
-                    ylabel(rtext)
-                    xlabel(ptext)     
+                    hold on
+                    
+                    % add infinite values at some highest value
+                    inf_resp = resp == inf;
+                    if sum(inf_resp) > 0
+                        yl = ylim;
+                        old_yl_2 = yl(2);
+                        new_yl_2 = yl(1) + 1.1*(yl(2)-yl(1));
+                        midpoint = mean([yl(2) new_yl_2]);
+                        new_yl_3 = yl(1) + 1.13*(yl(2)-yl(1));
+                        col = [0.8500, 0.3250, 0.0980];
+                        plot(predictor(inf_resp),new_yl_2,'*','color',col,'linewidth',2)
+                        ylim([yl(1) new_yl_3])
+                    else
+                        yl = ylim;
+                        old_yl_2 = yl(2);
+                    end
+                    if tilecount == 1 || tilecount == 6
+                        ylabel('Relative rate change')
+                    end
+                    if tilecount > 5
+                        xlabel(ptext)     
+                    end
                     set(gca,'fontsize',15)
                     pause(0.2) % delete at your own risk
                     xl = xlim;
-                    yl = ylim;
+                    %yl = ylim;
                     pause(0.2)
-                    text(xl(2),yl(2),sprintf('Pt %d \\rho = %1.2f, %s\nMC %s',...
+                    text(xl(2),old_yl_2,sprintf('Pt %d\n\\rho = %1.2f, %s\nMC %s',...
                         i,rho,pvaltext,mcpvaltext),...
                         'HorizontalAlignment','Right','VerticalAlignment','Top',...
                         'fontsize',15)
-                    
+                    if sum(inf_resp) > 0
+                        % change yaxis to clarify break
+                        yticks([yl(1) old_yl_2 new_yl_2])
+                        yticklabels({sprintf('%1.1f',yl(1)),sprintf('%1.1f',old_yl_2),...
+                            '\infty'});
+                        plot(xlim,[midpoint midpoint],'k--');
+                    end
                 end
 
             end

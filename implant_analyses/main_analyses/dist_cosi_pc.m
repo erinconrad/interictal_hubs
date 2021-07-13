@@ -49,10 +49,15 @@ p = 1;
 dist = out(p).dist;
 cosi = out(p).cosi;
 pc = out(p).metrics.added_pc;
+labels = out(p).unchanged_labels;
 
 % Correlate distance and co-spike index
 nexttile
 plot(dist,cosi,'o','linewidth',2,'color',cols(1,:))
+if 0
+plot(dist,cosi,'o','color',[1 1 1])
+text(dist,cosi,labels,'horizontalalignment','center');
+end
 xlabel('Distance from added electrodes (mm)')
 ylabel('Co-spike index')
 set(gca,'fontsize',15)
@@ -102,6 +107,7 @@ for i = 1:length(whichPts)
     
 end
 
+%{
 % Stouffer's method to combine the z scores
 k = length(all_dist_cosi);
 dist_cosi_z = nansum(all_dist_cosi(:,3))/sqrt(k);
@@ -117,6 +123,20 @@ cosi_pc_p = 2*normcdf(-abs(cosi_pc_z));
 dist_cosi_r = tanh(nanmean(all_dist_cosi(:,2)));
 dist_pc_r = tanh(nanmean(all_dist_pc(:,2)));
 cosi_pc_r = tanh(nanmean(all_cosi_pc(:,2)));
+%}
+
+% Do an unpaired two-tailed t-test on the z's
+[~,dist_cosi_p,~,stats] = ttest(all_dist_cosi(:,2));
+dist_cosi_df = stats.df;
+dist_cosi_tstat = stats.tstat;
+
+[~,dist_pc_p,~,stats] = ttest(all_dist_pc(:,2));
+dist_pc_df = stats.df;
+dist_pc_tstat = stats.tstat;
+
+[~,cosi_pc_p,~,stats] = ttest(all_cosi_pc(:,2));
+cosi_pc_df = stats.df;
+cosi_pc_tstat = stats.tstat;
 
 % Plot dist_cosi for each patient
 nexttile
@@ -132,7 +152,7 @@ xlabel('Patient')
 ylabel('Distance-CSI correlation')
 xl = xlim;
 yl = ylim;
-text(xl(2),yl(2),sprintf('Mean r = %1.2f\n%s',dist_cosi_r,get_p_text(dist_cosi_p)),...
+text(xl(2),yl(2),sprintf('Mean r = %1.2f\n%s',mean(all_dist_cosi(:,1)),get_p_text(dist_cosi_p)),...
     'fontsize',15,'horizontalalignment','right','verticalalignment','top')
 
 
@@ -151,7 +171,7 @@ xlabel('Patient')
 ylabel('Distance-FC correlation')
 xl = xlim;
 yl = ylim;
-text(xl(2),yl(2),sprintf('Mean r = %1.2f\n%s',dist_pc_r,get_p_text(dist_pc_p)),...
+text(xl(2),yl(2),sprintf('Mean r = %1.2f\n%s',mean(all_dist_pc(:,1)),get_p_text(dist_pc_p)),...
     'fontsize',15,'horizontalalignment','right','verticalalignment','top')
 
 % Plot pc_cosi for each patient
@@ -169,7 +189,7 @@ xlabel('Patient')
 ylabel('FC-CSI correlation')
 xl = xlim;
 yl = ylim;
-text(xl(2),yl(2),sprintf('Mean r = %1.2f\n%s',cosi_pc_r,get_p_text(cosi_pc_p)),...
+text(xl(2),yl(2),sprintf('Mean r = %1.2f\n%s',mean(all_cosi_pc(:,1)),get_p_text(cosi_pc_p)),...
     'fontsize',15,'horizontalalignment','right','verticalalignment','top')
 
 annotation('textbox',[0 0.91 0.1 0.1],'String','A','fontsize',20,'linestyle','none')
@@ -180,5 +200,18 @@ annotation('textbox',[0.33 0.42 0.1 0.1],'String','E','fontsize',20,'linestyle',
 annotation('textbox',[0.67 0.42 0.1 0.1],'String','F','fontsize',20,'linestyle','none')
 
 print(gcf,[main_spike_results,'dist_cosi_pc_corr'],'-dpng');
+
+%% Text
+fprintf(['\nAggregated across patients, there was a significant negative '...
+    'correlation between distance and co-spike index (mean r = %1.2f, '...
+    'two-tailed unpaired t-test of individual patient Fisher''s r-to-z '...
+    'transformed correlation coefficients: t(%d) = %1.2f, %s). There was also a '...
+    'significant negative correlation between distance and functional '...
+    'connectivity (mean r = %1.2f, t(%d) = %1.2f, %s), and a significant '...
+    'positive correlation between co-spike index and functional connectivity '...
+    '(mean r = %1.2f, t(%d) = %1.2f, %s) (Figure 1).\n'],...
+    mean(all_dist_cosi(:,1)),dist_cosi_df,dist_cosi_tstat,get_p_text(dist_cosi_p),...
+    mean(all_dist_pc(:,1)),dist_pc_df,dist_pc_tstat,get_p_text(dist_pc_p),...
+    mean(all_cosi_pc(:,1)),cosi_pc_df,cosi_pc_tstat,get_p_text(cosi_pc_p));
 
 end
