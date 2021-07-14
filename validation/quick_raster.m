@@ -7,6 +7,8 @@ random spike from that block-electrode pair, downloads the data from ieeg,
 and shows you the spike.
 %}
 
+surround = 24;
+
 %% Locations
 locations = interictal_hub_locations;
 results_folder = [locations.main_folder,'results/'];
@@ -53,6 +55,15 @@ rate = rate(~ekg,:);
 chLabels = chLabels(~ekg);
 findices = out(p).findices;
 bindices = out(p).bindices;
+
+[pre,post] = get_surround_times(rate,cblock,surround);
+% Get relative rate change
+pre_rate = nanmean(rate(:,pre),2);
+post_rate = nanmean(rate(:,post),2);
+rel_rate_change = (post_rate-pre_rate)./abs(pre_rate);
+
+[~,I] = sort(rel_rate_change,'descend');
+table(chLabels(I),rel_rate_change(I))
 
 
 figure

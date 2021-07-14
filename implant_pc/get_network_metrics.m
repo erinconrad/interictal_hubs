@@ -1,4 +1,6 @@
-function out = get_network_metrics(net)
+function out = get_network_metrics(net,unchanged_labels,rm_ekg)
+
+ekg = identify_ekg_scalp(unchanged_labels);
 
 %% Derive sizes
 nblocks = size(net,2);
@@ -23,6 +25,12 @@ for ib = 1:nblocks
     Note that because some channels are nans and which are nans change at
     different times, I need to normalize!
     %}
+    % set EKG to nans
+    if rm_ekg
+        mat(ekg,:) = nan;
+        mat(:,ekg) = nan;
+    end
+        
     
     % Node strength normalized
     ns_norm_temp = nanmean(mat,1);

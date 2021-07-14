@@ -236,7 +236,14 @@ end
 
 
 %% Get network metrics
-metrics = get_network_metrics(net);
+metrics = get_network_metrics(net,unchanged_labels,1);
+%metrics_old = get_network_metrics(net,unchanged_labels,0);
+
+if 0
+    fprintf('\n\n%s\n',name);
+    r = corr(nanmean(metrics_rm_ekg.ns,2),nanmean(metrics_old.ns,2),'rows','pairwise')
+end
+
 
 if 0
     imagesc(metrics.avg_mat)
