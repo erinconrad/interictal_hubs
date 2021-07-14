@@ -1,4 +1,4 @@
-function anatomy_analyses(whichPts,saved_out)
+function anatomy_analyses(whichPts,saved_out,out)
 
 %% Parameters
 all_surrounds = 12*[0.5,1,2,3,4,5,6,7,8,9,10];
@@ -32,8 +32,8 @@ end
 
 if saved_out == 1
     
-    out = load([main_spike_results,'out.mat']);
-    out = out.out;
+    %out = load([main_spike_results,'out.mat']);
+    %out = out.out;
     
 else
     out = initialize_out_struct(length(whichPts));

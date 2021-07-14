@@ -21,7 +21,7 @@ for i = 1:nw
     
     
     for ich = 1:nchs
-        for jch = 1:ich-1 % check that this is the right num to loop through
+        for jch = 1:ich-1 % loop through channels up to but not including ich
             
             % pearson correlation
             r = corr(clip(:,ich),clip(:,jch));

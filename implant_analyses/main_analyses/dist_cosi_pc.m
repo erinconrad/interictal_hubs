@@ -1,4 +1,4 @@
-function dist_cosi_pc(whichPts,saved_out)
+function dist_cosi_pc(whichPts,saved_out,out)
 
 %% Locations
 locations = interictal_hub_locations;
@@ -18,8 +18,8 @@ end
 
 if saved_out == 1
     
-    out = load([main_spike_results,'out.mat']);
-    out = out.out;
+    %out = load([main_spike_results,'out.mat']);
+    %out = out.out;
     
 else
     out = initialize_out_struct(length(whichPts));

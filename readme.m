@@ -1,3 +1,14 @@
+%% Interictal hubs ReadMe
+%{
+To run analyses for the Implant Effect paper, navigate to the
+implant_analysis/ folder and read the ReadMe in that folder.
+
+
+%}
+
+
+
+
 %{
 To run any of the code, you will need to put a file in your path called
 "interictal_hub_locations.m" that will point to various other paths. Here
@@ -8,8 +19,9 @@ is an example of what it should look like:
 %{
 function locations = interictal_hub_locations
 
-locations.script_folder = [locations.main_folder,'scripts/']; (path to this
-code base)
+locations.main_folder = [path to where you will output results from the
+analysis]
+locations.script_folder = [path to this code base]
 locations.ieeg_folder = [path to the ieeg.org codebase]
 locations.ieeg_pw_file = [path to you ieeg.org password file]
 locations.ieeg_login = [your ieeg.org login name]

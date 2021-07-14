@@ -1,4 +1,4 @@
-function ad_analyses(whichPts,saved_out)
+function ad_analyses(whichPts,saved_out,out)
 
 
 %% Parameters
@@ -27,8 +27,8 @@ end
 
 if saved_out == 1
     
-    out = load([main_spike_results,'out.mat']);
-    out = out.out;
+    %out = load([main_spike_results,'out.mat']);
+    %out = out.out;
     
 else
     out = initialize_out_struct(length(whichPts));

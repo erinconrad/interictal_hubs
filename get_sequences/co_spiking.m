@@ -16,7 +16,7 @@ added_idx = find(ismember(chLabels,added_labels));
 %% Sort by time
 times = gdf(:,2);
 if ~isequal(times,sort(times))
-    error('ruh-roh');
+    error('uh oh');
 end
 
 % Loop over spikes

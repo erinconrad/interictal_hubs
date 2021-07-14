@@ -1,4 +1,4 @@
-function rate_all_pts(whichPts,saved_out)
+function rate_all_pts(whichPts,saved_out,out)
 
 %{
 This performs the analysis associated with Figure 2 in the implant effect
@@ -30,8 +30,8 @@ end
 
 if saved_out == 1
     
-    out = load([main_spike_results,'out.mat']);
-    out = out.out;
+    %out = load([main_spike_results,'out.mat']);
+    %out = out.out;
     
 else
     out = initialize_out_struct(length(whichPts));

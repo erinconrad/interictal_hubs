@@ -1,5 +1,9 @@
 function gdf = detector(values,fs,which_chs,params)
 
+%{
+This is the spike detection algorithm used for the implant effect paper.
+%}
+
 tmul = params.tmul;
 absthresh = params.absthresh;
 

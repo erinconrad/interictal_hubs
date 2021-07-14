@@ -1,4 +1,4 @@
-function new_ros_fig(whichPts,saved_out)
+function new_ros_fig(whichPts,saved_out,out)
 
 %{
 This is used to perform the analysis associated with Figure 3 of the
@@ -43,8 +43,8 @@ end
 
 if saved_out == 1
     
-    out = load([main_spike_results,'out.mat']);
-    out = out.out;
+    %out = load([main_spike_results,'out.mat']);
+    %out = out.out;
     
 else
     out = initialize_out_struct(length(whichPts));
