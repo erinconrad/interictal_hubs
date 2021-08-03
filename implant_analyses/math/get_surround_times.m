@@ -1,4 +1,4 @@
-function [pre,post] = get_surround_times(rate,cblock,surround)
+function [pre,post,pre_nans,post_nans] = get_surround_times(rate,cblock,surround)
 
 first_non_nan_pre = [];
 first_non_nan_post = [];
@@ -26,6 +26,11 @@ if isempty(first_non_nan_pre) || isempty(first_non_nan_post)
     post = nan;
     return;
 end
+
+% Calculate number of pre-nans and post-nans (I will need to add these to
+% my buffer for the MC calculations)
+pre_nans = cblock-1 - first_non_nan_pre;
+post_nans = first_non_nan_post - (cblock+1);
 
 %% Now go surround back and forth from this
 pre = max(1,first_non_nan_pre-surround):first_non_nan_pre;

@@ -1,4 +1,5 @@
-function [true_rho,pval,mc_rho] = mc_corr(rate,ns,predictor,cblock,surround,nb,which_resp,corr_type)
+function [true_rho,pval,mc_rho] = mc_corr(rate,ns,predictor,cblock,surround,nb,which_resp,corr_type,...
+    buffer,do_buffer)
 
 %{
 This is the main statistical test for the correlation analysis of the
@@ -12,7 +13,7 @@ nblocks = size(rate,2);
 
 %% Get true corr
 % Identify pre and post times
-[pre,post] = get_surround_times(rate,cblock,surround); % note that this uses spike data to identify bad periods
+[pre,post,pre_nans,post_nans] = get_surround_times(rate,cblock,surround); % note that this uses spike data to identify bad periods
 
 % Calculate change in rate
 switch which_resp
@@ -47,8 +48,13 @@ for ib = 1:nb
         % Make a fake change time
         fchange = randi([surround+1,nblocks-surround]);
         
-        % recalculate change around this time
-        [fpre,fpost] = get_surround_times(rate,fchange,surround);
+        % recalculate change around this time (and buffer for MC
+        % simulation)
+        if do_buffer
+            [fpre,fpost] = get_surround_times_buffer(rate,fchange,surround,buffer,pre_nans,post_nans);
+        else
+            [fpre,fpost] = get_surround_times(rate,fchange,surround);
+        end
     
         if length(fpre) == 1 || length(fpost) == 1 
             continue % bad time, try another

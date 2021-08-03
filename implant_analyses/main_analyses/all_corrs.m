@@ -9,6 +9,7 @@ main_resp = 1;
 nb = 1e4;
 ex = 1;
 do_save = 1;
+do_buffer = 1;
 
 %% Fisher parameters (should both be 1)
 do_fisher = 1; % Do fisher transformation on data?
@@ -110,6 +111,9 @@ for s = 1:length(all_surrounds)
                 chLabels = out(i).unchanged_labels;
                 cblock = out(i).change_block;
                 ns = out(i).metrics.ns;
+                
+                % Get file gap
+                buffer = file_gaps(out(i).name);
 
                 % Identify pre and post times
                 [pre,post] = get_surround_times(rate,cblock,surround);
@@ -163,7 +167,7 @@ for s = 1:length(all_surrounds)
                 % analysis)
                 if p == main_pred
                     [rho,pval,mc_rho] = mc_corr(rate,ns,predictor,...
-                    cblock,surround,nb,which_resp,'Spearman');
+                    cblock,surround,nb,which_resp,'Spearman',buffer,do_buffer);
                 else
                     rho = corr(resp,predictor,'Type','Spearman','rows','pairwise');
                     pval = nan;

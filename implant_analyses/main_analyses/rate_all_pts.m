@@ -10,6 +10,8 @@ all_surrounds = 12*[0.5,1,2,3,4,5,6,7,8,9,10]; % number of half hour segments su
 %all_surrounds = 12*2;
 main_surround = 3; % 24 hour surround duration (24 30-minute blocks pre and 24 blocks post)
 nb = 1e4; % number of MC iterations
+buffer = 24;
+do_buffer = 1;
 
 
 %% Locations
@@ -53,7 +55,7 @@ for i = 1:length(whichPts)
     out(i).nan_blocks = find(isnan(nanmean(out(i).rate,1)));
     % MC analysis (in the math folder)
     out(i).overall_rate_pval = mc_overall_rate(out(i).overall_rate,...
-        surround,out(i).change_block,nb,out(i).rate);
+        surround,out(i).change_block,nb,out(i).rate,buffer,do_buffer);
 end
 
 %% Initialize figure

@@ -1,4 +1,4 @@
-function pval = mc_overall_rate(rate,surround,change,nb,full_rate)
+function pval = mc_overall_rate(rate,surround,change,nb,full_rate,buffer,do_buffer)
 
 nblocks = size(rate,2);
 
@@ -19,7 +19,13 @@ for ib = 1:nb
         % Make a fake change time
         fchange = randi([surround+1,nblocks-surround]);
 
-        [fpre,fpost] = get_surround_times(full_rate,fchange,surround);
+        % For the Monte Carlo simulation, make the surround somewhat longer
+        % to account for the gap in recording
+        if do_buffer
+            [fpre,fpost] = get_surround_times_buffer(full_rate,fchange,surround,buffer);
+        else
+            [fpre,fpost] = get_surround_times(full_rate,fchange,surround);
+        end
 
         if length(fpre) == 1 || length(fpost) == 1, continue; end
         

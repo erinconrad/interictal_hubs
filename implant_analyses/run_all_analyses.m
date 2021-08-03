@@ -11,7 +11,7 @@ folder as this script).
 % This is so that I get the same result (assuming I don't change the code)
 % each time I run this. Because I am doing a Monte Carlo test there is some
 % randomness.
-rng(100)
+rng(0)
 
 %% Temporarily add this codebase to the Matlab path
 locations = interictal_hub_locations; % This is a script you will need to add to your own path (see ReadMe for details)

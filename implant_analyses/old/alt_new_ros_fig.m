@@ -1,4 +1,4 @@
-function new_ros_fig(whichPts,saved_out,out)
+function alt_new_ros_fig(whichPts,saved_out,out)
 
 %{
 This is used to perform the analysis associated with Figure 3 of the
@@ -16,6 +16,7 @@ ex_p = 5;
 do_norm = 0; % doesn't seem to make much difference so I will keep 0 for simplicity (a node strength thign)
 do_cat = 0;
 do_buffer = 1;
+buffer = 24; % need to make this specific to patient
 
 %% Other info
 n_surrounds = length(all_surrounds);
@@ -88,7 +89,6 @@ for im = 1:n_metrics
 
         for i = 1:length(whichPts)
             
-            
             switch metric
                 case 'rate'
                     rate = out(i).rate;
@@ -102,17 +102,23 @@ for im = 1:n_metrics
             
             
             cblock = out(i).change_block;
-            
-            % Get file gap
-            buffer = file_gaps(out(i).name);
 
             % Remove EKG and scalp electrodes
             ekg = identify_ekg_scalp(out(i).unchanged_labels);
             rate(ekg,:) = [];
 
             % Get rho and statistics (in the math folder)
-            [pval_curr,true_rho,mc_rho] = ...
-                compare_rhos(rate,cblock,surround,nb,'Spearman',buffer,do_buffer,out(i).rate);
+            if 0
+            
+                [pval_curr,true_rho,mc_rho] = ...
+                    compare_rhos(rate,cblock,surround,nb,'Spearman',buffer,do_buffer,out(i).rate);
+            
+            else
+            
+                [pval_curr,true_rho,mc_rho] = ...
+                    compare_vecnorm(rate,cblock,surround,nb,buffer,do_buffer,out(i).rate);
+            end
+            
 
             all_all_mc_r(is,i,:,im) = mc_rho;
             all_all_true_r(is,i,im) = true_rho;
