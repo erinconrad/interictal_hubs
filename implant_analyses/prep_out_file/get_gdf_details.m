@@ -69,6 +69,8 @@ for c = nchanges % just do last one
         unchanged_anatomy = pt(p).ieeg.file(change(c).files(2)).anatomy(unchanged_idx);
         added_anatomy = pt(p).ieeg.file(change(c).files(2)).anatomy(added_idx);
     end
+    
+    %% Electrode type
 
     %% Get locs
     if ~isfield(pt(p).ieeg.file(change(c).files(2)),'locs')
