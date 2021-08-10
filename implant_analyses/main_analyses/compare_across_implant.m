@@ -61,7 +61,7 @@ all_rhos = nan(n_metrics,n_surrounds,n_patients,2); %2 is start-pre, post-end
 within_implant_rate_stats = nan(n_metrics,n_surrounds,2,3); %2 is first vs second implant, 3 is p-value, tstat, df
 between_implant_rate_stats = nan(n_metrics,n_surrounds,3); %3 is p-value, tstat, df
 all_rhos_stats = nan(n_metrics,n_surrounds,3); %3 is p-value, tstat, df
-
+sur_times = nan(n_metrics,n_surrounds,n_patients,4,2); %4 is start, pre, post, end, 2 is start and end of each time period
 
 % Loop over metrics
 for im = 1:n_metrics
@@ -96,6 +96,8 @@ for im = 1:n_metrics
             
             % Get pre, post, start, ending times
             [start,pre,post,ending] = across_implant_surround(rate,cblock,surround);
+            sur_times(im,is,i,:,:) = ([start(1),pre(1),post(1),ending(1);...
+                start(end),pre(end),post(end),ending(end)])';
             
             % Get mean rates (across time periods) in these times
             rate_start = nanmean(rate(:,start),2)/run_dur;
@@ -162,13 +164,13 @@ is = main_surround;
 %% initialize figure
 figure
 set(gcf,'position',[100 87 733 900])
-tiledlayout(3,1,'TileSpacing','tight','Padding','tight')
+tiledlayout(3,2,'TileSpacing','tight','Padding','tight')
 
 % colors
-cols = [0, 0.4470, 0.7410;0.8500, 0.3250, 0.0980];
+cols = [0, 0.4470, 0.7410;0.8500, 0.3250, 0.0980;0.6350, 0.0780, 0.1840];
 
 %% example raster
-nexttile
+nexttile([1 2])
 rate = out(ex_p).rate./out(ex_p).run_dur;
 ekg = identify_ekg_scalp(out(ex_p).unchanged_labels);
 rate(ekg,:) = [];
@@ -179,7 +181,7 @@ set(h,'XData',[0:curr_times(end)]);
 xlim([0 curr_times(end)])
 hold on
 yl = get(gca,'ylim');
-cp = plot([curr_change curr_change],yl,'r--','linewidth',3);
+cp = plot([curr_change curr_change],yl,'--','linewidth',4,'color',cols(3,:));
 xlabel('Hour')
 yticklabels([])
 if im == 1
@@ -189,9 +191,39 @@ set(gca,'fontsize',15)
 c = colorbar;
 ylabel(c,'Spikes/min','fontsize',15);
 
+% Add early/late designations for implant 1 and 2
+% Add stats
+sur = squeeze(sur_times(im,is,ex_p,:,:))* out(ex_p).block_dur;
+yl = ylim;
+new_yl = [yl(1) 1.17*(yl(2)-yl(1))];
+ybar = yl(1) + 1.01*(yl(2)-yl(1));
+yt = yl(1) + 1.09*(yl(2)-yl(1));
+ylim(new_yl);
+
+
+plot([sur(1,1) sur(1,2)],[ybar ybar],'-','color',cols(1,:),'linewidth',3); % Implant 1 early
+plot([sur(2,1) sur(2,2)],[ybar ybar],'-','color',cols(1,:),'linewidth',3); % Implant 1 late
+plot([sur(3,1) sur(3,2)],[ybar ybar],'-','color',cols(2,:),'linewidth',3); % Implant 2 early
+plot([sur(4,1) sur(4,2)],[ybar ybar],'-','color',cols(2,:),'linewidth',3); % Implant 2 late
+
+text(mean([sur(1,1),sur(1,2)]),yt,'E','color',cols(1,:),...
+    'horizontalalignment','center','fontsize',15)
+text(mean([sur(2,1),sur(2,2)]),yt,'L','color',cols(1,:),...
+    'horizontalalignment','center','fontsize',15)
+
+text(mean([sur(3,1),sur(3,2)]),yt,'E','color',cols(2,:),...
+    'horizontalalignment','center','fontsize',15)
+text(mean([sur(4,1),sur(4,2)]),yt,'L','color',cols(2,:),...
+    'horizontalalignment','center','fontsize',15)
+
+text(mean([sur(1,1),sur(2,2)]),yt,'Implant 1','color',cols(1,:),...
+    'horizontalalignment','center','fontsize',15)
+text(mean([sur(3,1),sur(4,2)]),yt,'Implant 2','color',cols(2,:),...
+    'horizontalalignment','center','fontsize',15)
+
 
 %% Rate analysis
-nexttile
+nexttile([1 2])
 
 % plot the data
 curr_rates = squeeze(all_rates(im,is,:,:));
@@ -231,8 +263,29 @@ legend([pfirst(1),psecond(1)],{'Implant 1','Implant 2'},'fontsize',15)
 ylabel('Spikes/min')
 set(gca,'fontsize',15);
 
+% Print word results
+fprintf(['\nWithin each implantation period, the spike rate change was '...
+    'heterogeneous across patients. There was no overall difference in spike '...
+    'rate between the early and late stage of either implant (Original implant: '...
+    'Early M = %1.1f spikes/min (SD = %1.1f), Late M = %1.1f (%1.1f), t(%d) = %1.1f, %s; '...
+    'Implant revision: Early M = %1.1f (SD = %1.1f), Late M = %1.1f (%1.1f), '...
+    't(%d) = %1.1f, %s).\n'],...
+    mean(curr_rates(:,1)), std(curr_rates(:,1)), mean(curr_rates(:,2)),...
+    std(curr_rates(:,2)), within_implant_rate_stats(im,is,1,3),...
+    within_implant_rate_stats(im,is,1,2), get_p_text(within_implant_rate_stats(im,is,1,1)),...
+    mean(curr_rates(:,3)), std(curr_rates(:,3)), mean(curr_rates(:,4)),...
+    std(curr_rates(:,4)), within_implant_rate_stats(im,is,2,3),...
+    within_implant_rate_stats(im,is,2,2), get_p_text(within_implant_rate_stats(im,is,2,1)))
 
-%% ROS analysis
+fprintf(['\nThere was also no consistent change in spike rate between the early '...
+    'portion of the original implant (M = %1.1f spikes/min, SD = %1.1f) and the '...
+    'late portion of the revised implant (M = %1.1f spikes/min, SD = %1.1f) ('...
+    't(%d) = %1.1f, %s).\n'],...
+     mean(curr_rates(:,1)), std(curr_rates(:,1)),mean(curr_rates(:,4)),...
+    std(curr_rates(:,4)),between_implant_rate_stats(im,is,3),...
+    between_implant_rate_stats(im,is,2),get_p_text(between_implant_rate_stats(im,is,1)));
+
+%% Spike stability analysis
 nexttile
 curr_rhos = squeeze(all_rhos(im,is,:,:));
 plot(1+0.05*rand(n_patients,1),curr_rhos(:,1),'o','markersize',15,'linewidth',2)
@@ -258,6 +311,61 @@ ylabel('Early-to-late spike stability')
 xticks([1 2])
 xticklabels({'Implant 1','Implant 2'})
 set(gca,'fontsize',15);
+
+% Words
+fprintf(['\nThe spike stability between the early-to-late implant periods '...
+    'varied across patients (Original implant: M = %1.2f, SD = %1.2f, Revised '...
+    'implant: M = %1.2f, SD = %1.2f) and did not differ between the two '...
+    'implantations (t(%d) = %1.1f, %s)\n'],...
+    mean(curr_rhos(:,1)),std(curr_rhos(:,1)),mean(curr_rhos(:,2)),...
+    std(curr_rhos(:,2)),all_rhos_stats(1,is,3),all_rhos_stats(1,is,2),...
+    get_p_text(all_rhos_stats(1,is,1)));
+
+%% NS stability analysis
+nexttile
+curr_rhos = squeeze(all_rhos(2,is,:,:)); % switch metric to node strength
+plot(1+0.05*rand(n_patients,1),curr_rhos(:,1),'o','markersize',15,'linewidth',2)
+hold on
+plot(2+0.05*rand(n_patients,1),curr_rhos(:,2),'o','markersize',15,'linewidth',2)
+xlim([0 3])
+
+% Get ylim stuff
+set(gca,'ylim',[0 1]);
+yl = ylim;
+new_yl = [yl(1) yl(1) + 1.3*(yl(2)-yl(1))];
+bar_y = yl(1) + 1.1*(yl(2)-yl(1));
+p_y = yl(1) + 1.15*(yl(2)-yl(1));
+ylim(new_yl)
+
+% Plot the stats
+plot([1 2],[bar_y bar_y],'k','linewidth',1)
+text(1.5,p_y,get_asterisks(squeeze(all_rhos_stats(2,is,1)),1),...
+    'horizontalalignment','center','fontsize',15);
+
+% Labels
+ylabel('Early-to-late NS stability')
+xticks([1 2])
+xticklabels({'Implant 1','Implant 2'})
+set(gca,'fontsize',15);
+
+% Words
+fprintf(['\nThe node strength stability between the early-to-late implant periods '...
+    'also varied across patients (Original implant: M = %1.2f, SD = %1.2f, Revised '...
+    'implant: M = %1.2f, SD = %1.2f) and did not differ between the two '...
+    'implantations (t(%d) = %1.1f, %s)\n'],...
+    mean(curr_rhos(:,1)),std(curr_rhos(:,1)),mean(curr_rhos(:,2)),...
+    std(curr_rhos(:,2)),all_rhos_stats(2,is,3),all_rhos_stats(2,is,2),...
+    get_p_text(all_rhos_stats(2,is,1)));
+
+%% Add labels
+annotation('textbox',[0 0.908 0.1 0.1],'String','A','fontsize',20,'linestyle','none')
+annotation('textbox',[0 0.57 0.1 0.1],'String','B','fontsize',20,'linestyle','none')
+annotation('textbox',[0 0.25 0.1 0.1],'String','C','fontsize',20,'linestyle','none')
+annotation('textbox',[0.45 0.25 0.1 0.1],'String','D','fontsize',20,'linestyle','none')
+
+%% Save it
+fname = 'across_implant';
+print(gcf,[main_spike_results,fname],'-dpng')
 
 %% Make supplemental tables
 im1_spike_T = cell2table(arrayfun(@(x,y,z) sprintf('t(%d) = %1.2f, %s',x,y,pretty_p_text(z)),...
