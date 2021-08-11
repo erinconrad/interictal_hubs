@@ -204,6 +204,7 @@ ylabel('Spikes/min')
 hold on
 
 % Get surround times, starting with first non nan
+surround = all_surrounds(is);
 [pre,post] = get_surround_times(out(ex_p).rate,cblock,surround);
 pre = pre*block_dur;
 post = post*block_dur;
@@ -211,9 +212,9 @@ xlim([0 length(rate)*block_dur]);
 
 set(gca,'fontsize',15)
 yl = ylim;
-new_yl = [yl(1) 1.25*(yl(2)-yl(1))];
+new_yl = [yl(1) 1.3*(yl(2)-yl(1))];
 top = yl(1) + 1.1*(yl(2)-yl(1));
-ybar = yl(1) + 1.15*(yl(2)-yl(1));
+ybar = yl(1) + 1.11*(yl(2)-yl(1));
 ytext=  yl(1) + 1.2*(yl(2)-yl(1));
 ylim(new_yl);
 for b = 1:length(nan_blocks)
@@ -226,8 +227,8 @@ for b = 1:length(nan_blocks)
 end
 cblock = cblock*block_dur;
 cp = plot([cblock cblock],[yl(1) top],'--','color',cols(3,:),'linewidth',5);
-plot([pre(1) pre(end)],[ybar ybar],'color',cols(1,:),'linewidth',2);
-plot([post(1) post(end)],[ybar ybar],'color',cols(2,:),'linewidth',2);
+plot([pre(1) pre(end)],[ybar ybar],'color',cols(1,:),'linewidth',4);
+plot([post(1) post(end)],[ybar ybar],'color',cols(2,:),'linewidth',4);
 
 xl = xlim;
 cblock_fig_units = axescoord2figurecoord(cblock,nan);
@@ -236,14 +237,30 @@ annotation('textarrow',[0.5 cblock_fig_units],...
     [0.98 0.9],'String','Revision','color',cols(3,:),...
     'fontsize',15,'linewidth',2);
 
-text((pre(1)+pre(end))/2,ytext,'Pre','color',cols(1,:),'fontsize',15,...
-    'HorizontalAlignment','center')
-text((post(1)+post(end))/2,ytext,'Post','color',cols(2,:),'fontsize',15,...
-    'HorizontalAlignment','center')
+%{
+text(pre(1),ytext,'Pre','color',cols(1,:),'fontsize',15,...
+    'HorizontalAlignment','right')
+text(post(end),ytext,'Post','color',cols(2,:),'fontsize',15,...
+    'HorizontalAlignment','left')
+    %}
+
+pre_text_fig_units = axescoord2figurecoord(pre(1),nan);
+pre_bar_fig_units = axescoord2figurecoord((pre(1)+pre(end))/2,nan);
+post_text_fig_units = axescoord2figurecoord(post(end),nan);
+post_bar_fig_units = axescoord2figurecoord((post(1)+post(end))/2,nan);
+
+annotation('textarrow',[pre_text_fig_units-0.05 pre_bar_fig_units],...
+    [0.983 0.975],'String','Pre','color',cols(1,:),...
+    'fontsize',15,'linewidth',2);
+
+annotation('textarrow',[post_text_fig_units+0.05 post_bar_fig_units],...
+    [0.983 0.975],'String','Post','color',cols(2,:),...
+    'fontsize',15,'linewidth',2);
+
 xl = xlim;
 yl = ylim;
 text(xl(1),yl(2),sprintf('Patient %d',ex_p),'fontsize',15,'VerticalAlignment','Top')
-xticklabels([])
+%xticklabels([])
 
 %% Spike rate change across electrodes
 nexttile
@@ -340,14 +357,14 @@ for im = 1:n_metrics
 
     if im == 1
         fprintf(['\nFor the primary surround period of 24 hours, the spike stability '...
-            'aggregated across patients (mean %1.2f, std %1.2f) was no different '...
-            'from chance (Fisher’s method, p = %1.3f).\n'],...
-            mean(true_r),std(true_r),p);
+            'aggregated across patients (M = %1.2f, SD = %1.2f) was no different '...
+            'from chance (Monte Carlo with Fisher''s method: %s).\n'],...
+            mean(true_r),std(true_r),pretty_p_text(p));
     elseif im == 2
-        fprintf(['\n The group node strength stability '...
+        fprintf(['\n The group node strength stability in the surround period of 24 hours '...
             '(mean %1.2f, std %1.2f) was also no different from '...
-            'chance (Fisher’s method, p = %1.3f).\n'],...
-            mean(true_r),std(true_r),p);
+            'chance (Monte Carlo with Fisher''s method: %s).\n'],...
+            mean(true_r),std(true_r),pretty_p_text(p));
     end
     
     
@@ -370,7 +387,7 @@ for im = 1:n_metrics
         plot([is-0.2,is+0.2],[yl(1)+0.8*(yl(2)-yl(1)) yl(1)+0.8*(yl(2)-yl(1))],...
             'k','linewidth',2)
         text(is,yl(1)+0.9*(yl(2)-yl(1)),get_asterisks(all_all_p(is,im),1),...
-        'horizontalalignment','center','fontsize',20)
+        'horizontalalignment','center','fontsize',15)
     end
     
     xlabel('Peri-revision period (hours)')
@@ -387,17 +404,28 @@ for im = 1:n_metrics
     
     % Text
     if im == 1
-        fprintf(['\nExamining other surround durations, only the 6-hour '...
+        fprintf(['\nExamining other peri-revision surround durations, only the 6-hour '...
             'peri-revision surround duration had a spike stability significantly '...
             'lower than chance (spike stability M = %1.2f, SD = %1.2f, Monte Carlo %s).\n'],...
             mean(all_all_true_r(1,:,im)), std(all_all_true_r(1,:,im)),...
             get_p_text(all_all_p(1,im)));
     elseif im == 2
         fprintf(['\nExamining other surround durations, several '...
-            'peri-revision surround durations had a node strength stability significantly '...
-            'lower than chance (see Figure 3 and Supplemental Table 1 for statistics).\n'],...
-            mean(all_all_true_r(1,:,im)), std(all_all_true_r(1,:,im)),...
-            get_p_text(all_all_p(1,im)));
+            'peri-revision surround durations (specifically ']); 
+        sig_idx = find(all_all_p(:,im) < 0.05);
+        for isig = 1:length(sig_idx)
+            which_sig = sig_idx(isig);
+            fprintf('%d',all_surrounds(which_sig));
+            if isig < length(sig_idx) -1
+                fprintf(', ');
+            elseif isig == length(sig_idx) - 1
+                fprintf(', and ')
+            else
+                fprintf(' hours');
+            end
+        end
+        fprintf([') had a node strength stability significantly '...
+            'lower than chance (see Figure 3 and Supplemental Table 1 for statistics).\n']);
     end
 
     
@@ -406,13 +434,22 @@ end
 %% Annotations
 annotation('textbox',[0 0.90 0.1 0.1],'String','A','fontsize',20,'linestyle','none')
 annotation('textbox',[0 0.67 0.1 0.1],'String','B','fontsize',20,'linestyle','none')
-annotation('textbox',[0.5 0.67 0.1 0.1],'String','D','fontsize',20,'linestyle','none')
-annotation('textbox',[0 0.42 0.1 0.1],'String','E','fontsize',20,'linestyle','none')
-annotation('textbox',[0.5 0.42 0.1 0.1],'String','F','fontsize',20,'linestyle','none')
-annotation('textbox',[0 0.18 0.1 0.1],'String','G','fontsize',20,'linestyle','none')
-annotation('textbox',[0.5 0.18 0.1 0.1],'String','H','fontsize',20,'linestyle','none')
+annotation('textbox',[0.49 0.67 0.1 0.1],'String','C','fontsize',20,'linestyle','none')
+annotation('textbox',[0 0.42 0.1 0.1],'String','D','fontsize',20,'linestyle','none')
+annotation('textbox',[0.49 0.42 0.1 0.1],'String','E','fontsize',20,'linestyle','none')
+annotation('textbox',[0 0.18 0.1 0.1],'String','F','fontsize',20,'linestyle','none')
+annotation('textbox',[0.49 0.18 0.1 0.1],'String','G','fontsize',20,'linestyle','none')
 
 %% Also save these to a specific range in the Supplemental Table 1
+agg_rate_T = cell2table(arrayfun(@(x,y,z) sprintf('t(%d) = %1.1f, %s',x,y,pretty_p_text(z)),...
+    squeeze(main_stats(1,:,3))',squeeze(main_stats(1,:,2))',...
+    squeeze(main_stats(1,:,1))','UniformOutput',false),...
+    'RowNames',arrayfun(@(x) sprintf('%d',x),all_surrounds,...
+    'UniformOutput',false));
+agg_corr_T = cell2table(arrayfun(@(x,y) sprintf('r = %1.2f, %s',x,pretty_p_text(y)),...
+    squeeze(added_stats(1,:,1))',squeeze(added_stats(1,:,2))','UniformOutput',false),...
+    'RowNames',arrayfun(@(x) sprintf('%d',x),all_surrounds,...
+    'UniformOutput',false));
 agg_spike_T = cell2table(arrayfun(@(x) sprintf('MC %s',pretty_p_text(x)),all_all_p(:,1),...
     'UniformOutput',false),...
     'RowNames',arrayfun(@(x) sprintf('%d',x),all_surrounds,...
@@ -421,11 +458,12 @@ agg_ns_T = cell2table(arrayfun(@(x) sprintf('MC %s',pretty_p_text(x)),all_all_p(
     'UniformOutput',false),...
     'RowNames',arrayfun(@(x) sprintf('%d',x),all_surrounds,...
     'UniformOutput',false));
-writetable(agg_spike_T,[main_spike_results,'spike_ros.csv'],'WriteRowNames',true)  
-writetable(agg_ns_T,[main_spike_results,'ns_ros.csv'],'WriteRowNames',true)  
 
-writetable(agg_spike_T,[main_spike_results,'Supplemental Table 1.xlsx'],'Range','C2:C12','WriteVariableNames',false)
-writetable(agg_ns_T,[main_spike_results,'Supplemental Table 1.xlsx'],'Range','D2:D12','WriteVariableNames',false)
+writetable(agg_rate_T,[main_spike_results,'Supplemental Table 2.xlsx'],'Range','D2:D12','WriteVariableNames',false)
+writetable(agg_corr_T,[main_spike_results,'Supplemental Table 2.xlsx'],'Range','E2:E12','WriteVariableNames',false)
+
+writetable(agg_spike_T,[main_spike_results,'Supplemental Table 2.xlsx'],'Range','F2:F12','WriteVariableNames',false)
+writetable(agg_ns_T,[main_spike_results,'Supplemental Table 2.xlsx'],'Range','G2:G12','WriteVariableNames',false)
 
 %% Save fig
 fname = 'new_rate';
