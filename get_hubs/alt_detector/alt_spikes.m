@@ -2,7 +2,7 @@ function alt_spikes(whichPts)
 
 %% Parameters
 overwrite = 0;
-test.do_test = 1;
+test.do_test = 0;
 do_plot = 1;
 do_save = 0;
 
