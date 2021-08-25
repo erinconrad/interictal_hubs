@@ -25,17 +25,17 @@ addpath(genpath(locations.script_folder)); % path to the interictal_hubs codebas
 out = load('out.mat');
 out = out.out;
 
-%% Run spike and node strength stability analysis
-new_ros_fig([],1,out);
-
-%% Run distance-rate change correlation analysis
-all_corrs([],1,out);
-
 %% Run distance-FC-cosi correlation analysis
 dist_cosi_pc([],1,out);
 
-%% Run rate analysis
-rate_all_pts([],1,out);
+%% Run compare across implant analysis
+compare_across_implant([],1,out); 
+
+%% Run distance-rate change correlation analysis
+all_corrs([],1,out); % Monte Carlo!
+
+%% Run spike rate and spike/ns stability analysis
+new_rate_analysis([],1,out); % Monte Carlo!
 
 %% Run alpha-delta ratio analysis
 ad_analyses([],1,out);

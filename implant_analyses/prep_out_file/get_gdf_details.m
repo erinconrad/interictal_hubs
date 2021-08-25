@@ -86,6 +86,7 @@ for c = nchanges % just do last one
     end
 
     all_rate = [];
+    all_rate_added = [];
     rate_post = [];
     findices = [];
     bindices = [];
@@ -186,6 +187,15 @@ for c = nchanges % just do last one
         % This part is important to stitch together things properly
 
         %% Get indices of unchanged and remove changed
+        % First do added
+        if f >= change(c).files(2)
+            [lia,locb] = ismember(chLabels,added);
+            new_labels_added = chLabels;
+            rate_added = rate;
+            rate_added(~lia,:) = [];
+            new_labels_added(~lia) = [];
+        end
+        
         [lia,locb] = ismember(chLabels,unchanged);
         new_labels = chLabels;
         new_labels(~lia) = [];
@@ -195,6 +205,19 @@ for c = nchanges % just do last one
         un_cos(:,~lia,:) = [];
 
         %% Re-order as needed
+        % First do added
+        if f >= change(c).files(2)
+            [lia,locb] = ismember(added,new_labels_added);
+            new_labels_added = new_labels_added(locb);
+            rate_added = rate_added(locb,:);
+            all_rate_added = [all_rate_added,rate_added];
+        else
+            all_rate_added = [all_rate_added,nan(length(added),size(rate,2))];
+            
+        end
+        
+        
+        
         [lia,locb] = ismember(unchanged,new_labels);
         new_labels = new_labels(locb);
         rate = rate(locb,:);
@@ -205,7 +228,9 @@ for c = nchanges % just do last one
             error('oh no');
         end
         %}
+        
 
+        
         all_rate = [all_rate,rate];
         all_un_cos = cat(3,all_un_cos,un_cos);
 
@@ -229,6 +254,7 @@ end
 
 out.name = name;
 out.rate = all_rate;
+out.rate_added = all_rate_added;
 out.cos = all_cos;
 out.un_cos = all_un_cos;
 out.change = change;

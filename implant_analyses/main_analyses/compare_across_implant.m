@@ -1,8 +1,11 @@
 function compare_across_implant(whichPts,saved_out,out)
 
+%{
+Need to change words
+%}
+
 %% User change parameters
 all_surrounds = 12*[0.5,1,2,3,4,5,6,7,8,9,10];
-%all_surrounds = 12*[2];
 main_surround = 3; %24 hour peri-revision surround
 main_metric = 1;
 ex_p = 1;
@@ -57,9 +60,11 @@ end
 % Initialize output
 n_patients = length(whichPts);
 all_rates = nan(n_metrics,n_surrounds,n_patients,4); % 4 is start, pre, post, end
+all_added_rates = nan(n_surrounds,n_patients,2); %start end
 all_rhos = nan(n_metrics,n_surrounds,n_patients,2); %2 is start-pre, post-end
 within_implant_rate_stats = nan(n_metrics,n_surrounds,2,3); %2 is first vs second implant, 3 is p-value, tstat, df
 between_implant_rate_stats = nan(n_metrics,n_surrounds,3); %3 is p-value, tstat, df
+unchanged_added_stats = nan(n_surrounds,2,3);% 1 vs 2 is within added vs added-to-unchanged
 all_rhos_stats = nan(n_metrics,n_surrounds,3); %3 is p-value, tstat, df
 sur_times = nan(n_metrics,n_surrounds,n_patients,4,2); %4 is start, pre, post, end, 2 is start and end of each time period
 
@@ -73,17 +78,15 @@ for im = 1:n_metrics
 
         surround = all_surrounds(is);
         
-        %% Get individual patient data
-        
+        %% Get individual patient data      
         for i = 1:length(whichPts)
             
             switch metric
                 case 'rate'
                     rate = out(i).rate;
+                    added_rate = out(i).rate_added;
                 case 'ns'
-                    
-                    rate = out(i).metrics.ns;
-                   
+                    rate = out(i).metrics.ns;            
             end
             
             cblock = out(i).change_block;
@@ -104,14 +107,22 @@ for im = 1:n_metrics
             rate_pre = nanmean(rate(:,pre),2)/run_dur;
             rate_post = nanmean(rate(:,post),2)/run_dur;
             rate_end = nanmean(rate(:,ending),2)/run_dur;
+            if im == 1
+                added_post = nanmean(added_rate(:,post),2)/run_dur;
+                added_end = nanmean(added_rate(:,ending),2)/run_dur;
+            end
             % This is the average spike rate in each channel for a 5 minute
             % run
             
             % Get the mean overall rate in each
-            overall_rate_start = nansum(rate_start);
-            overall_rate_pre = nansum(rate_pre);
-            overall_rate_post = nansum(rate_post);
-            overall_rate_end = nansum(rate_end);
+            overall_rate_start = nanmean(rate_start);
+            overall_rate_pre = nanmean(rate_pre);
+            overall_rate_post = nanmean(rate_post);
+            overall_rate_end = nanmean(rate_end);
+            if im == 1
+                overall_added_post = nanmean(added_post);
+                overall_added_end = nanmean(added_end);
+            end
             % And so, this would be in units of spikes/minute
             
             % Get the SRC between start and pre, and post and end
@@ -122,6 +133,9 @@ for im = 1:n_metrics
             all_rates(im,is,i,:) = [overall_rate_start,overall_rate_pre,...
                 overall_rate_post,overall_rate_end];
             all_rhos(im,is,i,:) = [start_pre_corr,post_end_corr];
+            if im == 1
+                all_added_rates(is,i,:) = [overall_added_post overall_added_end];
+            end
             
         end
         
@@ -141,11 +155,33 @@ for im = 1:n_metrics
         % fill matrix
         within_implant_rate_stats(im,is,2,:) = [p,stats.tstat,stats.df];
         
-        % Compare rate from start to end
-        [~,p,~,stats] = ttest(all_first_rates(:,1),all_second_rates(:,2));
+        % Compare rel rate change between first and 2nd implant
+        rel_2 = (all_second_rates(:,2)-all_second_rates(:,1))./all_second_rates(:,1);
+        rel_1 = (all_first_rates(:,2) - all_first_rates(:,1))./all_first_rates(:,1);
+        [~,p,~,stats] = ttest(rel_1,rel_2);
         
         % fill matrix
         between_implant_rate_stats(im,is,:) = [p,stats.tstat,stats.df];
+        
+        
+        if im == 1
+            % Compare added from post to end
+            [~,p,~,stats] = ttest(squeeze(all_added_rates(is,:,1)),...
+                squeeze(all_added_rates(is,:,2)));
+           
+            % fill
+            unchanged_added_stats(is,1,:) = [p,stats.tstat,stats.df];
+            
+            % compare rel rate change for added vs unchanged
+            added_rel = ((squeeze(all_added_rates(is,:,2))-squeeze(all_added_rates(is,:,1)))./...
+                squeeze(all_added_rates(is,:,1)))';
+            unchanged_rel = (all_second_rates(:,2)-all_second_rates(:,1))./all_second_rates(:,1);
+            
+            [~,p,~,stats] = ttest(added_rel,unchanged_rel);
+            
+            % fill
+            unchanged_added_stats(is,2,:) = [p,stats.tstat,stats.df];
+        end
         
         % Compare rhos between first and second implant
         curr_all_rhos = squeeze(all_rhos(im,is,:,:));
@@ -167,7 +203,8 @@ set(gcf,'position',[100 87 733 900])
 tiledlayout(3,2,'TileSpacing','tight','Padding','tight')
 
 % colors
-cols = [0, 0.4470, 0.7410;0.8500, 0.3250, 0.0980;0.6350, 0.0780, 0.1840];
+cols = [0, 0.4470, 0.7410;0.8500, 0.3250, 0.0980;0.6350, 0.0780, 0.1840;...
+    0.4940, 0.1840, 0.5560];
 
 %% example raster
 nexttile([1 2])
@@ -189,7 +226,7 @@ if im == 1
 end
 set(gca,'fontsize',15)
 c = colorbar;
-ylabel(c,'Spikes/min','fontsize',15);
+ylabel(c,'Spikes/elec/min','fontsize',15);
 
 % Add early/late designations for implant 1 and 2
 % Add stats
@@ -227,12 +264,15 @@ nexttile([1 2])
 
 % plot the data
 curr_rates = squeeze(all_rates(im,is,:,:));
+added_rates = squeeze(all_added_rates(is,:,:));
 pfirst = plot(([1 2].*ones(n_patients,1))',([curr_rates(:,1) curr_rates(:,2)])',...
     'color',cols(1,:),'linewidth',2);
 hold on
 psecond = plot(([3 4].*ones(n_patients,1))',([curr_rates(:,3) curr_rates(:,4)])',...
     'color',cols(2,:),'linewidth',2);
-xlim([0 5])
+padded = plot(([5 6].*ones(n_patients,1))',([added_rates(:,1) added_rates(:,2)])',...
+    'color',cols(4,:),'linewidth',2);
+xlim([0 7])
 
 % Get ylim stuff
 yl = get(gca,'ylim');
@@ -252,14 +292,22 @@ plot([3 4],[bar_y bar_y],'k','linewidth',1)
 text(3.5,p_y,get_asterisks(squeeze(within_implant_rate_stats(im,is,2,1)),1),...
     'horizontalalignment','center','fontsize',15);
 
-plot([1 4],[higher_bar higher_bar],'k','linewidth',1)
+plot([1.6 3.4],[higher_bar higher_bar],'k','linewidth',1)
 text(2.5,higher_p,get_asterisks(squeeze(between_implant_rate_stats(im,is,1)),1),...
     'horizontalalignment','center','fontsize',15);
 
+plot([5 6],[bar_y bar_y],'k','linewidth',1)
+text(5.5,p_y,get_asterisks(squeeze(unchanged_added_stats(is,1,1)),1),...
+    'horizontalalignment','center','fontsize',15);
+
+plot([3.6 5.4],[higher_bar higher_bar],'k','linewidth',1)
+text(4.5,higher_p,get_asterisks(squeeze(unchanged_added_stats(is,2,1)),1),...
+    'horizontalalignment','center','fontsize',15);
+
 % Labels
-xticks([1 2 3 4])
-xticklabels({'Early','Late','Early','Late'})
-legend([pfirst(1),psecond(1)],{'Implant 1','Implant 2'},'fontsize',15)
+xticks([1 2 3 4 5 6])
+xticklabels({'Early','Late','Early','Late','Early','Late'})
+legend([pfirst(1),psecond(1),padded(1)],{'Implant 1','Implant 2 - original','Implant 2 - added'},'fontsize',15)
 ylabel('Spikes/min')
 set(gca,'fontsize',15);
 

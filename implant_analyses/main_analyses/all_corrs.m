@@ -2,12 +2,10 @@ function all_corrs(whichPts,saved_out,out)
 
 %% Parameters
 all_surrounds = 12*[0.5,1,2,3,4,5,6,7,8,9,10];
-%all_surrounds = 12*[1 2];
 main_surround = 3; %*******24 hours
 main_pred = 1;
 main_resp = 1;
-nb = 1e2; % change!!!!!!!!!
-ex = 1;
+nb = 1e2; 
 do_save = 1;
 do_buffer = 1;
 
@@ -110,6 +108,7 @@ for s = 1:length(all_surrounds)
                 rate = out(i).rate./out(i).run_dur;
                 chLabels = out(i).unchanged_labels;
                 cblock = out(i).change_block;
+   
                 ns = out(i).metrics.ns;
                 
                 % Get file gap
@@ -544,8 +543,8 @@ Tns_simp = cell2table(arrayfun(@(x) sprintf('MC p = %1.3f',x),ns_p_simp,'Uniform
     'UniformOutput',false),'VariableNames',which_preds);
 
 
-    writetable(Tspike_simp,[main_spike_results,'spike_simp_','.csv'],'WriteRowNames',true)  
-    writetable(Tns_simp,[main_spike_results,'ns_simp_','.csv'],'WriteRowNames',true)  
+    %writetable(Tspike_simp,[main_spike_results,'spike_simp_','.csv'],'WriteRowNames',true)  
+    %writetable(Tns_simp,[main_spike_results,'ns_simp_','.csv'],'WriteRowNames',true)  
 end
 
 %% Also table of MC p-values
@@ -562,8 +561,8 @@ Tns_MC = cell2table(arrayfun(@(x) sprintf('MC %s',pretty_p_text(x)),ns_p_MC,'Uni
     'UniformOutput',false));
 
 
-    writetable(Tspike_MC,[main_spike_results,'spike_MC','.csv'],'WriteRowNames',true)  
-    writetable(Tns_MC,[main_spike_results,'ns_MC','.csv'],'WriteRowNames',true)  
+    %writetable(Tspike_MC,[main_spike_results,'spike_MC','.csv'],'WriteRowNames',true)  
+    %writetable(Tns_MC,[main_spike_results,'ns_MC','.csv'],'WriteRowNames',true)  
     
     %% Also add to main supplemental table
     writetable(Tspike_MC,[main_spike_results,'Supplemental Table 2.xlsx'],'Range','B2:B12','WriteVariableNames',false)

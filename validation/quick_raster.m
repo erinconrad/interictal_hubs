@@ -72,6 +72,7 @@ hold on
 plot([cblock cblock],ylim,'r--','linewidth',4)
 yticks(1:length(chLabels))
 yticklabels(chLabels)
+title(out(p).name)
 
 %
 while 1

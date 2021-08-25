@@ -1,4 +1,4 @@
-function buffer = file_gaps(name)
+function [buffer,h] = file_gaps(name)
 
 switch name
     

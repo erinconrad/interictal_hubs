@@ -7,7 +7,13 @@ implant_analysis/ folder and read the ReadMe in that folder.
 %}
 
 
+%{
+Notes:
+- results/backups/spikes_revision_August17/ contains the _spikes.mat files
+used for the implant revision project as of August 17 (pre implementing new
+detector)
 
+%}
 
 %{
 To run any of the code, you will need to put a file in your path called

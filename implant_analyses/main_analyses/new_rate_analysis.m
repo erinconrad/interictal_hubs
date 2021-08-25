@@ -1,13 +1,16 @@
 function new_rate_analysis(whichPts,saved_out,out)
 
+%{
+Just changed to mean across chs
+%}
+
 %% Parameters
 all_surrounds = 12*[0.5,1,2,3,4,5,6,7,8,9,10];
-%all_surrounds = 12*[1 2];
 main_surround = 3; %24 hour peri-revision surround
 main_metric = 1;
 ex_p = 1;
 do_buffer = 1;
-nb = 1e2; % change this!!!
+nb = 1e2; % CHANGE
 
 %% Other info
 n_surrounds = length(all_surrounds);
@@ -119,8 +122,8 @@ for im = 1:n_metrics
             end
             
             % overall rate
-            ov_pre = nansum(rate_pre); % sum across electrodes
-            ov_post = nansum(rate_post); 
+            ov_pre = nanmean(rate_pre); % mean across electrodes
+            ov_post = nanmean(rate_post); 
 
             % Fill up array with data
             all_ov(im,is,i,:) = [ov_pre ov_post];
@@ -191,7 +194,7 @@ rate(ekg,:) = [];
 run_dur = out(ex_p).run_dur;
 block_dur = out(ex_p).block_dur;
 rate = rate/run_dur;
-rate = nansum(rate,1); % sum across channels
+rate = nanmean(rate,1); % sum across channels
 times = (1:length(rate)) * block_dur;
 
 % Get nan blocks
@@ -199,7 +202,7 @@ nan_blocks = find(isnan(nanmean(out(ex_p).rate,1)));
 
 % plot
 plot(times,rate,'k','linewidth',1)
-ylabel('Spikes/min')
+ylabel('Spikes/elec/min')
  xlabel('Hour')
 hold on
 
@@ -280,7 +283,7 @@ for i = 1:length(ticklabels)
 end
 % set the tick labels
 set(gca, 'XTickLabel', ticklabels_new);
-ylabel('Spikes/min')
+ylabel('Spikes/elec/min')
 
 % Add stats
 yl = ylim;
@@ -358,11 +361,11 @@ for im = 1:n_metrics
     if im == 1
         fprintf(['\nFor the primary surround period of 24 hours, the spike stability '...
             'aggregated across patients (M = %1.2f, SD = %1.2f) was no different '...
-            'from chance (Monte Carlo with Fisher''s method: %s).\n'],...
+            'from chance (Monte Carlo with Fisher''s method: %s) (Figure 4).\n'],...
             mean(true_r),std(true_r),pretty_p_text(p));
     elseif im == 2
         fprintf(['\n The group node strength stability in the surround period of 24 hours '...
-            '(mean %1.2f, std %1.2f) was also no different from '...
+            '(M = %1.2f, SD = %1.2f) was also no different from '...
             'chance (Monte Carlo with Fisher''s method: %s).\n'],...
             mean(true_r),std(true_r),pretty_p_text(p));
     end

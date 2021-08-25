@@ -236,7 +236,7 @@ adT = cell2table(arrayfun(@(x,y,z) sprintf('t(%d) = %1.2f, %s',x,y,pretty_p_text
     'UniformOutput',false),...
     'RowNames',arrayfun(@(x) sprintf('%d',x),all_surrounds,...
     'UniformOutput',false));
-writetable(adT,[main_spike_results,'ad.csv'],'WriteRowNames',true)  
+%writetable(adT,[main_spike_results,'ad.csv'],'WriteRowNames',true)  
 %{
 plot(ones(npts,1)+0.05*rand(npts,1),all_ad(:,1),'o')
 hold on
