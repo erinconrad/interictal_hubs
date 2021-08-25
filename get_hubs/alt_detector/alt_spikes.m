@@ -4,7 +4,7 @@ function alt_spikes(whichPts)
 overwrite = 0;
 test.do_test = 0;
 do_plot = 0;
-do_save = 0;
+do_save = 1;
 
 %% Test parameters
 test.pt = 20;
