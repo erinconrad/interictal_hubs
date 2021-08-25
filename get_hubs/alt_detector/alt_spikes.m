@@ -183,7 +183,7 @@ for i = 1:length(whichPts)
 
                 %% Skip the chunk entirely if enough channels are bad (suggests period of disconnection)
                 if length(bad) >= 0.5*length(intracranial_chs)
-                    fprintf('\nSkipping this run because %d of %d chs marked bad\n',length(bad),length(which_chs));
+                    fprintf('\nSkipping this run because %d of %d chs marked bad\n',length(bad),length(intracranial_chs));
                     gdf = [];
                     which_chs = [];
                     run_skip = 1;
