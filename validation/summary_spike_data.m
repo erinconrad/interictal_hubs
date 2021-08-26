@@ -19,6 +19,8 @@ elseif which_ver == 3
     sp_folder = [results_folder,'nina_spikes/'];
 elseif which_ver == 4
     sp_folder = [results_folder,'revision_spikes/'];
+elseif which_ver == 5
+    sp_folder = [results_folder,'alt/spikes/'];
 end
 
 % Loop over spike files
