@@ -52,8 +52,8 @@ for i = 1:length(listing)
     n_dup = 0;
     n_sz = 0;
     name = spikes.name;
-    tmul1 = spikes.file(1).block(1).params.tmul;
-    absthresh1 = spikes.file(1).block(1).params.absthresh;
+    %tmul1 = spikes.file(1).block(1).params.tmul;
+    %absthresh1 = spikes.file(1).block(1).params.absthresh;
     
     for f = 1:length(spikes.file)
         
@@ -93,10 +93,10 @@ for i = 1:length(listing)
     nbad = mean(nbad);
     nskip = mean(nskip);
     
-    fprintf(['\nFor %s, using tmul %d and absthresh %d\n'...
+    fprintf(['\nFor %s, '...
         'in %d blocks, %d spikes detected \nmean %1.1f contacts skipped'...
         ', %1.1f rejected as artifact, %d duplicates removed, %d in sz removed\n'],...
-        name,tmul1,absthresh1,nblocks,nspikes,nskip,nbad,n_dup,n_sz);
+        name,nblocks,nspikes,nskip,nbad,n_dup,n_sz);
     
 end
 
