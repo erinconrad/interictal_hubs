@@ -140,7 +140,11 @@ for p = whichPts
         fs = spikes.file(f).block(1).fs;
         fname = pt(p).ieeg.file(f).name;
         chLabels = spikes.file(f).block(1).chLabels;
-        which_chs = spikes.file(f).block(h).run_chs;
+        if isfield(spikes.file(f).block(h),'run_chs')
+            which_chs = spikes.file(f).block(h).run_chs;
+        else
+            which_chs = spikes.file(f).block(h).which_chs;
+        end
         
         
         %% Get the EEG data
