@@ -25,6 +25,8 @@ elseif which_ver == 3
     spike_folder = [results_folder,'nina_spikes/'];
 elseif which_ver == 4
     spike_folder = [results_folder,'revision_spikes/'];
+elseif which_ver == 5
+    spike_folder = [results_folder,'alt/spikes/'];
 end
 
 %% Load pt file
@@ -59,6 +61,8 @@ for p = whichPts
         out_folder = [results_folder,'nina_validation/',pt_name,'/'];
     elseif which_ver == 4
         out_folder = [results_folder,'revision_validation/',pt_name,'/'];
+    elseif which_ver == 5
+        out_folder = [results_folder,'alt/validation/',pt_name,'/'];
     end
     
    
@@ -131,8 +135,8 @@ for p = whichPts
         h = all_spikes(sp,4);
         sp_time = all_spikes(sp,2);
         sp_ch = all_spikes(sp,1);
-        tmul = spikes.file(f).block(1).params.tmul;
-        absthresh = spikes.file(f).block(1).params.absthresh;
+        %tmul = spikes.file(f).block(1).params.tmul;
+        %absthresh = spikes.file(f).block(1).params.absthresh;
         fs = spikes.file(f).block(1).fs;
         fname = pt(p).ieeg.file(f).name;
         chLabels = spikes.file(f).block(1).chLabels;
@@ -161,11 +165,11 @@ for p = whichPts
         hold on
         plot(surround,values(round(sp_index),sp_ch),'o','markersize',10)
         if do_car
-            title(sprintf('Spike %d %1.1f s %s file %d, tmul %d absthresh %d',...
-                sp,sp_time,clean_labs{sp_ch},f,tmul,absthresh),'fontsize',10)
+            title(sprintf('Spike %d %1.1f s %s file %d',...
+                sp,sp_time,clean_labs{sp_ch},f),'fontsize',10)
         else
-            title(sprintf('Spike %d %1.1f s %s file %d block %d, tmul %d absthresh %d',...
-                sp,sp_time,bipolar_labels{sp_ch},f,h,tmul,absthresh),'fontsize',10)
+            title(sprintf('Spike %d %1.1f s %s file %d block %d',...
+                sp,sp_time,bipolar_labels{sp_ch},f,h),'fontsize',10)
         end
         if b ~= n_per_fig
             xticklabels([])
