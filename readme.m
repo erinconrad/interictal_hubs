@@ -13,6 +13,17 @@ Notes:
 used for the implant revision project as of August 17 (pre implementing new
 detector)
 
+I made all sorts of crazy stuff to fix the jackbox switches for Hup132. To
+summarize, I made code at the get_hubs stage to redefine channel labels. I
+then made code to break the output into new files so that ch labels are
+consistent within a file. I then edited the get_gdf_details code to take
+locs and anatomy from the spikes file rather than the pt file (because the
+pt file still retains the original file definitions and so is wrong!). 
+
+I still need to fix this for the pc and ad stuff and I need to check that
+the analysis files don't call the pt structure (which would be wrong for
+this patient).
+
 %}
 
 %{

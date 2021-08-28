@@ -1,14 +1,15 @@
 function new = break_files_132(spikes)
 
-new = spikes;
+%new = spikes;
 new_f = 0;
 new_h = 0;
-
+new.name = spikes.name;
 
 for f = 1:length(spikes.file)
     
-    % advance new f with old file changes
+    % advance new f and reset new h with old file changes
     new_f = new_f + 1;
+    new_h = 0;
     subtract_time = 0;
  
     switch f
@@ -24,6 +25,8 @@ for f = 1:length(spikes.file)
     if ~isnan(switch_time), did_switch = 0; else, did_switch = 1; end
     
     for h = 1:length(spikes.file(f).block)
+        
+        if isempty(spikes.file(f).block(h).run_times), continue; end
         
         % advance new_h
         new_h = new_h + 1;
@@ -45,7 +48,7 @@ for f = 1:length(spikes.file)
         new_ch_labels = new.file(new_f).block(new_h).car_labels;
         
         % Make sure that, within a file, all channel labels are the same!
-        if h == 1
+        if new_h == 1
             old_ch_labels = new_ch_labels; % set old channel labels to be those in the first block for the new file
         else
             if ~isequal(new_ch_labels,old_ch_labels)
@@ -55,5 +58,7 @@ for f = 1:length(spikes.file)
         
     end
 end
+
+new = add_locs_hup132(new);
 
 end
