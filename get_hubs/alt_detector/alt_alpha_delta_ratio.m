@@ -123,8 +123,12 @@ for i = 1:length(whichPts)
         
         
         %% Designate which electrodes to skip
-        [which_chs,skip] = designate_chs(chLabels,clean_labs,clean_loc_labs,loc(loc_p));
-        non_skip = which_chs;
+        if ~strcmp(name,'HUP132')
+            [which_chs,skip] = designate_chs(chLabels,clean_labs,clean_loc_labs,loc(loc_p));
+            non_skip = which_chs;
+        else
+            which_chs = 1:length(chLabels); non_skip = which_chs; skip = [];
+        end
         
         % filename
         fname = pt(p).ieeg.file(f).name;
@@ -150,6 +154,12 @@ for i = 1:length(whichPts)
                 
                 %% Get the eeg data
                 values = pull_ieeg_data(fname, login_name, pwfile, run_idx);
+                
+                %% Re-name chLabels for HUP132
+                if strcmp(name,'HUP132')
+                    clean_labs = fix_hup132(f,run_times,orig_labels,data_folder);
+                    chLabels = clean_labs;
+                end
 
                
                 %% Designate electrodes over which to run
@@ -168,10 +178,16 @@ for i = 1:length(whichPts)
                     % file level
                 end
                 
+                %% Find non-intracranial chs
+                non_intracranial = find_non_intracranial(clean_labs);
+                which_chs = find(~non_intracranial); % channels to do analysis on
+                intracranial_chs = which_chs;
+                
                 %% Reject bad channels
                 [bad,bad_details] = identify_bad_chs(values,which_chs,chLabels,fs);
+                which_chs(ismember(which_chs,bad)) = [];
                 
-                if length(bad) >= 0.5*length(which_chs)
+                if length(bad) >= 0.5*length(intracranial_chs)
                     fprintf('\nSkipping this run because %d of %d chs marked bad\n',length(bad),length(which_chs));
                     run_chs = [];
                     run_skip = 1;
@@ -205,8 +221,8 @@ for i = 1:length(whichPts)
                     pre_existing_idx = find(ismember(curr_labels,pre_existing_labels));
                     
                     
-                    values = new_pre_process(values,pre_existing_idx); % define car according to preexisting only
-                    %values = new_pre_process(values,1:size(values,2));
+                    [values,car_labels] = car_montage(values,pre_existing_idx,clean_labs);
+                    run_chs = ismember((1:length(clean_labs))',which_chs);
                     
                     %% Do filters
                     % No, don't
