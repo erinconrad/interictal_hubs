@@ -190,7 +190,7 @@ for i = 1:length(whichPts)
                 which_chs(ismember(which_chs,bad)) = [];
                 
                 if length(bad) >= 0.5*length(intracranial_chs)
-                    fprintf('\nSkipping this run because %d of %d chs marked bad\n',length(bad),length(which_chs));
+                    fprintf('\nSkipping this run because %d of %d chs marked bad\n',length(bad),length(intracranial_chs));
                     run_chs = [];
                     run_skip = 1;
                     details = [];
