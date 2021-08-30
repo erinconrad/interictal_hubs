@@ -233,7 +233,7 @@ for i = 1:length(whichPts)
                     values = bandpass_filter(values,fs);
                     
                     %% Do PC
-                    pc_out = calc_pc(values,fs,tw);
+                    pc_out = alt_calc_pc(values,fs,tw);
                     run_labels = clean_labs(run_chs);
                     
                 end
