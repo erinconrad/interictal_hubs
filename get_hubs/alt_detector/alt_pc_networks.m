@@ -117,6 +117,7 @@ for i = 1:length(whichPts)
         
         %% Get cleaned labels
         clean_labs = clean_labels_2(chLabels);
+        orig_labels = clean_labs;
         
         %% Reconcile cleaned labels with cleaned loc labels
         % For the purpose of knowing which electrodes to skip
