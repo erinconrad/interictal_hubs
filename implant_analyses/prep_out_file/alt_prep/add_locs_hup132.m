@@ -25,7 +25,7 @@ for f = 1:length(spikes.file)
     [lia,locb] = ismember(labels,loc_name);
     
     % get the locations corresponding
-    curr_locs(lia == 1) = locs(locb(lia == 1));
+    curr_locs(lia == 1,:) = locs(locb(lia == 1),:);
     
     % attempt to reconstruct labels from loc_name
     if ~isequal(labels(lia==1),loc_name(locb(lia==1))), error('why'); end

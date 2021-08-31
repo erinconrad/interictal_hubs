@@ -303,14 +303,14 @@ out.added_anatomy = added_anatomy;
 cosi = nanmean(all_cos./rate_post,2);
 out.cosi = cosi;
 
-%{
+%
 %% Get pc details
-metrics = get_pc_details(p);
-out.metrics = metrics;
+%metrics = get_pc_details(p);
+out.metrics = [];
 
 %% Get ad details
-ad = get_ad_details(p);
-out.ad = ad;
+%ad = get_ad_details(p);
+out.ad = [];
 %}
 
 %% Example plot

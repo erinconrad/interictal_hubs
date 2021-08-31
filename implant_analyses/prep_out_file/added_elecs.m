@@ -16,6 +16,9 @@ switch name
     case 'HUP128'
         elecs = {'LW','LX','LY','LZ'};
         depths=  {'LW','LX','LY','LZ'};
+    case 'HUP129'
+        elecs = {'RX','RY','RZ'};
+        depths = {'RX','RY','RZ'};
     case 'HUP132'
         elecs = {'LK','LM','LN'};
         depths = {'LK','LM','LN'};
@@ -25,7 +28,9 @@ switch name
     case 'HUP152'
         elecs = {'LH','LP','LQ'};
         depths = {'LH','LP','LQ'};
-            
+    case 'HUP168'
+        elecs = {'LN','LO','LP','LR'};
+        depths = {'LN','LO','LP','LR'};
     case 'HUP193'
         elecs = {'LK','LL'};
         depths = {'LK','LL'};

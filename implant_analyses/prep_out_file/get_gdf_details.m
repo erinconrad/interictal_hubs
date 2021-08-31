@@ -62,27 +62,38 @@ for c = nchanges % just do last one
 
     
     %% Anatomy
-    if ~isfield(pt(p).ieeg.file(change(c).files(2)),'anatomy')
-        unchanged_anatomy = cell(length(unchanged_labels),1);
-        added_anatomy = cell(length(added_labels),1);
+    if p == 35
+        unchanged_anatomy = spikes.file(change(c).files(2)).ana(unchanged_idx);
+        added_anatomy = spikes.file(change(c).files(2)).ana(added_idx);
     else
-        unchanged_anatomy = pt(p).ieeg.file(change(c).files(2)).anatomy(unchanged_idx);
-        added_anatomy = pt(p).ieeg.file(change(c).files(2)).anatomy(added_idx);
+        if ~isfield(pt(p).ieeg.file(change(c).files(2)),'anatomy')
+            unchanged_anatomy = cell(length(unchanged_labels),1);
+            added_anatomy = cell(length(added_labels),1);
+        else
+            unchanged_anatomy = pt(p).ieeg.file(change(c).files(2)).anatomy(unchanged_idx);
+            added_anatomy = pt(p).ieeg.file(change(c).files(2)).anatomy(added_idx);
+        end
     end
     
     %% Electrode type
 
     %% Get locs
-    if ~isfield(pt(p).ieeg.file(change(c).files(2)),'locs')
-        dist = nan(length(unchanged_labels),1);
-    else
-        added_locs = pt(p).ieeg.file(change(c).files(2)).locs(added_idx,:);
-        unchanged_locs = pt(p).ieeg.file(change(c).files(2)).locs(unchanged_idx,:);
-
-
-        %% For each unchanged electrode, get identity of and distance from nearest added electrode
+    if p == 35
+        added_locs = spikes.file(change(c).files(2)).locs(added_idx,:);
+        unchanged_locs = spikes.file(change(c).files(2)).locs(unchanged_idx,:);
         dist = distance_from_closest_added(unchanged_locs,added_locs);
+    else
+        if ~isfield(pt(p).ieeg.file(change(c).files(2)),'locs')
+            dist = nan(length(unchanged_labels),1);
+        else
+            added_locs = pt(p).ieeg.file(change(c).files(2)).locs(added_idx,:);
+            unchanged_locs = pt(p).ieeg.file(change(c).files(2)).locs(unchanged_idx,:);
 
+
+            %% For each unchanged electrode, get identity of and distance from nearest added electrode
+            dist = distance_from_closest_added(unchanged_locs,added_locs);
+
+        end
     end
 
     all_rate = [];
@@ -96,7 +107,11 @@ for c = nchanges % just do last one
     % Loop over files
     for f = 1:last_file
 
-        flocs = pt(p).ieeg.file(f).locs;
+        if p == 35
+            flocs = spikes.file(f).locs;
+        else
+            flocs = pt(p).ieeg.file(f).locs;
+        end
         fdist = distance_from_closest_added(flocs,added_locs);
 
         chLabels = clean_labels_2(spikes.file(f).block(1).chLabels);
@@ -114,7 +129,11 @@ for c = nchanges % just do last one
         un_cos = nan(nchs,nchs,nblocks);
         
         
-        sz_times = all_sz_times_in_file(pt,p,f);
+        if p == 35
+            sz_times = [];
+        else
+            sz_times = all_sz_times_in_file(pt,p,f);
+        end
 
         
 

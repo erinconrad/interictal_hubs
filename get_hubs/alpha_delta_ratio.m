@@ -129,7 +129,7 @@ for i = 1:length(whichPts)
             [which_chs,skip] = designate_chs(chLabels,clean_labs,clean_loc_labs,loc(loc_p));
             non_skip = which_chs;
         else
-            which_chs = 1:length(chLabels); non_skip = which_chs; skip = [];
+            which_chs = (1:length(chLabels))'; non_skip = which_chs; skip = [];
         end
         
         % filename
@@ -190,7 +190,7 @@ for i = 1:length(whichPts)
                     run_chs = [];
                     run_skip = 1;
                     details = [];
-                    pc_out = [];
+                    ad_rat = [];
                     run_labels = {};
                 else
                     run_skip = 0;

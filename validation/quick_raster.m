@@ -1,4 +1,4 @@
-function quick_raster(out,p)
+function quick_raster(out,p,do_alt,just_save)
 %{
 This is a handy validation function. You feed in the out file and specify
 the patient, and it plots a raster of spike rate in different channels over
@@ -12,11 +12,18 @@ surround = 24;
 %% Locations
 locations = interictal_hub_locations;
 results_folder = [locations.main_folder,'results/'];
-
 addpath(genpath(locations.script_folder));
 data_folder = [locations.script_folder,'data/'];
-spike_folder = [results_folder,'new_spikes/'];
+if do_alt
+    spike_folder = [results_folder,'alt/spikes/'];
+    out_folder = [results_folder,'alt/raster/'];
+else
+    spike_folder = [results_folder,'new_spikes/'];
+    out_folder = [results_folder,'raster/'];
+end
 name = out(p).name;
+
+if exist(out_folder,'dir')==0,mkdir(out_folder);end
 
 %% Load pt file
 pt = load([data_folder,'pt.mat']);
@@ -74,23 +81,27 @@ yticks(1:length(chLabels))
 yticklabels(chLabels)
 title(out(p).name)
 
-%
-while 1
-    try
-        [x,y] = ginput;
-    catch
-        break
+if just_save
+    print(gcf,[out_folder,name],'-dpng');
+    close(gcf)
+    
+else
+    while 1
+        try
+            [x,y] = ginput;
+        catch
+            break
+        end
+        chLab = chLabels{round(y(end))};
+        fidx = findices(round(x(end)));
+        bidx = bindices(round(x(end)));
+        fprintf('\nShowing spikes for %s ch %s file %d block %d\n',...
+            pt(pt_p).name,chLab,fidx,bidx);
+
+        plot_spikes_by_ch(pt_p,chLab,fidx,bidx,spikes)
+
     end
-    chLab = chLabels{round(y(end))};
-    fidx = findices(round(x(end)));
-    bidx = bindices(round(x(end)));
-    fprintf('\nShowing spikes for %s ch %s file %d block %d\n',...
-        pt(pt_p).name,chLab,fidx,bidx);
-
-    plot_spikes_by_ch(pt_p,chLab,fidx,bidx,spikes)
-
 end
-%}
 
 
 end

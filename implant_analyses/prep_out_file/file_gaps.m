@@ -6,16 +6,22 @@ switch name
         gap = '24:15:01';
     case 'HUP100'
         gap = '32:47:23';
+    case 'HUP110'
+        gap = '28:53:37';
     case 'HUP111'
         gap = '30:43:06';
     case 'HUP128'
         gap = '20:47:40';
+    case 'HUP129'
+        gap = '31:01:11';
     case 'HUP132'
         gap = '1:05:57';
     case 'HUP136'
         gap = '0:00:55';
     case 'HUP152'
         gap = '23:48:13';
+    case 'HUP168'
+        gap = '24:00:49';
     case 'HUP193'
         gap = '18:55:46';
     case 'HUP201'

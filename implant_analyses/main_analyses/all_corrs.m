@@ -1,11 +1,11 @@
-function all_corrs(whichPts,saved_out,out)
+function all_corrs(whichPts,saved_out,out,do_alt)
 
 %% Parameters
 all_surrounds = 12*[0.5,1,2,3,4,5,6,7,8,9,10];
 main_surround = 3; %*******24 hours
 main_pred = 1;
 main_resp = 1;
-nb = 1e2; 
+nb = 1e2;  % change
 do_save = 1;
 do_buffer = 1;
 
@@ -14,23 +14,32 @@ do_fisher = 1; % Do fisher transformation on data?
 weighted_avg = 1; % weight by n-3
 
 n_surrounds = length(all_surrounds);
-which_resps = {'rel_rate','ns_rel'};
-which_preds = {'dist','ns','cosi'};
+which_resps = {'rel_rate'};
+which_preds = {'dist'};
+%which_resps = {'rel_rate','ns_rel'};
+%which_preds = {'dist','ns','cosi'};
 
 %% Locations
 locations = interictal_hub_locations;
 results_folder = [locations.main_folder,'results/'];
-main_spike_results = [results_folder,'main_spikes/'];
+if do_alt
+    main_spike_results = [results_folder,'main_spikes/alt/'];
+else
+    main_spike_results = [results_folder,'main_spikes/'];
+end
 if ~exist(main_spike_results,'dir')
     mkdir(main_spike_results);
 end
 
 addpath(genpath(locations.script_folder));
-data_folder = [locations.script_folder,'data/'];
-spike_folder = [results_folder,'new_spikes/'];
+
 
 if isempty(whichPts)
-    whichPts = [20 103 106 107 35 109 110 111 94 97];
+    if do_alt
+        whichPts = [20 103 105 106 107 108 35 109 110 94 97];
+    else
+        whichPts = [20 103 106 107 35 109 110 111 94 97];
+    end
 end
 
 if saved_out == 1
@@ -46,9 +55,15 @@ else
     for i = 1:length(whichPts)
         p = whichPts(i);
         fprintf('%d of %d\n',i,length(whichPts));
-        out(i) = get_gdf_details(p);
+        if do_alt
+            out(i) = alt_get_gdf_details(p);
+        else
+            out(i) = get_gdf_details(p);
+        end
     end
+    
     save([main_spike_results,'out'],'out');
+    
 end
 
 %% Main analysis
@@ -80,7 +95,7 @@ all_all_p = nan(length(all_surrounds),length(which_resps),length(which_preds),le
 %% Prep supplemental figure
 figure
 set(gcf,'position',[608 175 1371 514])
-tiledlayout(2,5,'Padding','compact','tilespacing','compact')
+tiledlayout(3,5,'Padding','compact','tilespacing','compact')
 tilecount = 0;
 
 % Loop over surrounds
@@ -104,12 +119,17 @@ for s = 1:length(all_surrounds)
 
             % Loop over patients
             for i = 1:length(whichPts) 
-
+                out(i).name
                 rate = out(i).rate./out(i).run_dur;
                 chLabels = out(i).unchanged_labels;
                 cblock = out(i).change_block;
    
-                ns = out(i).metrics.ns;
+                if isempty(out(i).metrics)
+                    ns = nan(size(rate));
+                else
+                    ns = out(i).metrics.ns;
+                end
+                
                 
                 % Get file gap
                 buffer = file_gaps(out(i).name);

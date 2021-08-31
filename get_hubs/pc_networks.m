@@ -130,7 +130,7 @@ for i = 1:length(whichPts)
             [which_chs,skip] = designate_chs(chLabels,clean_labs,clean_loc_labs,loc(loc_p));
             non_skip = which_chs;
         else
-            which_chs = 1:length(chLabels); non_skip = which_chs; skip = [];
+            which_chs = (1:length(chLabels))'; non_skip = which_chs; skip = [];
         end
         
         % filename
@@ -226,7 +226,7 @@ for i = 1:length(whichPts)
                     values = do_filters(values,fs);
                     
                     %% Do PC
-                    pc_out = calc_pc(values,fs,tw);
+                    pc_out = alt_calc_pc(values,fs,tw);
                     run_labels = clean_labs(run_chs);
                     
                 end

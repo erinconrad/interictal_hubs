@@ -14,7 +14,8 @@ nb = 1e2; % CHANGE
 
 %% Other info
 n_surrounds = length(all_surrounds);
-all_metrics = {'rate','ns'};
+all_metrics = {'rate'};
+%all_metrics = {'rate','ns'};
 n_metrics = length(all_metrics);
 
 %% Locations
