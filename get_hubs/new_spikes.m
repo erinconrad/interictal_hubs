@@ -129,6 +129,8 @@ for i = 1:length(whichPts)
         %% Get cleaned labels
         clean_labs = clean_labels_2(chLabels);
         
+        
+        
         %% Reconcile cleaned labels with cleaned loc labels
         % For the purpose of knowing which electrodes to skip
         if ~isequal(clean_labs,clean_loc_labs)
@@ -137,8 +139,12 @@ for i = 1:length(whichPts)
         
         
         %% Designate which electrodes to skip
-        [which_chs,skip] = designate_chs(chLabels,clean_labs,clean_loc_labs,loc(loc_p));
-        non_skip = which_chs;
+        if ~strcmp(name,'HUP132')
+            [which_chs,skip] = designate_chs(chLabels,clean_labs,clean_loc_labs,loc(loc_p));
+            non_skip = which_chs;
+        else
+            which_chs = 1:length(chLabels); non_skip = which_chs; skip = [];
+        end
         
         % filename
         fname = pt(p).ieeg.file(f).name;
@@ -165,6 +171,14 @@ for i = 1:length(whichPts)
                 %% Get the eeg data
                 values = pull_ieeg_data(fname, login_name, pwfile, run_idx);
 
+                
+                %% Re-name chLabels for HUP132
+                if strcmp(name,'HUP132')
+                    clean_labs = fix_hup132(f,run_times,orig_labels,data_folder);
+                    chLabels = clean_labs;
+                end
+                
+                
                 %% Do pre-processing
                 car_values = new_pre_process(values,which_chs);
                 [bipolar_values,bipolar_labels,chs_in_bipolar] = pre_process(values,clean_labs);
