@@ -99,7 +99,7 @@ for i = 1:length(whichPts)
     
     % Get clean loc labels
     clean_loc_labs = clean_labels_2(loc(loc_p).labels);
-    orig_labels = clean_labs;
+    
     
     %% Pull spike detector parameters
     params = pull_detector_params(name,param_table);
@@ -129,7 +129,7 @@ for i = 1:length(whichPts)
         
         %% Get cleaned labels
         clean_labs = clean_labels_2(chLabels);
-        
+        orig_labels = clean_labs;
         
         
         %% Reconcile cleaned labels with cleaned loc labels

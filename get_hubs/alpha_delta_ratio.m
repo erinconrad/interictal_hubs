@@ -92,7 +92,7 @@ for i = 1:length(whichPts)
 
         % Get clean loc labels
         clean_loc_labs = clean_labels_2(loc(loc_p).labels);
-        orig_labels = clean_labs;
+        
 
         % Loop over ieeg files
         if isempty(pt(p).ieeg)
@@ -115,6 +115,7 @@ for i = 1:length(whichPts)
         
         %% Get cleaned labels
         clean_labs = clean_labels_2(chLabels);
+        orig_labels = clean_labs;
         
         %% Reconcile cleaned labels with cleaned loc labels
         % For the purpose of knowing which electrodes to skip
