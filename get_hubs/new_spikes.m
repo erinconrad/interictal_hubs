@@ -144,7 +144,7 @@ for i = 1:length(whichPts)
             [which_chs,skip] = designate_chs(chLabels,clean_labs,clean_loc_labs,loc(loc_p));
             non_skip = which_chs;
         else
-            which_chs = 1:length(chLabels); non_skip = which_chs; skip = [];
+            which_chs = (1:length(chLabels))'; non_skip = which_chs; skip = [];
         end
         
         % filename
