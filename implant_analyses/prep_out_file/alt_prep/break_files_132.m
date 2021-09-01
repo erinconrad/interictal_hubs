@@ -1,11 +1,10 @@
-function [new] = break_files_132(spikes)
+function [new,new_pc,new_ad] = break_files_132(spikes,pc,ad)
 
-%new = spikes;
 new_f = 0;
 new_h = 0;
 new.name = spikes.name;
-%new_pc.name = spikes.name;
-%new_ad.name = ad.name;
+new_pc.name = spikes.name;
+new_ad.name = ad.name;
 
 for f = 1:length(spikes.file)
     
@@ -49,15 +48,16 @@ for f = 1:length(spikes.file)
         new.file(new_f).block(new_h) = spikes.file(f).block(h);
         new.file(new_f).block(new_h).run_times = spikes.file(f).block(h).run_times - subtract_time;
         
-        %{
+        %
         new_pc.file(new_f).block(new_h) = pc.file(f).block(h);
         new_pc.file(new_f).block(new_h).run_times = pc.file(f).block(h).run_times - subtract_time;
         
         new_ad.file(new_f).block(new_h) = ad.file(f).block(h);
-        new_ad.file(new_f).block(new_h).run_times = new_ad.file(f).block(h).run_times - subtract_time;
+        new_ad.file(new_f).block(new_h).run_times = ad.file(f).block(h).run_times - subtract_time;
         %}
         
-        new_ch_labels = new.file(new_f).block(new_h).car_labels;
+        %new_ch_labels = new.file(new_f).block(new_h).car_labels;
+        new_ch_labels = new.file(new_f).block(new_h).chLabels;
         
         % Make sure that, within a file, all channel labels are the same!
         if new_h == 1

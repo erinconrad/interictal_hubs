@@ -39,7 +39,9 @@ pc = pc.pc;
 nfiles = length(pc.file);
 
 %% Identify files with a change in electrodes
-[change,no_change_ever] = find_electrode_change_files(pt,p,only_depth);
+[change,no_change_ever] = alt_find_electrode_change_files(pc,only_depth);
+
+%[change,no_change_ever] = find_electrode_change_files(pt,p,only_depth);
 nchanges = length(change);
 c = nchanges;
 
@@ -69,30 +71,6 @@ chLabels = clean_labels_2(pc.file(change(c).files(2)).block(1).chLabels);
 unchanged_labels = chLabels(unchanged_idx);
 added_labels = chLabels(added_idx);
 
-%% Get locs
-if ~isfield(pt(p).ieeg.file(change(c).files(2)),'locs')
-    dist_info = unchanged_labels;
-    dist = nan(length(unchanged_labels),1);
-else
-    added_locs = pt(p).ieeg.file(change(c).files(2)).locs(added_idx,:);
-    unchanged_locs = pt(p).ieeg.file(change(c).files(2)).locs(unchanged_idx,:);
-
-
-    %% For each unchanged electrode, get identity of and distance from nearest added electrode
-    [dist,closest_added] = distance_from_closest_added(unchanged_locs,added_locs);
-    closest_label = added_labels(closest_added);
-    dist_info = cellfun(@(x,y,z) sprintf('%s %s %1.1f',x,y,z),unchanged_labels,closest_label,num2cell(dist),'UniformOutput',false);
-
-end
-
-%% Get anatomy
-if ~isfield(pt(p).ieeg.file(change(c).files(2)),'anatomy')
-    unchanged_anatomy = cell(length(unchanged_labels),1);
-    added_anatomy = cell(length(added_labels),1);
-else
-    unchanged_anatomy = pt(p).ieeg.file(change(c).files(2)).anatomy(unchanged_idx);
-    added_anatomy = pt(p).ieeg.file(change(c).files(2)).anatomy(added_idx);
-end
 
 %% initialize thingy
 net = nan(length(unchanged_labels)*(length(unchanged_labels)-1)/2,nb);
@@ -110,7 +88,7 @@ for f = 1:last_file
         last_good_block = fix_hup136;
         nblocks = last_good_block;
     end
-    flocs = pt(p).ieeg.file(f).locs;
+
 
      % Loop over blocks
     for h = 1:nblocks

@@ -37,7 +37,9 @@ run_dur = diff(spikes.file(1).block(1).run_times)/60;
 nfiles = length(spikes.file);
 
 %% Identify files with a change in electrodes
-[change,no_change_ever] = find_electrode_change_files(pt,p,only_depth);
+[change,no_change_ever] = alt_find_electrode_change_files(spikes,only_depth);
+
+%[change,no_change_ever] = find_electrode_change_files(pt,p,only_depth);
 nchanges = length(change);
 
 for c = nchanges % just do last one
@@ -174,7 +176,7 @@ for c = nchanges % just do last one
                     % If the channel was marked as bad or skip, keep it
                     % a nan
                     if ismember(ich,block.bad) ||...
-                            ismember(ich,block.skip.all)
+                           (~strcmp(name,'HUP132') && ismember(ich,block.skip.all))
                         rate(ich,h) = nan;
                         continue
                     end
@@ -191,7 +193,7 @@ for c = nchanges % just do last one
                     % If the channel was marked as bad or skip, keep it
                     % a nan
                     if ismember(ich,block.bad) ||...
-                            ismember(ich,block.skip.all)
+                           (~strcmp(name,'HUP132') && ismember(ich,block.skip.all))
                         rate(ich,h) = nan;
                         continue
                     end

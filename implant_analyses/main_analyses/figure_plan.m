@@ -2,15 +2,18 @@
 
 Methods figure???
 
-Validation figure (unchanged)
+1) Validation figure (aka, I did it right)
 
-Across implant figure
+2) Across implant figure - no consistent change in spike rate across the
+implant)
 
-Rate change -dist correlation (unchanged)
+3) No consistent pre-to-post change in spike rate or in spike distribution
+for most times
 
-Rate + Spike stability (new)
+4) Rate change -dist correlation (ns)
 
-AD (unchanged)
+5) AD (ns)
+
 
 Table 1
 

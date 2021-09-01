@@ -10,12 +10,12 @@ main_surround = 3; %24 hour peri-revision surround
 main_metric = 1;
 ex_p = 1;
 do_buffer = 1;
-nb = 1e2; % CHANGE
+nb = 1e4; % CHANGE
 
 %% Other info
 n_surrounds = length(all_surrounds);
-all_metrics = {'rate'};
-%all_metrics = {'rate','ns'};
+%all_metrics = {'rate'};
+all_metrics = {'rate','ns'};
 n_metrics = length(all_metrics);
 
 %% Locations

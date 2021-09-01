@@ -28,7 +28,9 @@ ad = ad.ad;
 nfiles = length(ad.file);
 
 %% Identify files with a change in electrodes
-[change,no_change_ever] = find_electrode_change_files(pt,p,only_depth);
+[change,no_change_ever] = alt_find_electrode_change_files(ad,only_depth);
+
+%[change,no_change_ever] = find_electrode_change_files(pt,p,only_depth);
 nchanges = length(change);
 c = nchanges;
 

@@ -1,23 +1,23 @@
-function all_corrs(whichPts,saved_out,out,do_alt)
+function all_corrs(whichPts,saved_out,out)
 
 %% Parameters
+do_alt = 0;
 all_surrounds = 12*[0.5,1,2,3,4,5,6,7,8,9,10];
 main_surround = 3; %*******24 hours
 main_pred = 1;
 main_resp = 1;
-nb = 1e2;  % change
-do_save = 1;
+nb = 1e4;  % change
+do_save = 0;
 do_buffer = 1;
+type = 'Spearman';
 
 %% Fisher parameters (should both be 1)
 do_fisher = 1; % Do fisher transformation on data?
 weighted_avg = 1; % weight by n-3
 
 n_surrounds = length(all_surrounds);
-which_resps = {'rel_rate'};
-which_preds = {'dist'};
-%which_resps = {'rel_rate','ns_rel'};
-%which_preds = {'dist','ns','cosi'};
+which_resps = {'rel_rate','ns_rel'};
+which_preds = {'dist','ns','cosi'};
 
 %% Locations
 locations = interictal_hub_locations;
@@ -95,7 +95,7 @@ all_all_p = nan(length(all_surrounds),length(which_resps),length(which_preds),le
 %% Prep supplemental figure
 figure
 set(gcf,'position',[608 175 1371 514])
-tiledlayout(3,5,'Padding','compact','tilespacing','compact')
+tiledlayout(2,5,'Padding','compact','tilespacing','compact')
 tilecount = 0;
 
 % Loop over surrounds
@@ -119,7 +119,6 @@ for s = 1:length(all_surrounds)
 
             % Loop over patients
             for i = 1:length(whichPts) 
-                out(i).name
                 rate = out(i).rate./out(i).run_dur;
                 chLabels = out(i).unchanged_labels;
                 cblock = out(i).change_block;
@@ -186,9 +185,9 @@ for s = 1:length(all_surrounds)
                 % analysis)
                 if p == main_pred
                     [rho,pval,mc_rho] = mc_corr(rate,ns,predictor,...
-                    cblock,surround,nb,which_resp,'Spearman',buffer,do_buffer);
+                    cblock,surround,nb,which_resp,type,buffer,do_buffer);
                 else
-                    rho = corr(resp,predictor,'Type','Spearman','rows','pairwise');
+                    rho = corr(resp,predictor,'Type',type,'rows','pairwise');
                     pval = nan;
                     mc_rho = nan;
                 end
@@ -203,7 +202,7 @@ for s = 1:length(all_surrounds)
                 % purpose of weighting across patients
                 
                 [z,~,~] = fisher_transform(rho,n);
-                [rho,alt_pval2] = corr(resp,predictor,'Type','Spearman','rows','pairwise');
+                [rho,alt_pval2] = corr(resp,predictor,'Type',type,'rows','pairwise');
 
                 % Also get the fisher transformed r-to-z for each mc rho
                 mc_z = fisher_transform(mc_rho,n);

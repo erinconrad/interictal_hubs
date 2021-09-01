@@ -46,7 +46,7 @@ loc = loc.patient_localization;
 
 %% Get which patients to run
 if isempty(whichPts)
-    whichPts = 1:length(pt);
+    whichPts = [60 56 49 51 64 68 44 45 41 54 61 66];
 end
 
 % Loop over patients
