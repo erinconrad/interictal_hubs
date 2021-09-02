@@ -61,11 +61,11 @@ end
 n_patients = length(whichPts);
 all_rates = nan(n_metrics,n_surrounds,n_patients,4); % 4 is start, pre, post, end
 all_added_rates = nan(n_surrounds,n_patients,2); %start end
-all_rhos = nan(n_metrics,n_surrounds,n_patients,2); %2 is start-pre, post-end
+all_rhos = nan(n_metrics,n_surrounds,n_patients,3); %3 is start-pre, post-end, added post-end
 within_implant_rate_stats = nan(n_metrics,n_surrounds,2,3); %2 is first vs second implant, 3 is p-value, tstat, df
 between_implant_rate_stats = nan(n_metrics,n_surrounds,3); %3 is p-value, tstat, df
 unchanged_added_stats = nan(n_surrounds,2,3);% 1 vs 2 is within added vs added-to-unchanged
-all_rhos_stats = nan(n_metrics,n_surrounds,3); %3 is p-value, tstat, df
+all_rhos_stats = nan(n_metrics,n_surrounds,2,3); %2 is 1-2 unchanged, 2 is unchanged-added 2, 3 is p-value, tstat, df
 sur_times = nan(n_metrics,n_surrounds,n_patients,4,2); %4 is start, pre, post, end, 2 is start and end of each time period
 
 % Loop over metrics
@@ -128,11 +128,12 @@ for im = 1:n_metrics
             % Get the SRC between start and pre, and post and end
             start_pre_corr = corr(rate_start,rate_pre,'Type','Spearman','rows','pairwise');
             post_end_corr = corr(rate_post,rate_end,'Type','Spearman','rows','pairwise');
+            added_post_end_corr = corr(added_post,added_end,'Type','Spearman','rows','pairwise');
             
             % Fill up matrix
             all_rates(im,is,i,:) = [overall_rate_start,overall_rate_pre,...
                 overall_rate_post,overall_rate_end];
-            all_rhos(im,is,i,:) = [start_pre_corr,post_end_corr];
+            all_rhos(im,is,i,:) = [start_pre_corr,post_end_corr added_post_end_corr];
             if im == 1
                 all_added_rates(is,i,:) = [overall_added_post overall_added_end];
             end
@@ -187,7 +188,10 @@ for im = 1:n_metrics
         curr_all_rhos = squeeze(all_rhos(im,is,:,:));
         curr_all_zs = fisher_transform(curr_all_rhos,nan); % convert rhos to z's
         [~,p,~,stats] = ttest(curr_all_zs(:,1),curr_all_zs(:,2));
-        all_rhos_stats(im,is,:) = [p,stats.tstat,stats.df];
+        all_rhos_stats(im,is,1,:) = [p,stats.tstat,stats.df];
+        
+        [~,p,~,stats] = ttest(curr_all_zs(:,2),curr_all_zs(:,3));
+        all_rhos_stats(im,is,2,:) = [p,stats.tstat,stats.df];
         
     end
     
@@ -200,7 +204,7 @@ is = main_surround;
 %% initialize figure
 figure
 set(gcf,'position',[100 87 733 900])
-tiledlayout(3,2,'TileSpacing','tight','Padding','tight')
+tiledlayout(3,2,'TileSpacing','compact','Padding','tight')
 
 % colors
 cols = [0, 0.4470, 0.7410;0.8500, 0.3250, 0.0980;0.6350, 0.0780, 0.1840;...
@@ -225,8 +229,8 @@ if im == 1
     ylabel('Electrode')
 end
 set(gca,'fontsize',15)
-c = colorbar;
-ylabel(c,'Spikes/elec/min','fontsize',15);
+%c = colorbar;
+%ylabel(c,'Spikes/elec/min','fontsize',15);
 
 % Add early/late designations for implant 1 and 2
 % Add stats
@@ -307,7 +311,9 @@ text(4.5,higher_p,get_asterisks(squeeze(unchanged_added_stats(is,2,1)),1),...
 % Labels
 xticks([1 2 3 4 5 6])
 xticklabels({'Early','Late','Early','Late','Early','Late'})
-legend([pfirst(1),psecond(1),padded(1)],{'Implant 1','Implant 2 - original','Implant 2 - added'},'fontsize',15)
+lgd = legend([pfirst(1),psecond(1),padded(1)],{'Implant 1','Implant 2 - original','Implant 2 - added'},'fontsize',15);
+set(lgd,'Position',[0.7445 0.55 0.2271 0.0798])
+
 ylabel('Spikes/min')
 set(gca,'fontsize',15);
 
@@ -340,7 +346,9 @@ curr_rhos = squeeze(all_rhos(im,is,:,:));
 plot(1+0.05*rand(n_patients,1),curr_rhos(:,1),'o','markersize',15,'linewidth',2)
 hold on
 plot(2+0.05*rand(n_patients,1),curr_rhos(:,2),'o','markersize',15,'linewidth',2)
-xlim([0 3])
+plot(3+0.05*rand(n_patients,1),curr_rhos(:,3),'o','markersize',15,'linewidth',2,...
+    'color',cols(4,:))
+xlim([0 4])
 
 % Get ylim stuff
 set(gca,'ylim',[0 1]);
@@ -351,14 +359,19 @@ p_y = yl(1) + 1.15*(yl(2)-yl(1));
 ylim(new_yl)
 
 % Plot the stats
-plot([1 2],[bar_y bar_y],'k','linewidth',1)
-text(1.5,p_y,get_asterisks(squeeze(all_rhos_stats(im,is,1)),1),...
+plot([1.1 1.9],[bar_y bar_y],'k','linewidth',1)
+text(1.5,p_y,get_asterisks(squeeze(all_rhos_stats(im,is,1,1)),1),...
+    'horizontalalignment','center','fontsize',15);
+
+plot([2.1 2.9],[bar_y bar_y],'k','linewidth',1)
+text(2.5,p_y,get_asterisks(squeeze(all_rhos_stats(im,is,2,1)),1),...
     'horizontalalignment','center','fontsize',15);
 
 % Labels
-ylabel('Early-to-late spike stability')
-xticks([1 2])
-xticklabels({'Implant 1','Implant 2'})
+ylabel('Early-late spike stability')
+xticks([1 2 3])
+xticklabels({'Implant 1','Implant 2 - original','Implant 2 - added'})
+xtickangle(25)
 set(gca,'fontsize',15);
 
 % Words
@@ -367,10 +380,14 @@ fprintf(['\nThe spike stability, defined as the correlation in the spike '...
     'highly variable across patients (Original implant: M = %1.2f, '...
     'SD = %1.2f, Revised '...
     'implant: M = %1.2f, SD = %1.2f) and did not differ between the two '...
-    'implantations (t(%d) = %1.1f, %s).\n'],...
+    'implantations (t(%d) = %1.1f, %s). The spike stability in the added electrodes '...
+    'was also heterogeneous across patients in the revised implant (M = %1.2f, '...
+    'SD = %1.2f) and was not significantly different from that of the original '...
+    'electrodes in the revised implant (t(%d) = %1.1f, %s).\n'],...
     mean(curr_rhos(:,1)),std(curr_rhos(:,1)),mean(curr_rhos(:,2)),...
-    std(curr_rhos(:,2)),all_rhos_stats(1,is,3),all_rhos_stats(1,is,2),...
-    get_p_text(all_rhos_stats(1,is,1)));
+    std(curr_rhos(:,2)),all_rhos_stats(1,is,1,3),all_rhos_stats(1,is,1,2),...
+    get_p_text(all_rhos_stats(1,is,1,1)),mean(curr_rhos(:,3)),std(curr_rhos(:,3)),...
+    all_rhos_stats(1,is,2,3),all_rhos_stats(1,is,2,2),get_p_text(all_rhos_stats(1,is,2,1)));
 
 %% NS stability analysis
 nexttile
@@ -394,9 +411,11 @@ text(1.5,p_y,get_asterisks(squeeze(all_rhos_stats(2,is,1)),1),...
     'horizontalalignment','center','fontsize',15);
 
 % Labels
-ylabel('Early-to-late NS stability')
+ylabel('Early-late NS stability')
 xticks([1 2])
-xticklabels({'Implant 1','Implant 2'})
+
+xticklabels({'Implant 1','Implant 2 - original'})
+xtickangle(25)
 set(gca,'fontsize',15);
 
 % Words
@@ -410,9 +429,9 @@ fprintf(['\nThe node strength stability between the early-to-late implant period
 
 %% Add labels
 annotation('textbox',[0 0.908 0.1 0.1],'String','A','fontsize',20,'linestyle','none')
-annotation('textbox',[0 0.57 0.1 0.1],'String','B','fontsize',20,'linestyle','none')
-annotation('textbox',[0 0.25 0.1 0.1],'String','C','fontsize',20,'linestyle','none')
-annotation('textbox',[0.45 0.25 0.1 0.1],'String','D','fontsize',20,'linestyle','none')
+annotation('textbox',[0 0.595 0.1 0.1],'String','B','fontsize',20,'linestyle','none')
+annotation('textbox',[0 0.285 0.1 0.1],'String','C','fontsize',20,'linestyle','none')
+annotation('textbox',[0.49 0.285 0.1 0.1],'String','D','fontsize',20,'linestyle','none')
 
 %% Save it
 fname = 'across_implant';
@@ -429,8 +448,11 @@ bet_rate_spike_T = cell2table(arrayfun(@(x,y,z) sprintf('t(%d) = %1.2f, %s',x,y,
     between_implant_rate_stats(im,:,3)',between_implant_rate_stats(im,:,2)',...
     between_implant_rate_stats(im,:,1)','UniformOutput',false));
 rho_spike_T = cell2table(arrayfun(@(x,y,z) sprintf('t(%d) = %1.2f, %s',x,y,pretty_p_text(z)),...
-    all_rhos_stats(1,:,3)',all_rhos_stats(1,:,2)',...
-    all_rhos_stats(1,:,1)','UniformOutput',false));
+    all_rhos_stats(1,:,1,3)',all_rhos_stats(1,:,1,2)',...
+    all_rhos_stats(1,:,1,1)','UniformOutput',false));
+rho_spike_T_added = cell2table(arrayfun(@(x,y,z) sprintf('t(%d) = %1.2f, %s',x,y,pretty_p_text(z)),...
+    all_rhos_stats(1,:,2,3)',all_rhos_stats(1,:,2,2)',...
+    all_rhos_stats(1,:,2,1)','UniformOutput',false));
 rho_ns_T = cell2table(arrayfun(@(x,y,z) sprintf('t(%d) = %1.2f, %s',x,y,pretty_p_text(z)),...
     all_rhos_stats(2,:,3)',all_rhos_stats(2,:,2)',...
     all_rhos_stats(2,:,1)','UniformOutput',false));
@@ -439,7 +461,8 @@ writetable(im1_spike_T,[main_spike_results,'Supplemental Table 1.xlsx'],'Range',
 writetable(im2_spike_T,[main_spike_results,'Supplemental Table 1.xlsx'],'Range','C2:C12','WriteVariableNames',false)
 writetable(bet_rate_spike_T,[main_spike_results,'Supplemental Table 1.xlsx'],'Range','D2:D12','WriteVariableNames',false)
 writetable(rho_spike_T,[main_spike_results,'Supplemental Table 1.xlsx'],'Range','E2:E12','WriteVariableNames',false)
-writetable(rho_ns_T,[main_spike_results,'Supplemental Table 1.xlsx'],'Range','F2:F12','WriteVariableNames',false)
+writetable(rho_spike_T,[main_spike_results,'Supplemental Table 1.xlsx'],'Range','F2:F12','WriteVariableNames',false)
+writetable(rho_ns_T,[main_spike_results,'Supplemental Table 1.xlsx'],'Range','G2:G12','WriteVariableNames',false)
 
 
 end
