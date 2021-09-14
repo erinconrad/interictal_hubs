@@ -1,4 +1,4 @@
-function quick_raster(out,p,do_alt,just_save)
+function quick_raster(out,p,just_save)
 %{
 This is a handy validation function. You feed in the out file and specify
 the patient, and it plots a raster of spike rate in different channels over
@@ -7,6 +7,8 @@ random spike from that block-electrode pair, downloads the data from ieeg,
 and shows you the spike.
 %}
 
+%% parameters
+do_alt = 0;
 surround = 24;
 
 %% Locations
@@ -53,6 +55,8 @@ end
         
 
 rate = out(p).rate;
+rate_added = out(p).rate_added;
+added_labels = out(p).added_labels;
 chLabels = out(p).unchanged_labels;
 cblock = out(p).change_block;
 
@@ -72,13 +76,18 @@ rel_rate_change = (post_rate-pre_rate)./abs(pre_rate);
 [~,I] = sort(rel_rate_change,'descend');
 table(chLabels(I),rel_rate_change(I))
 
+all_rate = [rate;rate_added];
+all_labels = [chLabels;added_labels];
+nunchanged = length(chLabels);
 
 figure
-turn_nans_white(rate)
+set(gcf,'position',[10 10 1100 800])
+turn_nans_white(all_rate)
 hold on
 plot([cblock cblock],ylim,'r--','linewidth',4)
-yticks(1:length(chLabels))
-yticklabels(chLabels)
+plot(xlim,[nunchanged nunchanged],'r--','linewidth',4);
+yticks(1:length(all_labels))
+yticklabels(all_labels)
 title(out(p).name)
 
 if just_save
@@ -92,7 +101,7 @@ else
         catch
             break
         end
-        chLab = chLabels{round(y(end))};
+        chLab = all_labels{round(y(end))};
         fidx = findices(round(x(end)));
         bidx = bindices(round(x(end)));
         fprintf('\nShowing spikes for %s ch %s file %d block %d\n',...

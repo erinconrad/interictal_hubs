@@ -245,7 +245,7 @@ xlim([0.5 2.5])
 %}
 
 %% Also add to main supplemental table
-writetable(adT,[main_spike_results,'Supplemental Table 3.xlsx'],'Range','B2:B12','WriteVariableNames',false)
+writetable(adT,[main_spike_results,'Supplemental Table 4.xlsx'],'Range','B2:B12','WriteVariableNames',false)
 
 
 %

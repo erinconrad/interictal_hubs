@@ -264,7 +264,7 @@ final_table = cell2table(final_array',...
 %writetable(final_table,[main_spike_results,'anatomy.csv'],'WriteRowNames',true)  
 
 %% Also add to main supplemental table
-writetable(final_table,[main_spike_results,'Supplemental Table 3.xlsx'],'Range','C2:D12','WriteVariableNames',false)
+writetable(final_table,[main_spike_results,'Supplemental Table 4.xlsx'],'Range','C2:D12','WriteVariableNames',false)
 
 
 end

@@ -463,11 +463,11 @@ agg_ns_T = cell2table(arrayfun(@(x) sprintf('MC %s',pretty_p_text(x)),all_all_p(
     'RowNames',arrayfun(@(x) sprintf('%d',x),all_surrounds,...
     'UniformOutput',false));
 
-writetable(agg_rate_T,[main_spike_results,'Supplemental Table 2.xlsx'],'Range','D2:D12','WriteVariableNames',false)
-writetable(agg_corr_T,[main_spike_results,'Supplemental Table 2.xlsx'],'Range','E2:E12','WriteVariableNames',false)
+writetable(agg_rate_T,[main_spike_results,'Supplemental Table 3.xlsx'],'Range','D2:D12','WriteVariableNames',false)
+writetable(agg_corr_T,[main_spike_results,'Supplemental Table 3.xlsx'],'Range','E2:E12','WriteVariableNames',false)
 
-writetable(agg_spike_T,[main_spike_results,'Supplemental Table 2.xlsx'],'Range','F2:F12','WriteVariableNames',false)
-writetable(agg_ns_T,[main_spike_results,'Supplemental Table 2.xlsx'],'Range','G2:G12','WriteVariableNames',false)
+writetable(agg_spike_T,[main_spike_results,'Supplemental Table 3.xlsx'],'Range','F2:F12','WriteVariableNames',false)
+writetable(agg_ns_T,[main_spike_results,'Supplemental Table 3.xlsx'],'Range','G2:G12','WriteVariableNames',false)
 
 %% Save fig
 fname = 'new_rate';

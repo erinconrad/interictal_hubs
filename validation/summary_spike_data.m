@@ -34,6 +34,11 @@ for i = 1:length(listing)
     
     % Get corresponding pt
     name = spikes.name;
+    
+    if strcmp(name,'HUP132')
+        continue
+    end
+    
     foundit = 0;
     for p = 1:length(pt)
         if strcmp(pt(p).name,name)

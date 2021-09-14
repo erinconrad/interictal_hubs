@@ -6,7 +6,7 @@ all_surrounds = 12*[0.5,1,2,3,4,5,6,7,8,9,10];
 main_surround = 3; %*******24 hours
 main_pred = 1;
 main_resp = 1;
-nb = 1e4;  % change
+nb = 1e3;  % change
 do_save = 0;
 do_buffer = 1;
 type = 'Spearman';
@@ -584,8 +584,8 @@ Tns_MC = cell2table(arrayfun(@(x) sprintf('MC %s',pretty_p_text(x)),ns_p_MC,'Uni
     %writetable(Tns_MC,[main_spike_results,'ns_MC','.csv'],'WriteRowNames',true)  
     
     %% Also add to main supplemental table
-    writetable(Tspike_MC,[main_spike_results,'Supplemental Table 2.xlsx'],'Range','B2:B12','WriteVariableNames',false)
-    writetable(Tns_MC,[main_spike_results,'Supplemental Table 2.xlsx'],'Range','C2:C12','WriteVariableNames',false)
+    writetable(Tspike_MC,[main_spike_results,'Supplemental Table 3.xlsx'],'Range','B2:B12','WriteVariableNames',false)
+    writetable(Tns_MC,[main_spike_results,'Supplemental Table 3.xlsx'],'Range','C2:C12','WriteVariableNames',false)
 
 end
 

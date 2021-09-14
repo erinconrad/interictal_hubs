@@ -6,9 +6,9 @@ Need to change words
 
 %% User change parameters
 all_surrounds = 12*[0.5,1,2,3,4,5,6,7,8,9,10];
-main_surround = 3; %24 hour peri-revision surround
+main_surround = 3;%3 %24 hour peri-revision surround
 main_metric = 1;
-ex_p = 1;
+ex_p = 5;
 
 %% Other info
 n_surrounds = length(all_surrounds);
@@ -65,7 +65,7 @@ all_rhos = nan(n_metrics,n_surrounds,n_patients,3); %3 is start-pre, post-end, a
 within_implant_rate_stats = nan(n_metrics,n_surrounds,2,3); %2 is first vs second implant, 3 is p-value, tstat, df
 between_implant_rate_stats = nan(n_metrics,n_surrounds,3); %3 is p-value, tstat, df
 unchanged_added_stats = nan(n_surrounds,2,3);% 1 vs 2 is within added vs added-to-unchanged
-all_rhos_stats = nan(n_metrics,n_surrounds,2,3); %2 is 1-2 unchanged, 2 is unchanged-added 2, 3 is p-value, tstat, df
+all_rhos_stats = nan(n_metrics,n_surrounds,2,3); %2 is 1-2 unchanged, vs unchanged-added 2, 3 is p-value, tstat, df
 sur_times = nan(n_metrics,n_surrounds,n_patients,4,2); %4 is start, pre, post, end, 2 is start and end of each time period
 
 % Loop over metrics
@@ -90,12 +90,21 @@ for im = 1:n_metrics
             end
             
             cblock = out(i).change_block;
-
+            
+            
             % Remove EKG and scalp electrodes
             ekg = identify_ekg_scalp(out(i).unchanged_labels);
             rate(ekg,:) = [];
             run_dur = out(i).run_dur;
             
+            % Test
+            %{
+            nadded = size(added_rate,1);
+            nunchanged = size(rate,1);
+            rand_indices = randsample(nunchanged,min(nunchanged,nadded));
+            added_rate = rate(rand_indices,:);
+            %}
+
             
             % Get pre, post, start, ending times
             [start,pre,post,ending] = across_implant_surround(rate,cblock,surround);
@@ -133,7 +142,7 @@ for im = 1:n_metrics
             % Fill up matrix
             all_rates(im,is,i,:) = [overall_rate_start,overall_rate_pre,...
                 overall_rate_post,overall_rate_end];
-            all_rhos(im,is,i,:) = [start_pre_corr,post_end_corr added_post_end_corr];
+            all_rhos(im,is,i,:) = [start_pre_corr,post_end_corr,added_post_end_corr];
             if im == 1
                 all_added_rates(is,i,:) = [overall_added_post overall_added_end];
             end
@@ -444,9 +453,25 @@ im1_spike_T = cell2table(arrayfun(@(x,y,z) sprintf('t(%d) = %1.2f, %s',x,y,prett
 im2_spike_T = cell2table(arrayfun(@(x,y,z) sprintf('t(%d) = %1.2f, %s',x,y,pretty_p_text(z)),...
     within_implant_rate_stats(im,:,2,3)',within_implant_rate_stats(im,:,2,2)',...
     within_implant_rate_stats(im,:,2,1)','UniformOutput',false));
+added_spike_T = cell2table(arrayfun(@(x,y,z) sprintf('t(%d) = %1.2f, %s',x,y,pretty_p_text(z)),...
+    unchanged_added_stats(:,1,3),unchanged_added_stats(:,1,2),...
+    unchanged_added_stats(:,1,1),'UniformOutput',false));
 bet_rate_spike_T = cell2table(arrayfun(@(x,y,z) sprintf('t(%d) = %1.2f, %s',x,y,pretty_p_text(z)),...
     between_implant_rate_stats(im,:,3)',between_implant_rate_stats(im,:,2)',...
     between_implant_rate_stats(im,:,1)','UniformOutput',false));
+bet_un_added_spike_T = cell2table(arrayfun(@(x,y,z) sprintf('t(%d) = %1.2f, %s',x,y,pretty_p_text(z)),...
+    unchanged_added_stats(:,2,3),unchanged_added_stats(:,2,2),...
+    unchanged_added_stats(:,2,1),'UniformOutput',false));
+
+
+
+writetable(im1_spike_T,[main_spike_results,'Supplemental Table 1.xlsx'],'Range','B2:B12','WriteVariableNames',false)
+writetable(im2_spike_T,[main_spike_results,'Supplemental Table 1.xlsx'],'Range','C2:C12','WriteVariableNames',false)
+writetable(added_spike_T,[main_spike_results,'Supplemental Table 1.xlsx'],'Range','D2:D12','WriteVariableNames',false)
+writetable(bet_rate_spike_T,[main_spike_results,'Supplemental Table 1.xlsx'],'Range','E2:E12','WriteVariableNames',false)
+writetable(bet_un_added_spike_T,[main_spike_results,'Supplemental Table 1.xlsx'],'Range','F2:F12','WriteVariableNames',false)
+
+
 rho_spike_T = cell2table(arrayfun(@(x,y,z) sprintf('t(%d) = %1.2f, %s',x,y,pretty_p_text(z)),...
     all_rhos_stats(1,:,1,3)',all_rhos_stats(1,:,1,2)',...
     all_rhos_stats(1,:,1,1)','UniformOutput',false));
@@ -454,15 +479,12 @@ rho_spike_T_added = cell2table(arrayfun(@(x,y,z) sprintf('t(%d) = %1.2f, %s',x,y
     all_rhos_stats(1,:,2,3)',all_rhos_stats(1,:,2,2)',...
     all_rhos_stats(1,:,2,1)','UniformOutput',false));
 rho_ns_T = cell2table(arrayfun(@(x,y,z) sprintf('t(%d) = %1.2f, %s',x,y,pretty_p_text(z)),...
-    all_rhos_stats(2,:,3)',all_rhos_stats(2,:,2)',...
-    all_rhos_stats(2,:,1)','UniformOutput',false));
+    all_rhos_stats(2,:,1,3)',all_rhos_stats(2,:,1,2)',...
+    all_rhos_stats(2,:,1,1)','UniformOutput',false));
 
-writetable(im1_spike_T,[main_spike_results,'Supplemental Table 1.xlsx'],'Range','B2:B12','WriteVariableNames',false)
-writetable(im2_spike_T,[main_spike_results,'Supplemental Table 1.xlsx'],'Range','C2:C12','WriteVariableNames',false)
-writetable(bet_rate_spike_T,[main_spike_results,'Supplemental Table 1.xlsx'],'Range','D2:D12','WriteVariableNames',false)
-writetable(rho_spike_T,[main_spike_results,'Supplemental Table 1.xlsx'],'Range','E2:E12','WriteVariableNames',false)
-writetable(rho_spike_T,[main_spike_results,'Supplemental Table 1.xlsx'],'Range','F2:F12','WriteVariableNames',false)
-writetable(rho_ns_T,[main_spike_results,'Supplemental Table 1.xlsx'],'Range','G2:G12','WriteVariableNames',false)
+writetable(rho_spike_T,[main_spike_results,'Supplemental Table 2.xlsx'],'Range','B2:B12','WriteVariableNames',false)
+writetable(rho_spike_T_added,[main_spike_results,'Supplemental Table 2.xlsx'],'Range','C2:C12','WriteVariableNames',false)
+writetable(rho_ns_T,[main_spike_results,'Supplemental Table 2.xlsx'],'Range','D2:D12','WriteVariableNames',false)
 
 
 end
