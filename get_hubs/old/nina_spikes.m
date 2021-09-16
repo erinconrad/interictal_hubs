@@ -147,7 +147,7 @@ for i = 1:length(whichPts)
         n_blocks = length(pt(p).ieeg.file(f).block);
         for h = next_block:n_blocks
             tic;
-            fprintf('\nDoing %s file %d block %d of %d\n',name,f,h,n_blocks);
+            fprintf('\nDoing %s file %d block %d of %d, tmul %d\n',name,f,h,n_blocks,params.tmul);
             
             % get the run time (already randomly assigned minute)
             if test.do_test == 1

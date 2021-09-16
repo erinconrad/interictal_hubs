@@ -31,11 +31,11 @@ dist_cosi_pc([],1,out);
 %% Run compare across implant analysis
 compare_across_implant([],1,out); 
 
-%% Run distance-rate change correlation analysis
-all_corrs([],1,out); % Monte Carlo!
-
 %% Run spike rate and spike/ns stability analysis
 new_rate_analysis([],1,out); % Monte Carlo!
+
+%% Run distance-rate change correlation analysis
+all_corrs([],1,out); % Monte Carlo!
 
 %% Run alpha-delta ratio analysis
 ad_analyses([],1,out);

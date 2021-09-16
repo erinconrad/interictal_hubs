@@ -178,15 +178,15 @@ im = main_metric;
 is = main_surround;
 
 figure
-set(gcf,'position',[100 1 700 1000])
-tiledlayout(4,2,'TileSpacing','tight','Padding','tight')
+set(gcf,'position',[100 1 700 600])
+tiledlayout(3,2,'TileSpacing','tight','Padding','tight')
 
 % colors
 cols = [0.4660, 0.6740, 0.1880;0.4940, 0.1840, 0.5560;0.6350, 0.0780, 0.1840;...
     0, 0.4470, 0.7410;0.8500, 0.3250, 0.0980];
 
 %% Example patient, full spike rate
-nexttile([1 2])
+nexttile
 rate = out(ex_p).rate;
 cblock = out(ex_p).change_block;
 % Remove EKG and scalp electrodes
@@ -237,7 +237,7 @@ plot([post(1) post(end)],[ybar ybar],'color',cols(2,:),'linewidth',4);
 xl = xlim;
 cblock_fig_units = axescoord2figurecoord(cblock,nan);
 ytext_fig_units = axescoord2figurecoord(ytext,nan);
-annotation('textarrow',[0.5 cblock_fig_units],...
+annotation('textarrow',[0.4 cblock_fig_units+0.01],...
     [0.98 0.9],'String','Revision','color',cols(3,:),...
     'fontsize',15,'linewidth',2);
 
@@ -253,17 +253,17 @@ pre_bar_fig_units = axescoord2figurecoord((pre(1)+pre(end))/2,nan);
 post_text_fig_units = axescoord2figurecoord(post(end),nan);
 post_bar_fig_units = axescoord2figurecoord((post(1)+post(end))/2,nan);
 
-annotation('textarrow',[pre_text_fig_units-0.05 pre_bar_fig_units],...
-    [0.983 0.975],'String','Pre','color',cols(1,:),...
+annotation('textarrow',[pre_text_fig_units-0.03 pre_bar_fig_units],...
+    [0.983 0.972],'String','Pre','color',cols(1,:),...
     'fontsize',15,'linewidth',2);
 
-annotation('textarrow',[post_text_fig_units+0.05 post_bar_fig_units],...
-    [0.983 0.975],'String','Post','color',cols(2,:),...
+annotation('textarrow',[post_text_fig_units+0.05 post_text_fig_units],...
+    [0.983 0.972],'String','Post','color',cols(2,:),...
     'fontsize',15,'linewidth',2);
 
 xl = xlim;
 yl = ylim;
-text(xl(1),yl(2),sprintf('Patient %d',ex_p),'fontsize',15,'VerticalAlignment','Top')
+%text(xl(1),yl(2),sprintf('Patient %d',ex_p),'fontsize',15,'VerticalAlignment','Top')
 %xticklabels([])
 
 %% Spike rate change across electrodes
@@ -306,6 +306,7 @@ fprintf(['\nThere was no consistent difference across patients in the'...
     main_stats(im,is,3),main_stats(im,is,2),get_p_text(main_stats(im,is,1)))
 
 %% Spike rate correlated with number of added electrodes
+%{
 nexttile
 curr_ov = squeeze(all_ov(im,is,:,:));
 ov_change = (curr_ov(:,2)-curr_ov(:,1))./(curr_ov(:,1));
@@ -326,6 +327,7 @@ fprintf(['\nThere was a significant positive correlation across patients '...
     'between the number of electrodes added and the relative change in '...
     'spike rate (r = %1.2f, %s).\n'],added_stats(im,is,1),...
     get_p_text(added_stats(im,is,2)));
+%}
 
 %% Spike stability for main surround
 for im = 1:n_metrics
@@ -362,12 +364,12 @@ for im = 1:n_metrics
     if im == 1
         fprintf(['\nFor the primary surround period of 24 hours, the spike stability '...
             'aggregated across patients (M = %1.2f, SD = %1.2f) was no different '...
-            'from chance (Monte Carlo with Fisher''s method: %s) (Figure 4).\n'],...
+            'from chance (Monte Carlo with Fisher''s method: %s) (Figure 4C).\n'],...
             mean(true_r),std(true_r),pretty_p_text(p));
     elseif im == 2
         fprintf(['\n The group node strength stability in the surround period of 24 hours '...
             '(M = %1.2f, SD = %1.2f) was also no different from '...
-            'chance (Monte Carlo with Fisher''s method: %s).\n'],...
+            'chance (Monte Carlo with Fisher''s method: %s) (Figure 4D).\n'],...
             mean(true_r),std(true_r),pretty_p_text(p));
     end
     
@@ -414,7 +416,7 @@ for im = 1:n_metrics
             mean(all_all_true_r(1,:,im)), std(all_all_true_r(1,:,im)),...
             get_p_text(all_all_p(1,im)));
     elseif im == 2
-        fprintf(['\nExamining other surround durations, several '...
+        fprintf(['\nExamining other surround durations, two '...
             'peri-revision surround durations (specifically ']); 
         sig_idx = find(all_all_p(:,im) < 0.05);
         for isig = 1:length(sig_idx)
@@ -436,13 +438,13 @@ for im = 1:n_metrics
 end
 
 %% Annotations
-annotation('textbox',[0 0.90 0.1 0.1],'String','A','fontsize',20,'linestyle','none')
-annotation('textbox',[0 0.67 0.1 0.1],'String','B','fontsize',20,'linestyle','none')
-annotation('textbox',[0.49 0.67 0.1 0.1],'String','C','fontsize',20,'linestyle','none')
-annotation('textbox',[0 0.42 0.1 0.1],'String','D','fontsize',20,'linestyle','none')
-annotation('textbox',[0.49 0.42 0.1 0.1],'String','E','fontsize',20,'linestyle','none')
-annotation('textbox',[0 0.18 0.1 0.1],'String','F','fontsize',20,'linestyle','none')
-annotation('textbox',[0.49 0.18 0.1 0.1],'String','G','fontsize',20,'linestyle','none')
+annotation('textbox',[0 0.91 0.1 0.1],'String','A','fontsize',20,'linestyle','none')
+annotation('textbox',[0.50 0.91 0.1 0.1],'String','B','fontsize',20,'linestyle','none')
+annotation('textbox',[0 0.585 0.1 0.1],'String','C','fontsize',20,'linestyle','none')
+annotation('textbox',[0.50 0.585 0.1 0.1],'String','D','fontsize',20,'linestyle','none')
+annotation('textbox',[0 0.26 0.1 0.1],'String','E','fontsize',20,'linestyle','none')
+annotation('textbox',[0.50 0.26 0.1 0.1],'String','F','fontsize',20,'linestyle','none')
+%annotation('textbox',[0.49 0.18 0.1 0.1],'String','G','fontsize',20,'linestyle','none')
 
 %% Also save these to a specific range in the Supplemental Table 1
 agg_rate_T = cell2table(arrayfun(@(x,y,z) sprintf('t(%d) = %1.1f, %s',x,y,pretty_p_text(z)),...
