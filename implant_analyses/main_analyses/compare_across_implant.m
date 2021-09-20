@@ -1,7 +1,6 @@
 function compare_across_implant(whichPts,saved_out,out)
 
 %{
-Need to change words
 %}
 
 %% User change parameters
