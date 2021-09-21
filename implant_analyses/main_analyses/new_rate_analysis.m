@@ -8,9 +8,9 @@ Just changed to mean across chs
 all_surrounds = 12*[0.5,1,2,3,4,5,6,7,8,9,10];
 main_surround = 3; %24 hour peri-revision surround
 main_metric = 1;
-ex_p = 1;
+ex_p = 2;
 do_buffer = 1;
-nb = 1e4; % CHANGE
+nb = 1e2; % CHANGE
 
 %% Other info
 n_surrounds = length(all_surrounds);
@@ -237,7 +237,7 @@ plot([post(1) post(end)],[ybar ybar],'color',cols(2,:),'linewidth',4);
 xl = xlim;
 cblock_fig_units = axescoord2figurecoord(cblock,nan);
 ytext_fig_units = axescoord2figurecoord(ytext,nan);
-annotation('textarrow',[0.4 cblock_fig_units+0.01],...
+annotation('textarrow',[0.4 cblock_fig_units],...
     [0.98 0.9],'String','Revision','color',cols(3,:),...
     'fontsize',15,'linewidth',2);
 
@@ -253,11 +253,11 @@ pre_bar_fig_units = axescoord2figurecoord((pre(1)+pre(end))/2,nan);
 post_text_fig_units = axescoord2figurecoord(post(end),nan);
 post_bar_fig_units = axescoord2figurecoord((post(1)+post(end))/2,nan);
 
-annotation('textarrow',[pre_text_fig_units-0.03 pre_bar_fig_units],...
+annotation('textarrow',[pre_text_fig_units pre_bar_fig_units],...
     [0.983 0.972],'String','Pre','color',cols(1,:),...
     'fontsize',15,'linewidth',2);
 
-annotation('textarrow',[post_text_fig_units+0.05 post_text_fig_units],...
+annotation('textarrow',[post_text_fig_units post_text_fig_units],...
     [0.983 0.972],'String','Post','color',cols(2,:),...
     'fontsize',15,'linewidth',2);
 
@@ -392,7 +392,7 @@ for im = 1:n_metrics
     for is = 1:n_surrounds
         plot([is-0.2,is+0.2],[yl(1)+0.8*(yl(2)-yl(1)) yl(1)+0.8*(yl(2)-yl(1))],...
             'k','linewidth',2)
-        text(is,yl(1)+0.9*(yl(2)-yl(1)),get_asterisks(all_all_p(is,im),1),...
+        text(is,yl(1)+0.9*(yl(2)-yl(1)),get_asterisks(all_all_p(is,im),n_surrounds),...
         'horizontalalignment','center','fontsize',15)
     end
     
@@ -409,6 +409,10 @@ for im = 1:n_metrics
     set(gca,'fontsize',15)
     
     % Text
+    fprintf(['\nExamining other peri-revision durations, no '...
+            'duration had a spike stability significantly '...
+            'lower than chance.\n']);
+    %{
     if im == 1
         fprintf(['\nExamining other peri-revision surround durations, only the 6-hour '...
             'peri-revision surround duration had a spike stability significantly '...
@@ -433,6 +437,7 @@ for im = 1:n_metrics
         fprintf([') had a node strength stability significantly '...
             'lower than chance (see Figure 3 and Supplemental Table 1 for statistics).\n']);
     end
+    %}
 
     
 end

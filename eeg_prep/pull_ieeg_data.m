@@ -36,6 +36,8 @@ while 1
         end
     end
         
+end
+
 session.delete;
 clearvars -except values
 
