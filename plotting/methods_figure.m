@@ -9,8 +9,8 @@ csize = 200;
 locations = interictal_hub_locations;
 results_folder = [locations.main_folder,'results/'];
 out_folder = [results_folder,'job_talk/'];
-if ~exist(main_spike_results,'dir')
-    mkdir(main_spike_results);
+if ~exist(out_folder,'dir')
+    mkdir(out_folder);
 end
 
 addpath(genpath(locations.script_folder));

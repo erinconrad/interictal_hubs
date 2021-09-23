@@ -8,8 +8,8 @@ csize = 200;
 %% Locations
 locations = interictal_hub_locations;
 results_folder = [locations.main_folder,'results/'];
-main_spike_results = [results_folder,'main_spikes/'];
-if ~exist(main_spike_results,'dir')
+out_folder = [results_folder,'job_talk/'];
+if ~exist(out_folder,'dir')
     mkdir(main_spike_results);
 end
 
@@ -45,14 +45,23 @@ pre_ns = nanmean(ns(:,pre),2);
 post_ns = nanmean(ns(:,post),2);
 rel_ns_change = (post_ns-pre_ns)./abs(pre_ns);
 
+%% UNchanged locs
+figure
+scatter3(unchanged_locs(:,1),unchanged_locs(:,2),unchanged_locs(:,3),csize,'k','linewidth',2);
+hold on
+view([81,-6])
+axis off
+print([out_folder,'unchanged_locs'],'-dpng');
 
 figure
 scatter3(unchanged_locs(:,1),unchanged_locs(:,2),unchanged_locs(:,3),csize,'k','linewidth',2);
 hold on
-%text(unchanged_locs(:,1),unchanged_locs(:,2),unchanged_locs(:,3),unchanged_labels);
 scatter3(added_locs(:,1),added_locs(:,2),added_locs(:,3),csize,'rp','linewidth',2);
 view([81,-6])
 axis off
+print([out_folder,'unchanged_added_locs'],'-dpng');
+
+close all
 
 if 0
 %% Prep figure
