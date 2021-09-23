@@ -1,7 +1,7 @@
 function methods_figure(out)
 
 %% Parameters
-p = 1;
+p = 2;
 surround = 24;
 csize = 200;
 
@@ -23,6 +23,7 @@ ekg = identify_ekg_scalp(unchanged_labels);
 unchanged_labels(ekg) = [];
 unchanged_locs(ekg,:) = [];
 dist = out(p).dist;
+block_dur = out(p).block_dur;
 
 added_labels = out(p).added_labels;
 added_locs = out(p).added_locs;
@@ -58,6 +59,31 @@ all_dists = vecnorm(unchanged_locs(max_dist_elec,:) - added_locs,2,2);
 all_dists = vecnorm(unchanged_locs(min_dist_elec,:) - added_locs,2,2);
 [~,closest_min_dist] = min(all_dists);
 
+%% Spike rate over time
+figure
+set(gcf,'position',[317 452 1124 345])
+plot(nanmean(rate,1),'k','linewidth',2)
+hold on
+nan_blocks = find(isnan(nanmean(rate,1)));
+for b = 1:length(nan_blocks)
+    bidx = [max(nan_blocks(b) - 0.5,1) min(nan_blocks(b)+0.5,size(rate,2))];
+    bidx = bidx;
+    yl = ylim;
+    ap = fill([bidx(1),bidx(2),bidx(2),bidx(1)],...
+        [yl(1),yl(1),yl(2),yl(2)],...
+        [0.7 0.7 0.7],'EdgeColor',[0.7 0.7 0.7]);
+end
+xlim([0 500])
+ylim([0 9])
+xticklabels([])
+yticklabels([])
+xlabel('Time since implant')
+ylabel('Spike rate')
+set(gca,'fontsize',20)
+print([out_folder,'example_rate'],'-dpng');
+
+%{
+
 %% UNchanged locs
 figure
 scatter3(unchanged_locs(:,1),unchanged_locs(:,2),unchanged_locs(:,3),csize,'k','linewidth',2);
@@ -86,7 +112,7 @@ ylabel('Spike rate change')
 xlabel('Distance')
 set(gca,'fontsize',20)
 print([out_folder,'fake_correlation'],'-dpng');
-
+%}
 close all
 
 if 0
