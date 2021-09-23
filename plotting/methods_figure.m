@@ -76,6 +76,7 @@ axis off
 print([out_folder,'unchanged_added_locs'],'-dpng');
 
 %% Fake correlation (FAKE DATA)
+figure
 x = dist;
 y = 1./dist + 0.1*rand(length(dist),1);
 plot(x,y,'o','markersize',10,'linewidth',2);
