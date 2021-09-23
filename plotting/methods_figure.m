@@ -22,6 +22,7 @@ unchanged_locs = out(p).unchanged_locs;
 ekg = identify_ekg_scalp(unchanged_labels);
 unchanged_labels(ekg) = [];
 unchanged_locs(ekg,:) = [];
+dist = out(p).dist;
 
 added_labels = out(p).added_labels;
 added_locs = out(p).added_locs;
@@ -31,6 +32,7 @@ rate(ekg,:) = [];
 cblock = out(p).change_block;
 ns = out(p).metrics.ns;
 ns(ekg,:) = [];
+dist(ekg,:) = [];
 
 % Get surround times, starting with first non nan
 [pre,post] = get_surround_times(rate,cblock,surround);
@@ -45,6 +47,17 @@ pre_ns = nanmean(ns(:,pre),2);
 post_ns = nanmean(ns(:,post),2);
 rel_ns_change = (post_ns-pre_ns)./abs(pre_ns);
 
+%% Get distance between a few elecs
+[~,max_dist_elec] = max(dist);
+% Get which added elec it's closest to
+all_dists = vecnorm(unchanged_locs(max_dist_elec,:) - added_locs,2,2);
+[~,closest_max_dist] = min(all_dists);
+
+[~,min_dist_elec] = min(dist);
+% Get which added elec it's closest to
+all_dists = vecnorm(unchanged_locs(min_dist_elec,:) - added_locs,2,2);
+[~,closest_min_dist] = min(all_dists);
+
 %% UNchanged locs
 figure
 scatter3(unchanged_locs(:,1),unchanged_locs(:,2),unchanged_locs(:,3),csize,'k','linewidth',2);
@@ -53,6 +66,7 @@ view([81,-6])
 axis off
 print([out_folder,'unchanged_locs'],'-dpng');
 
+%% Unchanged and added
 figure
 scatter3(unchanged_locs(:,1),unchanged_locs(:,2),unchanged_locs(:,3),csize,'k','linewidth',2);
 hold on
@@ -60,6 +74,17 @@ scatter3(added_locs(:,1),added_locs(:,2),added_locs(:,3),csize,'rp','linewidth',
 view([81,-6])
 axis off
 print([out_folder,'unchanged_added_locs'],'-dpng');
+
+%% Fake correlation (FAKE DATA)
+x = dist;
+y = 1./dist + 0.1*rand(length(dist),1);
+plot(x,y,'o','markersize',10,'linewidth',2);
+xticklabels([])
+yticklabels([])
+ylabel('Spike rate change')
+xlabel('Distance')
+set(gca,'fontsize',20)
+print([out_folder,'fake_correlation'],'-dpng');
 
 close all
 
