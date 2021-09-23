@@ -1,7 +1,7 @@
 function new_rate_analysis(whichPts,saved_out,out)
 
 %{
-Just changed to mean across chs
+
 %}
 
 %% Parameters
@@ -10,11 +10,10 @@ main_surround = 3; %24 hour peri-revision surround
 main_metric = 1;
 ex_p = 2;
 do_buffer = 1;
-nb = 1e2; % CHANGE
+nb = 1e4; % CHANGE
 
 %% Other info
 n_surrounds = length(all_surrounds);
-%all_metrics = {'rate'};
 all_metrics = {'rate','ns'};
 n_metrics = length(all_metrics);
 
@@ -179,7 +178,7 @@ is = main_surround;
 
 figure
 set(gcf,'position',[100 1 700 600])
-tiledlayout(3,2,'TileSpacing','tight','Padding','tight')
+tiledlayout(3,2,'TileSpacing','tight','Padding','compact')
 
 % colors
 cols = [0.4660, 0.6740, 0.1880;0.4940, 0.1840, 0.5560;0.6350, 0.0780, 0.1840;...
@@ -237,8 +236,8 @@ plot([post(1) post(end)],[ybar ybar],'color',cols(2,:),'linewidth',4);
 xl = xlim;
 cblock_fig_units = axescoord2figurecoord(cblock,nan);
 ytext_fig_units = axescoord2figurecoord(ytext,nan);
-annotation('textarrow',[0.4 cblock_fig_units],...
-    [0.98 0.9],'String','Revision','color',cols(3,:),...
+annotation('textarrow',[0.39 cblock_fig_units],...
+    [0.93 0.86],'String','Revision','color',cols(3,:),...
     'fontsize',15,'linewidth',2);
 
 %{
@@ -253,12 +252,12 @@ pre_bar_fig_units = axescoord2figurecoord((pre(1)+pre(end))/2,nan);
 post_text_fig_units = axescoord2figurecoord(post(end),nan);
 post_bar_fig_units = axescoord2figurecoord((post(1)+post(end))/2,nan);
 
-annotation('textarrow',[pre_text_fig_units pre_bar_fig_units],...
-    [0.983 0.972],'String','Pre','color',cols(1,:),...
+annotation('textarrow',[pre_text_fig_units-0.04 pre_text_fig_units-0.01],...
+    [0.94 0.93],'String','Pre','color',cols(1,:),...
     'fontsize',15,'linewidth',2);
 
-annotation('textarrow',[post_text_fig_units post_text_fig_units],...
-    [0.983 0.972],'String','Post','color',cols(2,:),...
+annotation('textarrow',[post_bar_fig_units+0.02 post_bar_fig_units-0.01],...
+    [0.94 0.93],'String','Post','color',cols(2,:),...
     'fontsize',15,'linewidth',2);
 
 xl = xlim;
@@ -443,12 +442,12 @@ for im = 1:n_metrics
 end
 
 %% Annotations
-annotation('textbox',[0 0.91 0.1 0.1],'String','A','fontsize',20,'linestyle','none')
-annotation('textbox',[0.50 0.91 0.1 0.1],'String','B','fontsize',20,'linestyle','none')
-annotation('textbox',[0 0.585 0.1 0.1],'String','C','fontsize',20,'linestyle','none')
-annotation('textbox',[0.50 0.585 0.1 0.1],'String','D','fontsize',20,'linestyle','none')
+annotation('textbox',[0 0.9 0.1 0.1],'String','A','fontsize',20,'linestyle','none')
+annotation('textbox',[0.48 0.9 0.1 0.1],'String','B','fontsize',20,'linestyle','none')
+annotation('textbox',[0 0.58 0.1 0.1],'String','C','fontsize',20,'linestyle','none')
+annotation('textbox',[0.48 0.58 0.1 0.1],'String','D','fontsize',20,'linestyle','none')
 annotation('textbox',[0 0.26 0.1 0.1],'String','E','fontsize',20,'linestyle','none')
-annotation('textbox',[0.50 0.26 0.1 0.1],'String','F','fontsize',20,'linestyle','none')
+annotation('textbox',[0.48 0.26 0.1 0.1],'String','F','fontsize',20,'linestyle','none')
 %annotation('textbox',[0.49 0.18 0.1 0.1],'String','G','fontsize',20,'linestyle','none')
 
 %% Also save these to a specific range in the Supplemental Table 1
@@ -457,10 +456,12 @@ agg_rate_T = cell2table(arrayfun(@(x,y,z) sprintf('t(%d) = %1.1f, %s',x,y,pretty
     squeeze(main_stats(1,:,1))','UniformOutput',false),...
     'RowNames',arrayfun(@(x) sprintf('%d',x),all_surrounds,...
     'UniformOutput',false));
+%{
 agg_corr_T = cell2table(arrayfun(@(x,y) sprintf('r = %1.2f, %s',x,pretty_p_text(y)),...
     squeeze(added_stats(1,:,1))',squeeze(added_stats(1,:,2))','UniformOutput',false),...
     'RowNames',arrayfun(@(x) sprintf('%d',x),all_surrounds,...
     'UniformOutput',false));
+    %}
 agg_spike_T = cell2table(arrayfun(@(x) sprintf('MC %s',pretty_p_text(x)),all_all_p(:,1),...
     'UniformOutput',false),...
     'RowNames',arrayfun(@(x) sprintf('%d',x),all_surrounds,...
@@ -471,7 +472,7 @@ agg_ns_T = cell2table(arrayfun(@(x) sprintf('MC %s',pretty_p_text(x)),all_all_p(
     'UniformOutput',false));
 
 writetable(agg_rate_T,[main_spike_results,'Supplemental Table 3.xlsx'],'Range','D2:D12','WriteVariableNames',false)
-writetable(agg_corr_T,[main_spike_results,'Supplemental Table 3.xlsx'],'Range','E2:E12','WriteVariableNames',false)
+%writetable(agg_corr_T,[main_spike_results,'Supplemental Table 3.xlsx'],'Range','E2:E12','WriteVariableNames',false)
 
 writetable(agg_spike_T,[main_spike_results,'Supplemental Table 3.xlsx'],'Range','F2:F12','WriteVariableNames',false)
 writetable(agg_ns_T,[main_spike_results,'Supplemental Table 3.xlsx'],'Range','G2:G12','WriteVariableNames',false)

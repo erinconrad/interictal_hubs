@@ -7,7 +7,7 @@ main_surround = 3; %*******24 hours
 main_pred = 1;
 main_resp = 1;
 nb = 1e4;  % change
-do_save = 0;
+do_save = 1;
 do_buffer = 1;
 type = 'Spearman';
 
@@ -494,7 +494,7 @@ for r = 1:length(which_resps)
         plot([is-0.2,is+0.2],[yl(1)+0.8*(yl(2)-yl(1)) yl(1)+0.8*(yl(2)-yl(1))],...
             'k','linewidth',2)
         
-        text(is,yl(1)+0.9*(yl(2)-yl(1)),get_asterisks(all_p_mc(is,r,p),1),...
+        text(is,yl(1)+0.9*(yl(2)-yl(1)),get_asterisks(all_p_mc(is,r,p),n_surrounds),...
         'horizontalalignment','center','fontsize',15)
         
     end
