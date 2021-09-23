@@ -199,7 +199,7 @@ annotation('textbox',[0 0.42 0.1 0.1],'String','D','fontsize',20,'linestyle','no
 annotation('textbox',[0.33 0.42 0.1 0.1],'String','E','fontsize',20,'linestyle','none')
 annotation('textbox',[0.67 0.42 0.1 0.1],'String','F','fontsize',20,'linestyle','none')
 
-print(gcf,[main_spike_results,'dist_cosi_pc_corr'],'-dpng');
+print(gcf,[main_spike_results,'dist_cosi_pc_corr'],'-depsc');
 
 %% Text
 fprintf(['\nAggregated across patients, there was a significant negative '...

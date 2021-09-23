@@ -517,7 +517,7 @@ annotation('textbox',[0.51 0.46 0.1 0.1],'String','D','fontsize',20,'linestyle',
 %annotation('textbox',[0.51 0.24 0.1 0.1],'String','F','fontsize',20,'linestyle','none')
 
 if do_save 
-    print(gcf,[main_spike_results,sprintf('all_corrs_surround_%d',all_surrounds(main_surround))],'-dpng')
+    print(gcf,[main_spike_results,sprintf('all_corrs_surround_%d',all_surrounds(main_surround))],'-depsc')
 end
 
 %% Save table of p-values

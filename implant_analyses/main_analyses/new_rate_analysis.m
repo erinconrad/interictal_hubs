@@ -479,6 +479,6 @@ writetable(agg_ns_T,[main_spike_results,'Supplemental Table 3.xlsx'],'Range','G2
 
 %% Save fig
 fname = 'new_rate';
-print(gcf,[main_spike_results,fname],'-dpng');
+print(gcf,[main_spike_results,fname],'-depsc');
 
 end

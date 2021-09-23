@@ -467,7 +467,7 @@ annotation('textbox',[0.49 0.285 0.1 0.1],'String','D','fontsize',20,'linestyle'
 
 %% Save it
 fname = 'across_implant';
-print(gcf,[main_spike_results,fname],'-dpng')
+print(gcf,[main_spike_results,fname],'-depsc')
 
 %% Make supplemental tables
 im = 1;
