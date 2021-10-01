@@ -11,9 +11,13 @@ do_save = 1;
 do_buffer = 1;
 type = 'Spearman';
 
-%% Fisher parameters (should both be 1)
-do_fisher = 1; % Do fisher transformation on data?
+%% Do combined probability test rather than more complicated method? (Should be 1)
+do_comb_p = 1; % should be 1
+do_fisher = 1; % Do fisher transformation on data? Should be 1
 weighted_avg = 1; % weight by n-3
+
+%% For supplemental table, do simple or mc p value? (should be 'simple')
+which_p = 'simple'; % other is mc
 
 n_surrounds = length(all_surrounds);
 which_resps = {'rel_rate','ns_rel'};
@@ -285,7 +289,16 @@ for s = 1:length(all_surrounds)
             
             
             %% Get MC stats
-            if do_fisher
+            if do_comb_p
+                
+                % Fisher test to combine pvalues for ros
+                if sum(isnan(all_all_p(s,r,p,:))) > 0 && p == 1, error('why'); end
+                X_2 = -2 * sum(log(all_all_p(s,r,p,:)));
+                sum_p = 1-chi2cdf(X_2,2*length(all_all_p(s,r,p,:)));
+
+                p_mc_agg = sum_p;
+            %{    
+            elseif do_fisher
                 % Fisher transform combo analysis
                 % Get r back
                 if weighted_avg
@@ -307,7 +320,10 @@ for s = 1:length(all_surrounds)
                     end
                 end
 
-                
+                % Count number of mc_r's as or more extreme than true r -
+                % group MC analysis
+                num_more_sig = sum(abs(mc_r)>=abs(rho));
+                p_mc_agg = (num_more_sig + 1)/(nb+1);
                                 
             else
                 %Non fisher transform combo analysis
@@ -317,13 +333,15 @@ for s = 1:length(all_surrounds)
                 rho = mean(all_zs(:,3));
                 mc_r = (mean(all_mc_r,1));
                 
+                % Count number of mc_r's as or more extreme than true r -
+                % group MC analysis
+                num_more_sig = sum(abs(mc_r)>=abs(rho));
+                p_mc_agg = (num_more_sig + 1)/(nb+1);
+                %}
+                
             end
             
-            % Count number of mc_r's as or more extreme than true r -
-            % group MC analysis
-            num_more_sig = sum(abs(mc_r)>=abs(rho));
-            p_mc_agg = (num_more_sig + 1)/(nb+1);
-                      
+                 
             
             if 0
                 figure
@@ -463,13 +481,27 @@ for r = 1:length(which_resps)
     xl = xlim;
     plot([1 2],[yl(1)+0.7*(yl(2)-yl(1)) yl(1)+0.7*(yl(2)-yl(1))],...
             'k','linewidth',2)
-    text(1.5,yl(1)+0.8*(yl(2)-yl(1)),get_asterisks(all_p_mc(s,r,p),1),...
-    'horizontalalignment','center','fontsize',20)
-    text(xl(2),yl(2),...
-        sprintf('Combined r = %1.2f\nMC p = %1.3f',...
-        all_r(s,r,p),all_p_mc(s,r,p)),'fontsize',15,...
-        'horizontalalignment','right',...
-            'verticalalignment','top')
+    if strcmp(which_p,'simple')
+        text(1.5,yl(1)+0.8*(yl(2)-yl(1)),get_asterisks(all_p_simp(s,r,p),1),...
+        'horizontalalignment','center','fontsize',20)
+    
+        text(xl(2),yl(2),...
+            sprintf('Combined r = %1.2f\np = %1.3f',...
+            all_r(s,r,p),all_p_simp(s,r,p)),'fontsize',15,...
+            'horizontalalignment','right',...
+                'verticalalignment','top')
+        
+    elseif strcmp(which_p,'mc')
+        text(1.5,yl(1)+0.8*(yl(2)-yl(1)),get_asterisks(all_p_mc(s,r,p),1),...
+        'horizontalalignment','center','fontsize',20)
+    
+        text(xl(2),yl(2),...
+            sprintf('Combined r = %1.2f\nMC p = %1.3f',...
+            all_r(s,r,p),all_p_mc(s,r,p)),'fontsize',15,...
+            'horizontalalignment','right',...
+                'verticalalignment','top')
+    end
+    
     xticks([1 2])
     xticklabels({'True','Monte Carlo'})
     ylabel(sprintf('%s-%s\ncorrelation',rtext,ptext))
@@ -493,9 +525,13 @@ for r = 1:length(which_resps)
     for is = 1:n_surrounds
         plot([is-0.2,is+0.2],[yl(1)+0.8*(yl(2)-yl(1)) yl(1)+0.8*(yl(2)-yl(1))],...
             'k','linewidth',2)
-        
-        text(is,yl(1)+0.9*(yl(2)-yl(1)),get_asterisks(all_p_mc(is,r,p),n_surrounds),...
-        'horizontalalignment','center','fontsize',15)
+        if strcmp(which_p,'simple')
+            text(is,yl(1)+0.9*(yl(2)-yl(1)),get_asterisks(all_p_simp(is,r,p),n_surrounds),...
+            'horizontalalignment','center','fontsize',15)
+        elseif strcmp(which_p,'mc')
+            text(is,yl(1)+0.9*(yl(2)-yl(1)),get_asterisks(all_p_mc(is,r,p),n_surrounds),...
+            'horizontalalignment','center','fontsize',15)
+        end
         
     end
     xticks(1:n_surrounds)
@@ -521,56 +557,28 @@ if do_save
 end
 
 %% Save table of p-values
-%{
-p = 1;
-names = ['all';names];
-if do_fisher
-    all_p_mc_spike = all_p_mc(:,1)';
-    all_p_mc_ns = all_p_mc(:,2)';
-else
-    all_p_mc_spike = all_p_mc_rho(:,1,1)';
-    all_p_mc_ns = all_p_mc_rho(:,2,1)';
-end
+spike_p_simp = squeeze(all_p_simp(:,1,1,:));
+ns_p_simp = squeeze(all_p_simp(:,2,1,:));
 
-all_all_spike = [all_p_mc_spike;squeeze(all_all_p(:,1,1,:))'];
-all_all_ns = [all_p_mc_ns;squeeze(all_all_p(:,2,1,:))'];
-
-Tspike = cell2table(arrayfun(@(x) sprintf('%1.3f',x),all_all_spike,'UniformOutput',false),...
-    'VariableNames',arrayfun(@(x) sprintf('%d',x),all_surrounds,...
-    'UniformOutput',false),'RowNames',names);
-
-Tns = cell2table(arrayfun(@(x) sprintf('%1.3f',x),all_all_ns,'UniformOutput',false),...
-    'VariableNames',arrayfun(@(x) sprintf('%d',x),all_surrounds,...
-    'UniformOutput',false),'RowNames',names);
-
-dtext = which_preds{1};
-writetable(Tspike,[main_spike_results,'spike_',dtext,'.csv'],'WriteRowNames',true)  
-writetable(Tns,[main_spike_results,'ns_',dtext,'.csv'],'WriteRowNames',true)  
-%}
-
-%% Also table of simple p-values
-spike_p_simp = squeeze(all_p_simp(:,1,:,1));
-ns_p_simp = squeeze(all_p_simp(:,2,:,1));
-
-if do_save 
-Tspike_simp = cell2table(arrayfun(@(x) sprintf('MC p = %1.3f',x),spike_p_simp,'UniformOutput',false),...
+Tspike_simp = cell2table(arrayfun(@(x,y,z) sprintf('t(%d) = %1.1f, %s',x,y,pretty_p_text(z)),...
+    spike_p_simp(:,3),spike_p_simp(:,2),spike_p_simp(:,1),'UniformOutput',false),...
     'RowNames',arrayfun(@(x) sprintf('%d',x),all_surrounds,...
-    'UniformOutput',false),'VariableNames',which_preds);
+    'UniformOutput',false));
 
-Tns_simp = cell2table(arrayfun(@(x) sprintf('MC p = %1.3f',x),ns_p_simp,'UniformOutput',false),...
+Tns_simp = cell2table(arrayfun(@(x,y,z) sprintf('t(%d) = %1.1f, %s',x,y,pretty_p_text(z)),...
+    ns_p_simp(:,3),ns_p_simp(:,2),ns_p_simp(:,1),'UniformOutput',false),...
     'RowNames',arrayfun(@(x) sprintf('%d',x),all_surrounds,...
-    'UniformOutput',false),'VariableNames',which_preds);
+    'UniformOutput',false));
+
 
 
     %writetable(Tspike_simp,[main_spike_results,'spike_simp_','.csv'],'WriteRowNames',true)  
     %writetable(Tns_simp,[main_spike_results,'ns_simp_','.csv'],'WriteRowNames',true)  
-end
 
-%% Also table of MC p-values
+% Also table of MC p-values
 spike_p_MC = squeeze(all_p_mc(:,1,main_pred));
 ns_p_MC = squeeze(all_p_mc(:,2,main_pred));
 
-if do_save 
 Tspike_MC = cell2table(arrayfun(@(x) sprintf('MC %s',pretty_p_text(x)),spike_p_MC,'UniformOutput',false),...
     'RowNames',arrayfun(@(x) sprintf('%d',x),all_surrounds,...
     'UniformOutput',false));
@@ -583,10 +591,16 @@ Tns_MC = cell2table(arrayfun(@(x) sprintf('MC %s',pretty_p_text(x)),ns_p_MC,'Uni
     %writetable(Tspike_MC,[main_spike_results,'spike_MC','.csv'],'WriteRowNames',true)  
     %writetable(Tns_MC,[main_spike_results,'ns_MC','.csv'],'WriteRowNames',true)  
     
+if do_save
+    if strcmp(which_p,'simple')
+        %% Also add to main supplemental table
+        writetable(Tspike_simp,[main_spike_results,'Supplemental Table 2.xlsx'],'Range','E2:E12','WriteVariableNames',false)
+        writetable(Tns_simp,[main_spike_results,'Supplemental Table 2.xlsx'],'Range','F2:F12','WriteVariableNames',false)
+    elseif strcmp(which_pc,'mc')
     %% Also add to main supplemental table
-    writetable(Tspike_MC,[main_spike_results,'Supplemental Table 3.xlsx'],'Range','B2:B12','WriteVariableNames',false)
-    writetable(Tns_MC,[main_spike_results,'Supplemental Table 3.xlsx'],'Range','C2:C12','WriteVariableNames',false)
-
+        writetable(Tspike_MC,[main_spike_results,'Supplemental Table 2.xlsx'],'Range','E2:E12','WriteVariableNames',false)
+        writetable(Tns_MC,[main_spike_results,'Supplemental Table 2.xlsx'],'Range','F2:F12','WriteVariableNames',false)
+    end
 end
 
 %% Sentences

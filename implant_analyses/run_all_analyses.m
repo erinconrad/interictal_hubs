@@ -37,8 +37,8 @@ new_rate_analysis([],1,out); % Monte Carlo!
 %% Run distance-rate change correlation analysis
 all_corrs([],1,out); % Monte Carlo!
 
-%% Run alpha-delta ratio analysis
-ad_analyses([],1,out);
+%% Run alpha-delta ratio analysis (I no longer do this)
+%ad_analyses([],1,out);
 
 %% Run anatomy analysis
 anatomy_analyses([],1,out);

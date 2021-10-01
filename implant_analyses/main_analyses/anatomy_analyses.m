@@ -54,6 +54,7 @@ end
 %% Prep final table
 final_array = cell(length(all_metrics),n_surrounds);
 loc_nums = zeros(n_metrics,n_surrounds,length(whichPts),length(loc_names));
+bin_loc_nums = zeros(n_metrics,n_surrounds,length(whichPts),2);
 
 for im = 1:n_metrics
     
@@ -65,7 +66,7 @@ for im = 1:n_metrics
         
         %% prep table
         all_locs = array2table(nan(length(whichPts),length(loc_names)), 'VariableNames',loc_names);
-
+        mt_vs_other = array2table(nan(length(whichPts),2), 'VariableNames',{'MT','all other except unspec'});
         
         for i = 1:length(whichPts)
 
@@ -124,7 +125,22 @@ for im = 1:n_metrics
                 % add to locs table
                 all_locs(i,j) = num2cell(avg_change);
             end
-
+            
+            %% the mt vs other analysis
+            % Get those in MT group
+            chs = strcmp(ana_loc,'mesial temporal');
+            bin_loc_nums(im,is,i,1) = sum(chs);
+            avg_change = nanmean(resp_change(chs));
+            mt_vs_other(i,1) = num2cell(avg_change);
+            
+            
+            % Get those in other groups (ignoring unspecified)
+            chs = strcmp(ana_loc,'white matter') | ...
+                strcmp(ana_loc,'temporal neocortical') | ... 
+                strcmp(ana_loc,'other');
+            bin_loc_nums(im,is,i,2) = sum(chs);
+            avg_change = nanmean(resp_change(chs));
+            mt_vs_other(i,2) = num2cell(avg_change);
             
 
         end
@@ -225,6 +241,32 @@ for im = 1:n_metrics
             end
         end
         
+        %% Do analysis for MT vs other
+        %{
+        mt_vs_other = table2array(mt_vs_other);
+        [~,p,~,stats] = ttest(mt_vs_other(:,1),mt_vs_other(:,2));
+        if is == main_surround
+            fprintf(['\nThe mean (SD) relative %s change in the %d-hour peri-implant '...
+                'period was %1.1f (%1.1f) for %s and %1.1f (%1.1f) for %s '...
+                '(paired t-test: t(%d) = %1.1f, %s).\n'],...
+                all_metrics{im},all_surrounds(is),...    
+                nanmean(mt_vs_other(:,1)),nanstd(mt_vs_other(:,1)),loc_names{2},...
+                nanmean(mt_vs_other(:,1)),nanstd(mt_vs_other(:,1)),'other localizations',...
+                stats.df,stats.tstat,pretty_p_text(p));
+            
+            % Plot it for my own understanding
+            if 0
+            figure
+            for k = 1:2
+                plot(k+rand(size(mt_vs_other,1),1)*0.05,mt_vs_other(:,k),'o')
+                hold on
+
+            end
+            title(all_metrics{im})
+            end
+        end
+        %}
+        
     end
 end
 
@@ -264,7 +306,7 @@ final_table = cell2table(final_array',...
 %writetable(final_table,[main_spike_results,'anatomy.csv'],'WriteRowNames',true)  
 
 %% Also add to main supplemental table
-writetable(final_table,[main_spike_results,'Supplemental Table 4.xlsx'],'Range','C2:D12','WriteVariableNames',false)
+writetable(final_table,[main_spike_results,'Supplemental Table 2.xlsx'],'Range','G2:H12','WriteVariableNames',false)
 
 
 end
