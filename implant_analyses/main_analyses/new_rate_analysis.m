@@ -71,6 +71,7 @@ all_all_true_r = nan(n_surrounds,length(whichPts),n_metrics);
 all_all_mc_r = nan(n_surrounds,length(whichPts),nb,n_metrics);
 all_all_p = nan(n_surrounds,n_metrics);
 all_all_all_p = nan(n_surrounds,length(whichPts),n_metrics);
+all_rate_pval = nan(n_surrounds,length(whichPts),n_metrics);
 
 % Loop over metrics
 for im = 1:n_metrics
@@ -124,7 +125,11 @@ for im = 1:n_metrics
             % overall rate
             ov_pre = nanmean(rate_pre); % mean across electrodes
             ov_post = nanmean(rate_post); 
-
+            
+            % Get stats on individual patient overall rate change
+            rate_pval = mc_overall_rate(rate,surround,cblock,nb,out(i).rate,buffer,do_buffer);
+            all_rate_pval(is,i,im) = rate_pval;
+            
             % Fill up array with data
             all_ov(im,is,i,:) = [ov_pre ov_post];
             
@@ -152,7 +157,7 @@ for im = 1:n_metrics
         [~,p_main_rate,~,stats] = ttest(curr_ov(:,1),curr_ov(:,2));
         tstat = stats.tstat;
         df = stats.df;
-        
+                
         % (2) Does relative spike rate increase correlate with number of electrodes
         ov_change = (curr_ov(:,2)-curr_ov(:,1))./(curr_ov(:,1));
         [r_ov_all,p_ov_all] = corr(ov_change,all_added_elecs(:,1));
@@ -296,6 +301,16 @@ text(1.5,yp,sprintf('%s',get_asterisks(main_stats(im,is,1),1)),...
     'horizontalalignment','center','fontsize',15);
 set(gca,'fontsize',15)
 
+% Results sentence
+curr_rate_pvals = squeeze(all_rate_pval(is,:,im));
+if any(curr_rate_pvals < 0.05/length(curr_rate_pvals))
+    fprintf('\nSurprise significant individual patient rate result\n');
+else
+    fprintf(['\nNo individual patient had a larger peri-revision change in'...
+        ' overall spike rates than that observed at randomly chosen time periods'...
+        ' (Monte Carlo test with Bonferroni correction).\n']);
+end
+
 % Results Sentence
 fprintf(['\nThere was no consistent difference across patients in the'...
     ' pre- (M = %1.1f, SD = %1.1f spikes/min) and post-revision'...
@@ -361,11 +376,33 @@ for im = 1:n_metrics
     set(gca,'fontsize',15)
 
     if im == 1
+        
+        % Results sentence
+        curr_pvals = squeeze(all_all_all_p(is,:,im));
+        if any(curr_pvals < 0.05/length(curr_pvals))
+            fprintf('\nSurprise significant individual patient rho result\n');
+        else
+            fprintf(['\nNo individual patient had a larger peri-revision change in'...
+                ' spike rate distribution than that observed at randomly chosen time periods'...
+                ' (Monte Carlo test with Bonferroni correction).\n']);
+        end
+        
         fprintf(['\nFor the primary surround period of 24 hours, the spike stability '...
             'aggregated across patients (M = %1.2f, SD = %1.2f) was no different '...
             'from chance (Monte Carlo with Fisher''s method: %s) (Figure 4C).\n'],...
             mean(true_r),std(true_r),pretty_p_text(p));
     elseif im == 2
+        
+        % Results sentence
+        curr_pvals = squeeze(all_all_all_p(is,:,im));
+        if any(curr_pvals < 0.05/length(curr_pvals))
+            fprintf('\nSurprise significant individual patient rho result\n');
+        else
+            fprintf(['\nNo individual patient had a larger peri-revision change in'...
+                ' node strength distribution than that observed at randomly chosen time periods'...
+                ' (Monte Carlo test with Bonferroni correction).\n']);
+        end
+        
         fprintf(['\n The group node strength stability in the surround period of 24 hours '...
             '(M = %1.2f, SD = %1.2f) was also no different from '...
             'chance (Monte Carlo with Fisher''s method: %s) (Figure 4D).\n'],...

@@ -6,7 +6,7 @@ all_surrounds = 12*[0.5,1,2,3,4,5,6,7,8,9,10];
 main_surround = 3; %*******24 hours
 main_pred = 1;
 main_resp = 1;
-nb = 1e4;  % change
+nb = 1e2;  % change
 do_save = 1;
 do_buffer = 1;
 type = 'Spearman';
@@ -96,6 +96,15 @@ all_all_r = nan(length(all_surrounds),length(which_resps),length(which_preds),le
 % Individual pt MC p-values
 all_all_p = nan(length(all_surrounds),length(which_resps),length(which_preds),length(whichPts));
 
+% Occurrences of infinite relative change
+inf_rel_change = nan(length(all_surrounds),length(which_resps),length(whichPts));
+
+% Number old elecs
+number_orig_elecs = nan(length(whichPts),1);
+
+% Distance to closest newest elecs
+all_dist = cell(length(whichPts),1);
+
 %% Prep supplemental figure
 figure
 set(gcf,'position',[608 175 1371 514])
@@ -184,10 +193,20 @@ for s = 1:length(all_surrounds)
                         rtext = 'NS change';
                 end
 
+                
 
                 % Monte carlo test (I only do this for the distance
                 % analysis)
                 if p == main_pred
+                    
+                    % Get occurrences of infinite relative change
+                    inf_rel_change(s,r,i) = sum(resp == inf);
+                    number_orig_elecs = length(resp);
+                    
+                    % Distance to closest new elec
+                    all_dist{i} = predictor;
+
+                    % MC test
                     [rho,pval,mc_rho] = mc_corr(rate,ns,predictor,...
                     cblock,surround,nb,which_resp,type,buffer,do_buffer);
                 else
@@ -232,7 +251,7 @@ for s = 1:length(all_surrounds)
                     tilecount = tilecount + 1;
                     plot(predictor,resp,'o','linewidth',2)
                     hold on
-                    
+                                        
                     % add infinite values at some highest value
                     inf_resp = resp == inf;
                     if sum(inf_resp) > 0
@@ -369,6 +388,27 @@ if do_save
     print(gcf,[main_spike_results,sprintf('supp_fig1_surround_%d',all_surrounds(main_surround))],'-dpng')
 end
 
+%% Say how many occurrences of inifinte relative change there are
+s = main_surround;
+
+    
+fprintf(['\nThis occurred for an average of %1.1f (%1.1f%%) electrodes '...
+    'across patients.\n'],...
+    mean(inf_rel_change(s,1,:)),mean(inf_rel_change(s,1,:)./number_orig_elecs*100));
+    
+
+%% Say distance to closest new electrode
+all_all_dist = [];
+for i = 1:length(all_dist)
+   all_all_dist = [all_all_dist;all_dist{i}]; 
+end
+min_dist = cellfun(@min,all_dist);
+fprintf(['\nAcross all patients and all electrodes, the mean (SD) distance '...
+    'to the revision site was %1.1f (%1.1f) mm. '...
+    'Across patients, the original electrode closest to the revision site was '...
+    'on average %1.1f (SD %1.1f) mm from the revision site\n'],...
+    mean(all_all_dist),std(all_all_dist),...
+    mean(min_dist),std(min_dist));
 
 %% initialize main figure
 figure
@@ -468,36 +508,39 @@ for r = 1:length(which_resps)
     count = count+1;
     nexttile(tile_order(count));
     % Plot the individual patient rho's (not transformed)
-    plot(1+0.05*rand(length(whichPts),1),squeeze(all_all_r(s,r,p,:)),'o','markersize',10,'linewidth',2)
+    plot(1+0.3*rand(length(whichPts),1),squeeze(all_all_r(s,r,p,:)),'o','markersize',10,'linewidth',2)
     hold on
     % plot the mean individual patient MCs (not transformed), averaged over
     % iterations
-    plot(2+0.05*rand(length(whichPts),1),(squeeze(mean(all_all_mc_r(s,r,p,:,:),5))),'o','markersize',10,'linewidth',2)
+    errorbar(2+0.3*rand(length(whichPts),1),...
+        (squeeze(mean(all_all_mc_r(s,r,p,:,:),5))),...
+        (squeeze(std(all_all_mc_r(s,r,p,:,:),[],5))),...
+        'o','markersize',10,'linewidth',2)
     ylim([-1 1])
     xlim([0.5 2.5])
     yl = ylim;
     ylim([yl(1) yl(1)+1.1*(yl(2)-yl(1))])
     yl = ylim;
     xl = xlim;
-    plot([1 2],[yl(1)+0.7*(yl(2)-yl(1)) yl(1)+0.7*(yl(2)-yl(1))],...
+    plot([1 2],[yl(1)+0.75*(yl(2)-yl(1)) yl(1)+0.75*(yl(2)-yl(1))],...
             'k','linewidth',2)
     if strcmp(which_p,'simple')
-        text(1.5,yl(1)+0.8*(yl(2)-yl(1)),get_asterisks(all_p_simp(s,r,p),1),...
+        text(1.5,yl(1)+0.82*(yl(2)-yl(1)),get_asterisks(all_p_simp(s,r,p),1),...
         'horizontalalignment','center','fontsize',20)
     
         text(xl(2),yl(2),...
-            sprintf('Combined r = %1.2f\np = %1.3f',...
-            all_r(s,r,p),all_p_simp(s,r,p)),'fontsize',15,...
+            sprintf('Combined r = %1.2f\n%s',...
+            all_r(s,r,p),pretty_p_text(all_p_simp(s,r,p))),'fontsize',15,...
             'horizontalalignment','right',...
                 'verticalalignment','top')
         
     elseif strcmp(which_p,'mc')
-        text(1.5,yl(1)+0.8*(yl(2)-yl(1)),get_asterisks(all_p_mc(s,r,p),1),...
+        text(1.5,yl(1)+0.82*(yl(2)-yl(1)),get_asterisks(all_p_mc(s,r,p),1),...
         'horizontalalignment','center','fontsize',20)
     
         text(xl(2),yl(2),...
-            sprintf('Combined r = %1.2f\nMC p = %1.3f',...
-            all_r(s,r,p),all_p_mc(s,r,p)),'fontsize',15,...
+            sprintf('Combined r = %1.2f\nMC %s',...
+            all_r(s,r,p),pretty_p_text(all_p_mc(s,r,p))),'fontsize',15,...
             'horizontalalignment','right',...
                 'verticalalignment','top')
     end
@@ -604,6 +647,26 @@ if do_save
 end
 
 %% Sentences
+
+sp_p_main = squeeze(all_all_p(3,1,1,:));
+ns_p_main = squeeze(all_all_p(3,2,1,:));
+
+if any(sp_p_main < 0.05/length(sp_p_main))
+    fprintf('\nSurprise significant individual patient spike correlation result\n');
+else
+    fprintf(['\nNo individual patient had a larger peri-revision correlation between relative spike rate change and'...
+        ' distance from the implant revision site than that observed at randomly chosen time periods'...
+        ' (Monte Carlo test with Bonferroni correction).\n']);
+end
+
+if any(ns_p_main < 0.05/length(ns_p_main))
+    fprintf('\nSurprise significant individual patient rho result\n');
+else
+    fprintf(['\nNo individual patient had a larger peri-revision correlation between relative node strength change and'...
+        ' distance from the implant revision site than that observed at randomly chosen time periods'...
+        ' (Monte Carlo test with Bonferroni correction).\n']);
+end
+
 fprintf(['\n\nThe average correlation across patients between relative spike rate change '...
     'and distance from the revision site was %1.2f, which was not significantly '...
     'different from zero (t(%d) = %1.1f, p = %1.3f). Furthermore, this correlation '...
