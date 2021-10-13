@@ -612,6 +612,7 @@ for i = 1:2 % spikes and node strength
     xlim([0 5])
     xticks(1:4)
     xticklabels(loc_names)
+    xtickangle(30)
     if i == 1
         ylabel({'Relative spike','rate change'});
     else
