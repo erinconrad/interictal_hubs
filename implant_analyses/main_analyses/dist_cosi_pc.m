@@ -41,10 +41,10 @@ cols = [0, 0.4470, 0.7410;...
 
 %% Initialize figure
 figure
-set(gcf,'position',[29 100 1340 550])
-tiledlayout(2,3,'TileSpacing','tight','padding','tight')
+set(gcf,'position',[29 100 800 800])
+tiledlayout(3,2,'TileSpacing','tight','padding','tight')
 
-%% First row is example plots for a single patient
+%% First column is example plots for a single patient
 p = 1;
 dist = out(p).dist;
 cosi = out(p).cosi;
@@ -52,7 +52,7 @@ pc = out(p).metrics.added_pc;
 labels = out(p).unchanged_labels;
 
 % Correlate distance and co-spike index
-nexttile
+nexttile(1)
 plot(dist,cosi,'o','linewidth',2,'color',cols(1,:))
 if 0
 plot(dist,cosi,'o','color',[1 1 1])
@@ -64,7 +64,7 @@ set(gca,'fontsize',15)
 
 
 % Correlate distance and pearson correlation with added electrodes
-nexttile
+nexttile(3)
 plot(dist,pc,'o','linewidth',2,'color',cols(2,:))
 xlabel('Distance from added electrodes (mm)')
 ylabel('Functional connectivity')
@@ -72,7 +72,7 @@ set(gca,'fontsize',15)
 
 
 % Correlate pearson correlation and co-spike index
-nexttile
+nexttile(5)
 plot(pc,cosi,'o','linewidth',2,'color',cols(3,:))
 xlabel('Functional connectivity')
 ylabel('Co-spike index')
@@ -139,7 +139,7 @@ cosi_pc_df = stats.df;
 cosi_pc_tstat = stats.tstat;
 
 % Plot dist_cosi for each patient
-nexttile
+nexttile(2)
 plot(all_dist_cosi(:,1),'o','linewidth',2,'markersize',15,'color',cols(1,:))
 hold on
 %plot(xlim,[dist_cosi_r dist_cosi_r],'linewidth',2);
@@ -157,7 +157,7 @@ text(xl(2),yl(2),sprintf('Mean r = %1.2f\n%s',mean(all_dist_cosi(:,1)),get_p_tex
 
 
 % Plot dist_pc for each patient
-nexttile
+nexttile(4)
 plot(all_dist_pc(:,1),'o','linewidth',2,'markersize',15,'color',cols(2,:))
 hold on
 %plot(xlim,[dist_pc_r dist_pc_r],'linewidth',2);
@@ -175,7 +175,7 @@ text(xl(2),yl(2),sprintf('Mean r = %1.2f\n%s',mean(all_dist_pc(:,1)),get_p_text(
     'fontsize',15,'horizontalalignment','right','verticalalignment','top')
 
 % Plot pc_cosi for each patient
-nexttile
+nexttile(6)
 plot(all_cosi_pc(:,1),'o','linewidth',2,'markersize',15,'color',cols(3,:))
 hold on
 %plot(xlim,[cosi_pc_r cosi_pc_r],'linewidth',2);
@@ -193,11 +193,20 @@ text(xl(2),yl(2),sprintf('Mean r = %1.2f\n%s',mean(all_cosi_pc(:,1)),get_p_text(
     'fontsize',15,'horizontalalignment','right','verticalalignment','top')
 
 annotation('textbox',[0 0.91 0.1 0.1],'String','A','fontsize',20,'linestyle','none')
+annotation('textbox',[0.495 0.91 0.1 0.1],'String','B','fontsize',20,'linestyle','none')
+annotation('textbox',[0 0.58 0.1 0.1],'String','C','fontsize',20,'linestyle','none')
+annotation('textbox',[0.495 0.58 0.1 0.1],'String','D','fontsize',20,'linestyle','none')
+annotation('textbox',[0 0.25 0.1 0.1],'String','E','fontsize',20,'linestyle','none')
+annotation('textbox',[0.495 0.25 0.1 0.1],'String','F','fontsize',20,'linestyle','none')
+
+%{
+annotation('textbox',[0 0.91 0.1 0.1],'String','A','fontsize',20,'linestyle','none')
 annotation('textbox',[0.33 0.91 0.1 0.1],'String','B','fontsize',20,'linestyle','none')
 annotation('textbox',[0.67 0.91 0.1 0.1],'String','C','fontsize',20,'linestyle','none')
 annotation('textbox',[0 0.42 0.1 0.1],'String','D','fontsize',20,'linestyle','none')
 annotation('textbox',[0.33 0.42 0.1 0.1],'String','E','fontsize',20,'linestyle','none')
 annotation('textbox',[0.67 0.42 0.1 0.1],'String','F','fontsize',20,'linestyle','none')
+    %}
 
 print(gcf,[main_spike_results,'dist_cosi_pc_corr'],'-depsc');
 
