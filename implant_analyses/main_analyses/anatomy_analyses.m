@@ -1,4 +1,4 @@
-function anatomy_analyses(whichPts,saved_out,out)
+function [output_for_plot,out_loc_names] = anatomy_analyses(whichPts,saved_out,out)
 
 %% Parameters
 all_surrounds = 12*[0.5,1,2,3,4,5,6,7,8,9,10];
@@ -55,6 +55,7 @@ end
 final_array = cell(length(all_metrics),n_surrounds);
 loc_nums = zeros(n_metrics,n_surrounds,length(whichPts),length(loc_names));
 bin_loc_nums = zeros(n_metrics,n_surrounds,length(whichPts),2);
+output_for_plot = nan(length(whichPts),4,2);
 
 for im = 1:n_metrics
     
@@ -219,6 +220,11 @@ for im = 1:n_metrics
         
         % Show full result if main surround
         if is == main_surround
+            if im == 1
+                output_for_plot(:,:,1) = all_locs_minus_unspecified;
+            elseif im == 2
+               output_for_plot(:,:,2) = all_locs_minus_unspecified;
+            end
             fprintf(['\nThe mean (SD) relative %s change in the %d-hour peri-implant surround period was %1.1f (%1.1f)'...
                 ' for %s, %1.1f (%1.1f) for %s, %1.1f (%1.1f) for %s, and %1.1f (%1.1f) for %s regions.'...
                 ' The difference between groups was not significant (Skillings-Mack %s)\n'],...
@@ -271,6 +277,7 @@ for im = 1:n_metrics
 end
 
 %% show numbers
+out_loc_names = loc_names(2:5);
 s = main_surround;
 im = 1;
     

@@ -6,7 +6,7 @@ all_surrounds = 12*[0.5,1,2,3,4,5,6,7,8,9,10];
 main_surround = 3; %*******24 hours
 main_pred = 1;
 main_resp = 1;
-nb = 1e2;  % change
+nb = 1e4;  % change
 do_save = 1;
 do_buffer = 1;
 type = 'Spearman';
@@ -410,15 +410,18 @@ fprintf(['\nAcross all patients and all electrodes, the mean (SD) distance '...
     mean(all_all_dist),std(all_all_dist),...
     mean(min_dist),std(min_dist));
 
+%% Do anatomy analysis
+[output_for_plot,loc_names] = anatomy_analyses(whichPts,saved_out,out);
+
 %% initialize main figure
 figure
 %set(gcf,'position',[50 547 700 800])
-set(gcf,'position',[50 329 687 468])
+set(gcf,'position',[50 329 687 700])
 %{
 tt = tiledlayout(3,2,'TileSpacing','compact','padding','compact');
 tile_order = [1 3 5 2 4 6];
 %}
-tt = tiledlayout(2,2,'TileSpacing','compact','padding','compact');
+tt = tiledlayout(3,2,'TileSpacing','compact','padding','compact');
 tile_order = [1 3 2 4];
 
 % set predictor and surround
@@ -508,11 +511,11 @@ for r = 1:length(which_resps)
     count = count+1;
     nexttile(tile_order(count));
     % Plot the individual patient rho's (not transformed)
-    plot(1+0.3*rand(length(whichPts),1),squeeze(all_all_r(s,r,p,:)),'o','markersize',10,'linewidth',2)
+    plot(1+0.08*randn(length(whichPts),1),squeeze(all_all_r(s,r,p,:)),'o','markersize',10,'linewidth',2)
     hold on
     % plot the mean individual patient MCs (not transformed), averaged over
     % iterations
-    errorbar(2+0.3*rand(length(whichPts),1),...
+    errorbar(2+0.08*randn(length(whichPts),1),...
         (squeeze(mean(all_all_mc_r(s,r,p,:,:),5))),...
         (squeeze(std(all_all_mc_r(s,r,p,:,:),[],5))),...
         'o','markersize',10,'linewidth',2)
@@ -536,7 +539,7 @@ for r = 1:length(which_resps)
         
     elseif strcmp(which_p,'mc')
         text(1.5,yl(1)+0.82*(yl(2)-yl(1)),get_asterisks(all_p_mc(s,r,p),1),...
-        'horizontalalignment','center','fontsize',20)
+        'horizontalalignment','center','fontsize',15)
     
         text(xl(2),yl(2),...
             sprintf('Combined r = %1.2f\nMC %s',...
@@ -577,6 +580,7 @@ for r = 1:length(which_resps)
         end
         
     end
+    xlim([0 n_surrounds+1])
     xticks(1:n_surrounds)
     xticklabels(all_surrounds)
     xlabel('Peri-revision period (hours)')
@@ -585,11 +589,45 @@ for r = 1:length(which_resps)
     
 end
 
+%% do anatomy plots
+for i = 1:2 % spikes and node strength
+    nexttile
+    for j = 1:4
+        data = squeeze(output_for_plot(:,j,i));
+        errorbar(j,mean(data),std(data),'o','linewidth',2,'markersize',10);
+        hold on
+    end
+    p = friedman(output_for_plot(:,:,i),1,'off');
+    if p < 0.05, error('woah'); end
+    
+    yl = ylim;
+    ybar = yl(1) + 1.02*(yl(2)-yl(1));
+    ytext = yl(1) + 1.1*(yl(2)-yl(1));
+    ylnew = [yl(1) yl(1) + 1.15*(yl(2)-yl(1))];
+    ylim(ylnew)
+    
+    plot([1 4],[ybar ybar],'k-','linewidth',2)
+    text(2.5,ytext,'ns','horizontalalignment','center','fontsize',15)
+    
+    xlim([0 5])
+    xticks(1:4)
+    xticklabels(loc_names)
+    if i == 1
+        ylabel({'Relative spike','rate change'});
+    else
+        ylabel({'Relative node','strength change'});
+    end
+    set(gca,'fontsize',15)
+end
+
+
 %% Annotations
-annotation('textbox',[0 0.9 0.1 0.1],'String','A','fontsize',20,'linestyle','none')
-annotation('textbox',[0.51 0.9 0.1 0.1],'String','B','fontsize',20,'linestyle','none')
-annotation('textbox',[0 0.46 0.1 0.1],'String','C','fontsize',20,'linestyle','none')
-annotation('textbox',[0.51 0.46 0.1 0.1],'String','D','fontsize',20,'linestyle','none')
+annotation('textbox',[0.03 0.90 0.1 0.1],'String','A','fontsize',20,'linestyle','none')
+annotation('textbox',[0.54 0.90 0.1 0.1],'String','B','fontsize',20,'linestyle','none')
+annotation('textbox',[0.03 0.59 0.1 0.1],'String','C','fontsize',20,'linestyle','none')
+annotation('textbox',[0.54 0.59 0.1 0.1],'String','D','fontsize',20,'linestyle','none')
+annotation('textbox',[0.03 0.28 0.1 0.1],'String','E','fontsize',20,'linestyle','none')
+annotation('textbox',[0.54 0.28 0.1 0.1],'String','F','fontsize',20,'linestyle','none')
 %annotation('textbox',[0 0.58 0.1 0.1],'String','C','fontsize',20,'linestyle','none')
 %annotation('textbox',[0.51 0.58 0.1 0.1],'String','D','fontsize',20,'linestyle','none')
 %annotation('textbox',[0 0.24 0.1 0.1],'String','E','fontsize',20,'linestyle','none')
