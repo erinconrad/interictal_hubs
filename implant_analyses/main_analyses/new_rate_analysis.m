@@ -8,9 +8,9 @@ function new_rate_analysis(whichPts,saved_out,out)
 all_surrounds = 12*[0.5,1,2,3,4,5,6,7,8,9,10];
 main_surround = 3; %24 hour peri-revision surround
 main_metric = 1;
-ex_p = 2;
+ex_p = 4;
 do_buffer = 1;
-nb = 1e4; % CHANGE
+nb = 1e2; % CHANGE
 
 %% Other info
 n_surrounds = length(all_surrounds);
@@ -241,8 +241,8 @@ plot([post(1) post(end)],[ybar ybar],'color',cols(2,:),'linewidth',4);
 xl = xlim;
 cblock_fig_units = axescoord2figurecoord(cblock,nan);
 ytext_fig_units = axescoord2figurecoord(ytext,nan);
-annotation('textarrow',[0.39 cblock_fig_units],...
-    [0.93 0.86],'String','Revision','color',cols(3,:),...
+annotation('textarrow',[0.2 cblock_fig_units-0.02],...
+    [0.935 0.86],'String','Revision','color',cols(3,:),...
     'fontsize',15,'linewidth',2);
 
 %{
