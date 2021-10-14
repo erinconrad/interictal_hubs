@@ -10,7 +10,7 @@ main_surround = 3; %24 hour peri-revision surround
 main_metric = 1;
 ex_p = 4;
 do_buffer = 1;
-nb = 1e2; % CHANGE
+nb = 1e4; % CHANGE
 
 %% Other info
 n_surrounds = length(all_surrounds);
