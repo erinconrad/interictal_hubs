@@ -1,7 +1,7 @@
 function methods_figure(out)
 
 %% Parameters
-p = 2;
+p = 6;
 surround = 24;
 csize = 200;
 
@@ -58,6 +58,20 @@ all_dists = vecnorm(unchanged_locs(max_dist_elec,:) - added_locs,2,2);
 % Get which added elec it's closest to
 all_dists = vecnorm(unchanged_locs(min_dist_elec,:) - added_locs,2,2);
 [~,closest_min_dist] = min(all_dists);
+
+
+%% test plot
+scatter3(unchanged_locs(:,1),unchanged_locs(:,2),unchanged_locs(:,3),csize,'k','linewidth',2);
+hold on
+%text(unchanged_locs(:,1),unchanged_locs(:,2),unchanged_locs(:,3),unchanged_labels);
+scatter3(added_locs(:,1),added_locs(:,2),added_locs(:,3),csize,'rp','linewidth',2);
+
+% Plot some nearby ones
+[~,I] = (sort(dist));
+scatter3(unchanged_locs(I(1:3),1),unchanged_locs(I(1:3),2),unchanged_locs(I(1:3),3),csize,'b','linewidth',2);
+all_dists = vecnorm(unchanged_locs(I(1),:) - added_locs,2,2);
+[~,closest_min_dist] = min(all_dists);
+scatter3(added_locs(closest_min_dist,1),added_locs(closest_min_dist,2),added_locs(closest_min_dist,3),csize,'bp','linewidth',2);
 
 %% Spike rate over time
 figure
@@ -134,6 +148,11 @@ scatter3(unchanged_locs(:,1),unchanged_locs(:,2),unchanged_locs(:,3),csize,'k','
 hold on
 %text(unchanged_locs(:,1),unchanged_locs(:,2),unchanged_locs(:,3),unchanged_labels);
 scatter3(added_locs(:,1),added_locs(:,2),added_locs(:,3),csize,'rp','linewidth',2);
+
+% Plot some nearby ones
+[~,I] = (sort(out(p).dist));
+scatter3(unchanged_locs(I(1:3),1),unchanged_locs(I(1:3),2),unchanged_locs(I(1:3),3),csize,'b','linewidth',2);
+
 view([81,-6])
 axis off
 %cs = colorbar;

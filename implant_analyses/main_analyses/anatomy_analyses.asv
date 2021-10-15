@@ -4,7 +4,7 @@ function [output_for_plot,out_loc_names] = anatomy_analyses(whichPts,saved_out,o
 all_surrounds = 12*[0.5,1,2,3,4,5,6,7,8,9,10];
 do_norm = 0; % doesn't seem to make much difference so I will keep 0 for simplicity
 main_surround = 3;
-which_resp = 'rel';%'rel';% 
+which_resp = 'abs';%'rel';%
 which_test = 'skillmack';%'friedman';
 
 %% Other info
@@ -99,7 +99,13 @@ for im = 1:n_metrics
             %% Define pre and post
             [pre,post] = get_surround_times(out(i).rate,cblock,surround);
 
-     
+            %% Get rate/ns relative change
+            if strcmp(which_resp,'abs')
+                resp_change = (nanmean(resp(:,post),2) - nanmean(resp(:,pre),2));
+            elseif strcmp(which_resp,'rel')
+                resp_change = (nanmean(resp(:,post),2) - nanmean(resp(:,pre),2))./abs(nanmean(resp(:,pre),2));
+            end
+                
             %% Group by localization
             [~,ana_loc] = anatomy_grouper(unchanged_anatomy);
             
@@ -121,22 +127,7 @@ for im = 1:n_metrics
                 loc_nums(im,is,i,j) = sum(chs);
 
                 % Get the average rate change for those chs
-                %% Get rate/ns relative change
-                if strcmp(which_resp,'abs')
-                    resp_change = (nanmean(resp(chs,post),'all') - nanmean(resp(chs,pre),'all'));
-                elseif strcmp(which_resp,'rel')
-                    resp_change = (nanmean(resp(chs,post),'all') - nanmean(resp(chs,pre),'all'))./abs(nanmean(resp(chs,pre),'all'));
-                end
-                avg_change = resp_change;
-                
-                %{
-                if strcmp(which_resp,'abs')
-                    resp_change = (nanmean(resp(chs,post),2) - nanmean(resp(chs,pre),2));
-                elseif strcmp(which_resp,'rel')
-                    resp_change = (nanmean(resp(chs,post),2) - nanmean(resp(chs,pre),2))./abs(nanmean(resp(chs,pre),2));
-                end
                 avg_change = nanmean(resp_change(chs));
-                %}
                 
                 % add to locs table
                 all_locs(i,j) = num2cell(avg_change);
@@ -146,8 +137,8 @@ for im = 1:n_metrics
             % Get those in MT group
             chs = strcmp(ana_loc,'mesial temporal');
             bin_loc_nums(im,is,i,1) = sum(chs);
-            %avg_change = nanmean(resp_change(chs));
-            %mt_vs_other(i,1) = num2cell(avg_change);
+            avg_change = nanmean(resp_change(chs));
+            mt_vs_other(i,1) = num2cell(avg_change);
             
             
             % Get those in other groups (ignoring unspecified)
@@ -155,8 +146,8 @@ for im = 1:n_metrics
                 strcmp(ana_loc,'temporal neocortical') | ... 
                 strcmp(ana_loc,'other');
             bin_loc_nums(im,is,i,2) = sum(chs);
-            %avg_change = nanmean(resp_change(chs));
-            %mt_vs_other(i,2) = num2cell(avg_change);
+            avg_change = nanmean(resp_change(chs));
+            mt_vs_other(i,2) = num2cell(avg_change);
             
 
         end
@@ -176,7 +167,7 @@ for im = 1:n_metrics
         elseif strcmp(which_test,'friedman')
             [p,~,stats] = friedman(all_locs_minus_unspecified,1,'off');
         end
-        %
+        %{
         if sum(isnan(all_locs_minus_unspecified)) == 0
             pf = friedman(all_locs_minus_unspecified,1,'off');
             if abs(p-pf) > 0.01
@@ -191,8 +182,8 @@ for im = 1:n_metrics
         curr_string = sprintf('chi^2(%d) = %1.1f, %s',df,chi2,pretty_p_text(p));
         final_array{im,is} = (curr_string);
         
-        % Do between group analysis if p < 0.05/nsurrounds
-        if p < 0.05/length(all_surrounds)
+        % Do between group analysis if p < 0.05
+        if p < 0.05
             
             if 0
                 figure
@@ -257,15 +248,7 @@ for im = 1:n_metrics
                     nanmean(all_locs_minus_unspecified(:,4)),nanstd(all_locs_minus_unspecified(:,4)),loc_names{5},...
                     curr_string);
             elseif strcmp(which_resp,'abs')
-                fprintf(['\nThe mean (SD) %s change in the %d-hour peri-implant surround period was %1.1f (%1.1f)'...
-                    ' for %s, %1.1f (%1.1f) for %s, %1.1f (%1.1f) for %s, and %1.1f (%1.1f) for %s regions.'...
-                    ' The difference between groups was not significant (Skillings-Mack %s)\n'],...
-                    all_metrics{im},all_surrounds(is),...
-                    nanmean(all_locs_minus_unspecified(:,1)),nanstd(all_locs_minus_unspecified(:,1)),loc_names{2},...
-                    nanmean(all_locs_minus_unspecified(:,2)),nanstd(all_locs_minus_unspecified(:,2)),loc_names{3},...
-                    nanmean(all_locs_minus_unspecified(:,3)),nanstd(all_locs_minus_unspecified(:,3)),loc_names{4},...
-                    nanmean(all_locs_minus_unspecified(:,4)),nanstd(all_locs_minus_unspecified(:,4)),loc_names{5},...
-                    curr_string);
+                
                 
             end
             

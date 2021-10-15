@@ -5,7 +5,7 @@ Double checked
 %}
 
 %% User change parameters
-all_surrounds = 12*[0.5,1,2,3,4,5,6,7,8,9,10];
+all_surrounds = 12*[0.5,1,2,3,4,5,6,7,8,9,10]; % number of blocks in the early and late period
 main_surround = 3;%3 %24 hour peri-revision surround
 main_metric = 1;
 ex_p = 5;

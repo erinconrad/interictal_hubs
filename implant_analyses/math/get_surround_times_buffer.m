@@ -19,6 +19,7 @@ post = min(cblock+buffer+post_nans,size(rate,2)):...
     min(cblock+surround+buffer+post_nans,size(rate,2)); % go buffer ahead from the first non nan time
 
 
+% show the times I will use for the fake pre and post
 if 0
     figure
     turn_nans_white(rate)

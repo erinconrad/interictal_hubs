@@ -117,7 +117,7 @@ if 0
     plot(sortedmc)
     hold on
     if true_rho < 0
-        plot(find(sortedmc<=true_rho),sortedmc(sortedmc<=true_rho),'r')
+        plot(find((sortedmc)<=true_rho),sortedmc(sortedmc<=true_rho),'r')
     else
         plot(find(sortedmc>=true_rho),sortedmc(sortedmc>=true_rho),'r')
     end
