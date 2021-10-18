@@ -25,8 +25,6 @@ addpath(genpath(locations.script_folder)); % path to the interictal_hubs codebas
 out = load('out.mat');
 out = out.out;
 
-%% Run distance-FC-cosi correlation analysis
-dist_cosi_pc([],1,out);
 
 %% Run compare across implant analysis
 compare_across_implant([],1,out); 
@@ -38,8 +36,5 @@ new_rate_analysis([],1,out); % Monte Carlo!
 all_corrs([],1,out); % Monte Carlo!
 % Note that this calls the anatomy analysis as part of it
 
-%% Run alpha-delta ratio analysis (I no longer do this)
-%ad_analyses([],1,out);
-
-%% Run anatomy analysis
-%anatomy_analyses([],1,out);
+%% Run distance-FC-cosi correlation analysis
+dist_cosi_pc([],1,out);
