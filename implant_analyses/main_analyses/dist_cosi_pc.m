@@ -79,6 +79,11 @@ ylabel('Co-spike index')
 set(gca,'fontsize',15)
 
 %% Second row is aggregate patient data
+
+% anonymous function doing correlation
+mycorr = @(x1,x2) corr(x1,x2,'rows','pairwise');
+nboot = 1e4; %  bootstrap iterations
+
 all_dist_cosi = [];
 all_dist_pc = [];
 all_cosi_pc = [];
@@ -95,15 +100,17 @@ for i = 1:length(whichPts)
     dist_pc_r = corr(dist,pc,'rows','pairwise');
     cosi_pc_r = corr(cosi,pc,'rows','pairwise');
     
-    % Fisher r-to-z transformation, get z-score out
+    
+    % Fisher r-to-z transformation, get z-score out; the last 2 columns are
+    % the bootstrap lower and upper confidence intervals
     [z,score,p] = fisher_transform(dist_cosi_r,sum(~isnan(dist) & ~isnan(cosi)));
-    all_dist_cosi = [all_dist_cosi;dist_cosi_r z score p];
+    all_dist_cosi = [all_dist_cosi;dist_cosi_r z score p bootci(nboot,{mycorr,dist,cosi})'];
     
     [z,score,p] = fisher_transform(dist_pc_r,sum(~isnan(dist) & ~isnan(pc)));
-    all_dist_pc = [all_dist_pc;dist_pc_r z score p];
+    all_dist_pc = [all_dist_pc;dist_pc_r z score p bootci(nboot,{mycorr,dist,pc})'];
     
     [z,score,p] = fisher_transform(cosi_pc_r,sum(~isnan(cosi) & ~isnan(pc)));
-    all_cosi_pc = [all_cosi_pc;cosi_pc_r z score p];
+    all_cosi_pc = [all_cosi_pc;cosi_pc_r z score p bootci(nboot,{mycorr,cosi,pc})'];
     
 end
 
@@ -140,7 +147,9 @@ cosi_pc_tstat = stats.tstat;
 
 % Plot dist_cosi for each patient
 nexttile(2)
-plot(all_dist_cosi(:,1),'o','linewidth',2,'markersize',15,'color',cols(1,:))
+%plot(all_dist_cosi(:,1),'o','linewidth',2,'markersize',15,'color',cols(1,:))
+errorbar(1:10,all_dist_cosi(:,1),all_dist_cosi(:,1)-all_dist_cosi(:,end-1),...
+    all_dist_cosi(:,end)-all_dist_cosi(:,1),'o','linewidth',2,'markersize',15,'color',cols(1,:))
 hold on
 %plot(xlim,[dist_cosi_r dist_cosi_r],'linewidth',2);
 set(gca,'fontsize',15)
@@ -158,7 +167,9 @@ text(xl(2),yl(2),sprintf('Mean r = %1.2f\n%s',mean(all_dist_cosi(:,1)),get_p_tex
 
 % Plot dist_pc for each patient
 nexttile(4)
-plot(all_dist_pc(:,1),'o','linewidth',2,'markersize',15,'color',cols(2,:))
+%plot(all_dist_pc(:,1),'o','linewidth',2,'markersize',15,'color',cols(2,:))
+errorbar(1:10,all_dist_pc(:,1),all_dist_pc(:,1)-all_dist_pc(:,end-1),...
+    all_dist_pc(:,end)-all_dist_pc(:,1),'o','linewidth',2,'markersize',15,'color',cols(2,:))
 hold on
 %plot(xlim,[dist_pc_r dist_pc_r],'linewidth',2);
 set(gca,'fontsize',15)
@@ -176,7 +187,9 @@ text(xl(2),yl(2),sprintf('Mean r = %1.2f\n%s',mean(all_dist_pc(:,1)),get_p_text(
 
 % Plot pc_cosi for each patient
 nexttile(6)
-plot(all_cosi_pc(:,1),'o','linewidth',2,'markersize',15,'color',cols(3,:))
+%plot(all_cosi_pc(:,1),'o','linewidth',2,'markersize',15,'color',cols(3,:))
+errorbar(1:10,all_cosi_pc(:,1),all_cosi_pc(:,1)-all_cosi_pc(:,end-1),...
+   all_cosi_pc(:,end)-all_cosi_pc(:,1),'o','linewidth',2,'markersize',15,'color',cols(3,:))
 hold on
 %plot(xlim,[cosi_pc_r cosi_pc_r],'linewidth',2);
 set(gca,'fontsize',15)

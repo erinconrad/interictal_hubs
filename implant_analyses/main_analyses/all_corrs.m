@@ -385,7 +385,7 @@ end
 
 % Save the supplemental figure
 if do_save
-    print(gcf,[main_spike_results,sprintf('supp_fig1_surround_%d',all_surrounds(main_surround))],'-dpng')
+    print(gcf,[main_spike_results,sprintf('supp_fig1_surround_%d',all_surrounds(main_surround))],'-depsc')
 end
 
 %% Say how many occurrences of inifinte relative change there are
