@@ -75,8 +75,8 @@ for im = 1:n_metrics
 
 
             %% unchanegd labels, cblock
-            unchanged_labels = out(i).unchanged_labels;
             cblock = out(i).change_block;
+            unchanged_labels = out(i).unchanged_labels;
             switch metric
                 case 'spike rate'
                     resp = out(i).rate;
@@ -93,6 +93,7 @@ for im = 1:n_metrics
 
             %% Remove EKG and scalp electrodes
             ekg = identify_ekg_scalp(out(i).unchanged_labels);
+            unchanged_labels(ekg) = [];
             resp(ekg,:) = [];
             unchanged_anatomy(ekg) = [];
             
@@ -106,7 +107,7 @@ for im = 1:n_metrics
             if 0
                 % show result of anatomy grouper
                 fprintf('\n%s:\n',out(i).name)
-                table(unchanged_anatomy,ana_loc)
+                table(unchanged_labels,unchanged_anatomy,ana_loc)
                 pause
                 
             end
@@ -125,6 +126,12 @@ for im = 1:n_metrics
                 if strcmp(which_resp,'abs')
                     resp_change = (nanmean(resp(chs,post),'all') - nanmean(resp(chs,pre),'all'));
                 elseif strcmp(which_resp,'rel')
+                   % resp_change = (nansum(resp(chs,post),'all') - nansum(resp(chs,pre),'all'))./abs(nansum(resp(chs,pre),'all'));
+                   % nansum slightly different. I think nanmean makes more
+                   % sense because then, if one electrode disconnected, the
+                   % nansum would essentially say it had fewer spikes
+                   % because it does not divide by the number of non-nan
+                   % channels. But results basically the same
                     resp_change = (nanmean(resp(chs,post),'all') - nanmean(resp(chs,pre),'all'))./abs(nanmean(resp(chs,pre),'all'));
                 end
                 avg_change = resp_change;
@@ -191,7 +198,8 @@ for im = 1:n_metrics
         curr_string = sprintf('chi^2(%d) = %1.1f, %s',df,chi2,pretty_p_text(p));
         final_array{im,is} = (curr_string);
         
-        % Do between group analysis if p < 0.05/nsurrounds
+        % Do between group analysis if p < 0.05/nsurrounds (this doesn't
+        % happen)
         if p < 0.05/length(all_surrounds)
             
             if 0

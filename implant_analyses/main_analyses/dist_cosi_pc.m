@@ -103,6 +103,8 @@ for i = 1:length(whichPts)
     
     % Fisher r-to-z transformation, get z-score out; the last 2 columns are
     % the bootstrap lower and upper confidence intervals
+    % 1 = r, 2 = z, 3 = z-score (unused), 4 = p-value, 5 = lower 95% CI, 6
+    % = upper 95% CI
     [z,score,p] = fisher_transform(dist_cosi_r,sum(~isnan(dist) & ~isnan(cosi)));
     all_dist_cosi = [all_dist_cosi;dist_cosi_r z score p bootci(nboot,{mycorr,dist,cosi})'];
     
@@ -148,6 +150,7 @@ cosi_pc_tstat = stats.tstat;
 % Plot dist_cosi for each patient
 nexttile(2)
 %plot(all_dist_cosi(:,1),'o','linewidth',2,'markersize',15,'color',cols(1,:))
+% error bars are upper CI - r, r - lower CI
 errorbar(1:10,all_dist_cosi(:,1),all_dist_cosi(:,1)-all_dist_cosi(:,end-1),...
     all_dist_cosi(:,end)-all_dist_cosi(:,1),'o','linewidth',2,'markersize',15,'color',cols(1,:))
 hold on

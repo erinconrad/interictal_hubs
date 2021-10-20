@@ -159,7 +159,7 @@ for s = 1:length(all_surrounds)
                 switch which_pred
                     case 'dist'
                         predictor = out(i).dist;
-                        ptext = 'Distance';  
+                        ptext = 'Distance (mm)';  
                     case 'ns'
                         predictor = out(i).metrics.added_pc;
                         ptext = 'FC';  
