@@ -174,9 +174,11 @@ for im = 1:n_metrics
         % for Friedman, remove unspecified category
         all_locs_minus_unspecified = all_locs_array(:,[2:end]);
         
-        % revmoe missing pt
+        % revmoe missing pt (none missing anymore so this does nothing)
+        %{
         missing = nansum(all_locs_minus_unspecified,2) == 0;
         all_locs_minus_unspecified(missing,:) = [];
+        %}
         
         if strcmp(which_test,'skillmack')
             [p stats] = skillmack(all_locs_minus_unspecified,1);
@@ -355,7 +357,7 @@ final_table = cell2table(final_array',...
 %writetable(final_table,[main_spike_results,'anatomy.csv'],'WriteRowNames',true)  
 
 %% Also add to main supplemental table
-writetable(final_table,[main_spike_results,'Supplemental Table 2.xlsx'],'Range','G2:H12','WriteVariableNames',false)
+writetable(final_table,[main_spike_results,'Supplemental Table 3.xlsx'],'Range','G2:H12','WriteVariableNames',false)
 
 
 end

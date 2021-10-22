@@ -29,9 +29,11 @@ for ib = 1:nb
 
         if length(fpre) == 1 || length(fpost) == 1, continue; end
         
+        % Average across fake pre and fake post times
         fpre = nanmean(rate(:,fpre),2);
         fpost = nanmean(rate(:,fpost),2);
 
+        % Average across electrodes
         perm_diff_temp = nanmean(fpost) - nanmean(fpre);
         
         if isnan(perm_diff_temp)

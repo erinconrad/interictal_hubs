@@ -1,5 +1,10 @@
 function all_corrs(whichPts,saved_out,out)
 
+%{
+This analysis tests whether electrodes closer to the revision site
+experience a larger change in electrographic features peri-revision.
+%}
+
 %% Parameters
 do_alt = 0;
 all_surrounds = 12*[0.5,1,2,3,4,5,6,7,8,9,10];
@@ -14,7 +19,7 @@ type = 'Spearman';
 %% Do combined probability test rather than more complicated method? (Should be 1)
 do_comb_p = 1; % should be 1
 do_fisher = 1; % Do fisher transformation on data? Should be 1
-weighted_avg = 1; % weight by n-3
+weighted_avg = 1; % weight by n-3 (doesn't matter, I no longer do this)
 
 %% For supplemental table, do simple or mc p value? (should be 'simple')
 which_p = 'simple'; % other is mc
@@ -115,12 +120,12 @@ tilecount = 0;
 for s = 1:length(all_surrounds)
     surround = all_surrounds(s);
     % Loop over responses
-    for r = 1:length(which_resps)
+    for r = 1:length(which_resps) % relative rate change, relative node strength change
 
         which_resp = which_resps{r};
 
         % Loop over predictors
-        for p = 1:length(which_preds)
+        for p = 1:length(which_preds) % distance, FC, cospike index
 
             which_pred = which_preds{p};
 
@@ -677,12 +682,12 @@ Tns_MC = cell2table(arrayfun(@(x) sprintf('MC %s',pretty_p_text(x)),ns_p_MC,'Uni
 if do_save
     if strcmp(which_p,'simple')
         %% Also add to main supplemental table
-        writetable(Tspike_simp,[main_spike_results,'Supplemental Table 2.xlsx'],'Range','E2:E12','WriteVariableNames',false)
-        writetable(Tns_simp,[main_spike_results,'Supplemental Table 2.xlsx'],'Range','F2:F12','WriteVariableNames',false)
+        writetable(Tspike_simp,[main_spike_results,'Supplemental Table 3.xlsx'],'Range','E2:E12','WriteVariableNames',false)
+        writetable(Tns_simp,[main_spike_results,'Supplemental Table 3.xlsx'],'Range','F2:F12','WriteVariableNames',false)
     elseif strcmp(which_pc,'mc')
     %% Also add to main supplemental table
-        writetable(Tspike_MC,[main_spike_results,'Supplemental Table 2.xlsx'],'Range','E2:E12','WriteVariableNames',false)
-        writetable(Tns_MC,[main_spike_results,'Supplemental Table 2.xlsx'],'Range','F2:F12','WriteVariableNames',false)
+        writetable(Tspike_MC,[main_spike_results,'Supplemental Table 3.xlsx'],'Range','E2:E12','WriteVariableNames',false)
+        writetable(Tns_MC,[main_spike_results,'Supplemental Table 3.xlsx'],'Range','F2:F12','WriteVariableNames',false)
     end
 end
 

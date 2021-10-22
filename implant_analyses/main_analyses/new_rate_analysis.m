@@ -1,7 +1,11 @@
 function new_rate_analysis(whichPts,saved_out,out)
 
 %{
-
+This analysis looks for 1) a change in overall spike rate pre-to-post
+revision, 2) whether the change in spike rate distribution across
+electrodes is larger peri-revision than expected by chance, and 3) whether
+the change in connectivity distribution across electrodes is larger
+peri-revision than expected by chance.
 %}
 
 %% Parameters
@@ -112,7 +116,14 @@ for im = 1:n_metrics
             % Get surround times, starting with first non nan
             [pre,post] = get_surround_times(rate,cblock,surround);
             
-            % Get the rate for all electrodes in the pre and post
+            % Get the rate for all electrodes in the pre and post. Note
+            % that by first taking the average across times and then across
+            % electrodes, I get a slightly different result than if I take
+            % the mean across times and electrodes simultaneously due to
+            % the presence of nans. There aren't that many nans so it
+            % doesn't make a huge difference. But by doing it this way I am
+            % arguably overweighting the non-nan times on the electrodes
+            % with frequent nans.
             rate_pre = nanmean(rate(:,pre),2); % divide by 5 minutes to get rate per minute
             rate_post = nanmean(rate(:,post),2);
             
@@ -343,7 +354,8 @@ fprintf(['\nThere was a significant positive correlation across patients '...
     get_p_text(added_stats(im,is,2)));
 %}
 
-%% Spike stability for main surround
+%% Spike stability and node strength stability for main surround
+% Loop over metrics (spikes vs node strength)
 for im = 1:n_metrics
     
     metric = all_metrics{im};
@@ -412,7 +424,7 @@ for im = 1:n_metrics
     
 end
 
-%% Spike stability for all surrounds
+%% Spike/node strength stability for all surrounds
 for im = 1:n_metrics
     
     nexttile
@@ -488,6 +500,7 @@ annotation('textbox',[0.48 0.26 0.1 0.1],'String','F','fontsize',20,'linestyle',
 %annotation('textbox',[0.49 0.18 0.1 0.1],'String','G','fontsize',20,'linestyle','none')
 
 %% Also save these to a specific range in the Supplemental Table 1
+% rate stats
 agg_rate_T = cell2table(arrayfun(@(x,y,z) sprintf('t(%d) = %1.1f, %s',x,y,pretty_p_text(z)),...
     squeeze(main_stats(1,:,3))',squeeze(main_stats(1,:,2))',...
     squeeze(main_stats(1,:,1))','UniformOutput',false),...
@@ -499,20 +512,24 @@ agg_corr_T = cell2table(arrayfun(@(x,y) sprintf('r = %1.2f, %s',x,pretty_p_text(
     'RowNames',arrayfun(@(x) sprintf('%d',x),all_surrounds,...
     'UniformOutput',false));
     %}
+    
+% spike stability    
 agg_spike_T = cell2table(arrayfun(@(x) sprintf('MC %s',pretty_p_text(x)),all_all_p(:,1),...
     'UniformOutput',false),...
     'RowNames',arrayfun(@(x) sprintf('%d',x),all_surrounds,...
     'UniformOutput',false));
+
+% node strength stability
 agg_ns_T = cell2table(arrayfun(@(x) sprintf('MC %s',pretty_p_text(x)),all_all_p(:,2),...
     'UniformOutput',false),...
     'RowNames',arrayfun(@(x) sprintf('%d',x),all_surrounds,...
     'UniformOutput',false));
 
-writetable(agg_rate_T,[main_spike_results,'Supplemental Table 2.xlsx'],'Range','B2:B12','WriteVariableNames',false)
+writetable(agg_rate_T,[main_spike_results,'Supplemental Table 3.xlsx'],'Range','B2:B12','WriteVariableNames',false)
 %writetable(agg_corr_T,[main_spike_results,'Supplemental Table 3.xlsx'],'Range','E2:E12','WriteVariableNames',false)
 
-writetable(agg_spike_T,[main_spike_results,'Supplemental Table 2.xlsx'],'Range','C2:C12','WriteVariableNames',false)
-writetable(agg_ns_T,[main_spike_results,'Supplemental Table 2.xlsx'],'Range','D2:D12','WriteVariableNames',false)
+writetable(agg_spike_T,[main_spike_results,'Supplemental Table 3.xlsx'],'Range','C2:C12','WriteVariableNames',false)
+writetable(agg_ns_T,[main_spike_results,'Supplemental Table 3.xlsx'],'Range','D2:D12','WriteVariableNames',false)
 
 %% Save fig
 fname = 'new_rate';

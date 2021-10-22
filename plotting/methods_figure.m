@@ -1,7 +1,7 @@
-function methods_figure(out)
+function methods_figure(out,p)
 
 %% Parameters
-p = 6;
+%p = 6;
 surround = 24;
 csize = 200;
 

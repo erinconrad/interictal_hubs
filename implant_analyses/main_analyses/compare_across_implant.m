@@ -1,13 +1,14 @@
 function compare_across_implant(whichPts,saved_out,out)
 
 %{
-Double checked
+This analysis looks at how the spike rate changes from early to late in the
+implant
 %}
 
 %% User change parameters
 all_surrounds = 12*[0.5,1,2,3,4,5,6,7,8,9,10]; % number of blocks in the early and late period
 main_surround = 3;%3 %24 hour peri-revision surround
-main_metric = 1;
+main_metric = 1; % rate
 ex_p = 5;
 
 %% Other info
@@ -108,7 +109,7 @@ for im = 1:n_metrics
             rate_pre = nanmean(rate(:,pre),2)/run_dur;
             rate_post = nanmean(rate(:,post),2)/run_dur;
             rate_end = nanmean(rate(:,ending),2)/run_dur;
-            if im == 1
+            if im == 1 % for rate, also get the added post and added end
                 added_post = nanmean(added_rate(:,post),2)/run_dur;
                 added_end = nanmean(added_rate(:,ending),2)/run_dur;
             end
@@ -124,7 +125,7 @@ for im = 1:n_metrics
                 overall_added_post = nanmean(added_post);
                 overall_added_end = nanmean(added_end);
             end
-            % And so, this would be in units of spikes/minute
+            % And so, this would be in units of spikes/elec/minute
             
             % Get the SRC between start and pre, and post and end
             start_pre_corr = corr(rate_start,rate_pre,'Type','Spearman','rows','pairwise');
@@ -166,7 +167,7 @@ for im = 1:n_metrics
         % fill matrix
         between_implant_rate_stats(im,is,:) = [p,stats.tstat,stats.df];
         
-        
+        % if looking at rate
         if im == 1
             
             rel_rate_change(is,:,1) = rel_1;
@@ -471,29 +472,38 @@ print(gcf,[main_spike_results,fname],'-depsc')
 
 %% Make supplemental tables
 im = 1;
+% first implant early to late t-test
 im1_spike_T = cell2table(arrayfun(@(x,y,z) sprintf('t(%d) = %1.2f, %s',x,y,pretty_p_text(z)),...
     within_implant_rate_stats(im,:,1,3)',within_implant_rate_stats(im,:,1,2)',...
     within_implant_rate_stats(im,:,1,1)','UniformOutput',false));
+
+% 2nd implant original early to late ttest
 im2_spike_T = cell2table(arrayfun(@(x,y,z) sprintf('t(%d) = %1.2f, %s',x,y,pretty_p_text(z)),...
     within_implant_rate_stats(im,:,2,3)',within_implant_rate_stats(im,:,2,2)',...
     within_implant_rate_stats(im,:,2,1)','UniformOutput',false));
+
+% 2nd implant added early to late t-test
 added_spike_T = cell2table(arrayfun(@(x,y,z) sprintf('t(%d) = %1.2f, %s',x,y,pretty_p_text(z)),...
     unchanged_added_stats(:,1,3),unchanged_added_stats(:,1,2),...
     unchanged_added_stats(:,1,1),'UniformOutput',false));
+
+% original elecs rel rate change implant 1 vs 2 t test
 bet_rate_spike_T = cell2table(arrayfun(@(x,y,z) sprintf('t(%d) = %1.2f, %s',x,y,pretty_p_text(z)),...
     between_implant_rate_stats(im,:,3)',between_implant_rate_stats(im,:,2)',...
     between_implant_rate_stats(im,:,1)','UniformOutput',false));
+
+% added elecs vs original elecs implant 2 t test
 bet_un_added_spike_T = cell2table(arrayfun(@(x,y,z) sprintf('t(%d) = %1.2f, %s',x,y,pretty_p_text(z)),...
     unchanged_added_stats(:,2,3),unchanged_added_stats(:,2,2),...
     unchanged_added_stats(:,2,1),'UniformOutput',false));
 
 
 
-writetable(im1_spike_T,[main_spike_results,'Supplemental Table 1.xlsx'],'Range','B2:B12','WriteVariableNames',false)
-writetable(im2_spike_T,[main_spike_results,'Supplemental Table 1.xlsx'],'Range','C2:C12','WriteVariableNames',false)
-writetable(added_spike_T,[main_spike_results,'Supplemental Table 1.xlsx'],'Range','D2:D12','WriteVariableNames',false)
-writetable(bet_rate_spike_T,[main_spike_results,'Supplemental Table 1.xlsx'],'Range','E2:E12','WriteVariableNames',false)
-writetable(bet_un_added_spike_T,[main_spike_results,'Supplemental Table 1.xlsx'],'Range','F2:F12','WriteVariableNames',false)
+writetable(im1_spike_T,[main_spike_results,'Supplemental Table 2.xlsx'],'Range','B2:B12','WriteVariableNames',false)
+writetable(im2_spike_T,[main_spike_results,'Supplemental Table 2.xlsx'],'Range','C2:C12','WriteVariableNames',false)
+writetable(added_spike_T,[main_spike_results,'Supplemental Table 2.xlsx'],'Range','D2:D12','WriteVariableNames',false)
+writetable(bet_rate_spike_T,[main_spike_results,'Supplemental Table 2.xlsx'],'Range','E2:E12','WriteVariableNames',false)
+writetable(bet_un_added_spike_T,[main_spike_results,'Supplemental Table 2.xlsx'],'Range','F2:F12','WriteVariableNames',false)
 
 %{
 rho_spike_T = cell2table(arrayfun(@(x,y,z) sprintf('t(%d) = %1.2f, %s',x,y,pretty_p_text(z)),...

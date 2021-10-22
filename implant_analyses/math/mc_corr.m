@@ -116,11 +116,8 @@ if 0
     nexttile
     plot(sortedmc)
     hold on
-    if true_rho < 0
-        plot(find((sortedmc)<=true_rho),sortedmc(sortedmc<=true_rho),'r')
-    else
-        plot(find(sortedmc>=true_rho),sortedmc(sortedmc>=true_rho),'r')
-    end
+    plot(find((sortedmc)<=-abs(true_rho)),sortedmc((sortedmc)<=-abs(true_rho)),'r')
+    plot(find((sortedmc)>=abs(true_rho)),sortedmc((sortedmc)>=abs(true_rho)),'r')
     plot(xlim,[true_rho true_rho])
     title(sprintf('%1.3f',pval))
     pause

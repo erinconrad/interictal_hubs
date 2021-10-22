@@ -32,7 +32,7 @@ for ib = 1:nb
 
         if length(pre) == 1 || length(post) == 1
             
-            continue % bad time, try another
+            continue % bad time, try another (this happens if the random time includes a period of all nans)
         end
 
         % recalculate

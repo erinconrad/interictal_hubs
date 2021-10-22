@@ -1,5 +1,13 @@
 function dist_cosi_pc(whichPts,saved_out,out)
 
+%{
+This code determines the correlation between different measures of
+proximity to the revision site (Euclidean distance to nearest added
+electrode, functional connectivity to added electrodes, and co-spike index
+to added electrodes).
+
+%} 
+
 %% Locations
 locations = interictal_hub_locations;
 results_folder = [locations.main_folder,'results/'];
@@ -88,20 +96,21 @@ all_dist_cosi = [];
 all_dist_pc = [];
 all_cosi_pc = [];
 for i = 1:length(whichPts)
-    dist = out(i).dist;
-    cosi = out(i).cosi;
+    dist = out(i).dist; % Euclidean distance to nearest added electrode
+    cosi = out(i).cosi; % Co-spike index (how much does it co spike with added electrodes)
     if isempty(out(i).metrics)
         pc = nan(length(dist),1);
     else
-        pc = out(i).metrics.added_pc;
+        pc = out(i).metrics.added_pc; % Functional connectivity
     end
     
+    % Do correlations
     dist_cosi_r = corr(dist,cosi,'rows','pairwise');
     dist_pc_r = corr(dist,pc,'rows','pairwise');
     cosi_pc_r = corr(cosi,pc,'rows','pairwise');
     
     
-    % Fisher r-to-z transformation, get z-score out; the last 2 columns are
+    % Fisher r-to-z transformation; the last 2 columns are
     % the bootstrap lower and upper confidence intervals
     % 1 = r, 2 = z, 3 = z-score (unused), 4 = p-value, 5 = lower 95% CI, 6
     % = upper 95% CI
