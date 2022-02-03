@@ -3,6 +3,8 @@ function [dist,closest] = distance_from_closest_added(unchanged,added)
 dist = nan(size(unchanged,1),1);
 closest = nan(size(unchanged,1),1);
 
+if isempty(added), return; end
+
 % Loop over unchanged electrodes
 for i = 1:size(unchanged,1)
     

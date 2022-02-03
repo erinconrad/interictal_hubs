@@ -1,5 +1,10 @@
 function [output_for_plot,out_loc_names] = anatomy_analyses(whichPts,saved_out,out)
 
+%{
+This analysis tests whether the relative change in electrographic features
+is larger for different anatomical regions.
+%}
+
 %% Parameters
 all_surrounds = 12*[0.5,1,2,3,4,5,6,7,8,9,10];
 do_norm = 0; % doesn't seem to make much difference so I will keep 0 for simplicity
@@ -147,6 +152,20 @@ for im = 1:n_metrics
                 
                 % add to locs table
                 all_locs(i,j) = num2cell(avg_change);
+                
+                
+                if 0
+                    turn_nans_white(resp)
+                    hold on
+                    yticks(find(chs));
+                    plot([cblock cblock],ylim,'r--')
+                    xticks([pre(1) pre(end) post(1) post(end)])
+                    colorbar
+                    %plot([pre(1) pre(end)],[0 0],'g','linewidth',2)
+                    %plot([post(1) post(end)],[0 0],'r','linewidth',2)
+                    pause
+                    
+                end
             end
             
             %% the mt vs other analysis

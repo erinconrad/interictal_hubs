@@ -3,6 +3,7 @@ function all_corrs(whichPts,saved_out,out)
 %{
 This analysis tests whether electrodes closer to the revision site
 experience a larger change in electrographic features peri-revision.
+
 %}
 
 %% Parameters
@@ -27,6 +28,7 @@ which_p = 'simple'; % other is mc
 n_surrounds = length(all_surrounds);
 which_resps = {'rel_rate','ns_rel'};
 which_preds = {'dist','ns','cosi'};
+resp_text = {'relative spike rate','relative node strength'};
 
 %% Locations
 locations = interictal_hub_locations;
@@ -106,6 +108,12 @@ inf_rel_change = nan(length(all_surrounds),length(which_resps),length(whichPts))
 
 % Number old elecs
 number_orig_elecs = nan(length(whichPts),1);
+
+% Individual patient rhos (not fisher transformed), 1 for dist to depth, 1
+% for dist to subdural (1 is depth, 2 is subdural)
+all_all_r_type = nan(length(all_surrounds),length(which_resps),length(whichPts),2);
+all_all_p_type = nan(length(all_surrounds),length(which_resps),length(which_preds),length(whichPts),2);
+all_all_dist_resp = cell(length(all_surrounds),length(which_resps),length(whichPts),2); % distance and response for each electrode
 
 % Distance to closest newest elecs
 all_dist = cell(length(whichPts),1);
@@ -197,8 +205,14 @@ for s = 1:length(all_surrounds)
                         resp = (nanmean(ns(:,post),2) - nanmean(ns(:,pre),2));
                         rtext = 'NS change';
                 end
-
                 
+                %% For revision stage, also correlate distance from different electrode types and spike rate change
+                dist_depth = out(i).dist_depth;
+                dist_subdural = out(i).dist_subdural;
+                dist_depth(ekg) = []; % remove ekg
+                dist_subdural(ekg) = []; % remove ekg
+                dist_depth(zero_dist) = [];
+                dist_subdural(zero_dist) = [];
 
                 % Monte carlo test (I only do this for the distance
                 % analysis)
@@ -214,11 +228,32 @@ for s = 1:length(all_surrounds)
                     % MC test
                     [rho,pval,mc_rho] = mc_corr(rate,ns,predictor,...
                     cblock,surround,nb,which_resp,type,buffer,do_buffer);
+                
+                    %% For revision stage, also correlate distance from different electrode types and spike rate change
+                    %{
+                    [rho_depth,pval_depth,mc_rho_depth] = mc_corr(rate,ns,dist_depth,...
+                        cblock,surround,nb,which_resp,type,buffer,do_buffer);
+                    
+
+                    [rho_subdural,pval_subdural,mc_rho_subdural] = mc_corr(rate,ns,dist_subdural,...
+                        cblock,surround,nb,which_resp,type,buffer,do_buffer);
+                    %}
+                    rho_depth = corr(resp,dist_depth,'Type',type,'rows','pairwise');
+                    rho_subdural = corr(resp,dist_subdural,'Type',type,'rows','pairwise');
+                    all_all_r_type(s,r,i,:) = [rho_depth,rho_subdural];
+                    all_all_dist_resp{s,r,i,1} = [resp,dist_depth];
+                    all_all_dist_resp{s,r,i,2} = [resp,dist_subdural];
+                    
+                    %all_all_mc_r_type(s,r,p,i,:) = [mc_rho_depth,mc_rho_subdural];
+                    %all_all_p_type(s,r,p,i,:) = [pval_depth,pval_subdural];
+                    
                 else
                     rho = corr(resp,predictor,'Type',type,'rows','pairwise');
                     pval = nan;
                     mc_rho = nan;
                 end
+                
+                
                 
 
                 % Fisher's R to z transformation on the original rhos
@@ -757,4 +792,92 @@ fprintf(['\n\nExamining other measures of proximity to the revision site,'...
      mean(all_all_r(main_surround,2,3,:)),all_p_simp(main_surround,2,3,3),...
     all_p_simp(main_surround,2,3,2),all_p_simp(main_surround,2,3,1));
 
+
+%% For reviews, test whether original electrodes very close to depths have a bigger spike rate change than those close to subdurals
+dthreshs = [10 20 30];
+type_table = cell(length(all_surrounds),2,length(dthreshs));
+type_text = {'depth','subdural'};
+out_text = cell(2,1);
+
+for id = 1:length(dthreshs)
+    dthresh = dthreshs(id);
+    for is = 1:length(all_surrounds)
+        for ir = 1:2
+            for ipatient = 2
+                depth = squeeze(all_all_dist_resp{is,ir,ipatient,1});
+                subdural = squeeze(all_all_dist_resp{is,ir,ipatient,2});
+                depth_r = squeeze(all_all_r_type(is,ir,ipatient,1));
+                subdural_r = squeeze(all_all_r_type(is,ir,ipatient,2));
+
+                % find those electrodes very close to added depths and subdurals,
+                % respectively
+                close_depth = depth(:,2) < dthresh;
+                close_subdural = subdural(:,2) < dthresh;
+                
+                % difference in relative feature change between those
+                % close to depths and those close to subdurals?
+                [pval,~,stats] = ranksum(depth(close_depth,1),subdural(close_subdural,1));
+                W = stats.ranksum;
+                nt = sum(~(isnan(depth(close_depth,1))));
+                ne = sum(~(isnan(subdural(close_subdural,1))));
+                U1 = W - nt*(nt+1)/2;
+                U2 = nt*ne-U1;
+                U = min([U1,U2]);
+                
+                if id == 2 && is == main_surround
+                    fprintf(['\nThe median %s change for original contacts within'...
+                        ' %d mm of the closest added %s contacts was (%1.2f), which was not'...
+                        ' significantly different from that for contacts within %d mm of the'...
+                        ' closest added %s contacts (%1.2f) (Mann-Whitney test: U'...
+                        '(N_depth_proximate = %d, N_subdural_proximate = %d) = %1.1f, %s).\n'],...
+                        resp_text{ir},dthresh,type_text{1},nanmedian(depth(close_depth,1)),...
+                        dthresh,type_text{2},nanmedian(depth(close_subdural,1)),nt,ne,U,simple_p_text(pval));
+                   % out_text{ir} = ttext;
+                end
+                table_text = sprintf('U = %1.1f, %s',U,simple_p_text(pval));
+                type_table{is,ir,id} = table_text;
+
+                if 0
+                    figure
+                    plot(1+randn(sum(close_depth),1)*0.05,depth(close_depth,1),'o')
+                    hold on
+                    plot(2+randn(sum(close_subdural),1)*0.05,subdural(close_subdural,1),'o')
+                    title(sprintf('p = %1.3f',pval))
+                    pause
+                    close gcf
+                end
+                
+
+            end
+        end
+    end
+end
+
+new_type_table = cell2table([{'10 mm threshold spike rate change','10 mm threshold node strength change'};...
+    type_table(:,:,1);{'',''};{'20 mm threshold spike rate change','20 mm threshold node strength change'};...
+    type_table(:,:,2);{'',''};{'30 mm threshold spike rate change','30 mm threshold node strength change'};type_table(:,:,3)]);
+writetable(new_type_table,[main_spike_results,'Supplemental Table 4.xlsx'],'Range','A2:B39','WriteVariableNames',false)
+
+%out_text{1}
+%out_text{2}
+%{
+%figure
+%tiledlayout(2,2)
+type_table = nan(2,2,2); % spikes vs ns, patient, depth vs subdural
+for ir = 1:2 % spikes and ns
+    curr_r_type = squeeze(all_all_r_type(is,ir,ip,:,:));
+    curr_p_type = squeeze(all_all_p_type(is,ir,ip,:,:));
+    
+    % find patients without any nans
+    no_nans = ~any(isnan(curr_r_type),2);
+    
+    curr_r_type = curr_r_type(no_nans);
+    curr_p_type = curr_p_type(no_nans);
+    npts = size(curr_r_type,1);
+    for p = 1:npts
+        curr_curr = curr_r_type(p,:);
+    end
+end
+%}
+    
 end

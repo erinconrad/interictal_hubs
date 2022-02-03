@@ -32,14 +32,17 @@ for f = 1:nfiles-1
         change(nchange).old_unchanged = unchanged_elecs;
         
         [new_elecs,new_depths,really_unchanged] = added_elecs(name,new_labels,unchanged_elecs);
+        new_subdural = new_elecs(~ismember(new_elecs,new_depths));
         if only_depth
             change(nchange).added = new_depths;
         else
             change(nchange).added = new_elecs;
         end
-        change(nchange).added_depths = new_depths;
+        change(nchange).added_depth = new_depths;
+        change(nchange).added_subdural = new_subdural;
         change(nchange).added_all = new_depths;
         change(nchange).unchanged = really_unchanged;
+        
         
     end
 end

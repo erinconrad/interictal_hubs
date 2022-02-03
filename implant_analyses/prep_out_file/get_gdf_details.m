@@ -39,7 +39,8 @@ nfiles = length(spikes.file);
 %% Identify files with a change in electrodes
 [change,no_change_ever] = alt_find_electrode_change_files(spikes,only_depth);
 
-%[change,no_change_ever] = find_electrode_change_files(pt,p,only_depth);
+%[change,no_change_ever] = find_electrode_change_files(pt,p,only_depth); %
+%old method that includes incorrect info for hup132
 nchanges = length(change);
 
 for c = nchanges % just do last one
@@ -50,6 +51,8 @@ for c = nchanges % just do last one
     end
     added = change(c).added;
     unchanged = no_change_ever;%change(c).unchanged;
+    added_depth = change(c).added_depth;
+    added_subdural = change(c).added_subdural;
 
     if isempty(added)
         continue
@@ -59,8 +62,12 @@ for c = nchanges % just do last one
     chLabels = clean_labels_2(spikes.file(change(c).files(2)).block(1).chLabels);
     [~,added_idx] = ismember(added,chLabels);
     [~,unchanged_idx] = ismember(unchanged,chLabels);
+    [~,added_depth_idx] = ismember(added_depth,chLabels);
+    [~,added_subdural_idx] = ismember(added_subdural,chLabels);
     unchanged_labels = chLabels(unchanged_idx);
     added_labels = chLabels(added_idx);
+    added_depth_labels = chLabels(added_depth_idx);
+    added_subdural_labels = chLabels(added_subdural_idx);
 
     
     %% Anatomy
@@ -82,18 +89,30 @@ for c = nchanges % just do last one
     %% Get locs
     if p == 35
         added_locs = spikes.file(change(c).files(2)).locs(added_idx,:);
+        added_depth_locs = spikes.file(change(c).files(2)).locs(added_depth_idx,:);
+        added_subdural_locs = spikes.file(change(c).files(2)).locs(added_subdural_idx,:);
         unchanged_locs = spikes.file(change(c).files(2)).locs(unchanged_idx,:);
         dist = distance_from_closest_added(unchanged_locs,added_locs);
+        
+        % Also get distance from closest added depth and distance from
+        % closest added strip or grid
+        dist_depth = distance_from_closest_added(unchanged_locs,added_depth_locs);
+        dist_subdural = distance_from_closest_added(unchanged_locs,added_subdural_locs);
+        
     else
         if ~isfield(pt(p).ieeg.file(change(c).files(2)),'locs')
             dist = nan(length(unchanged_labels),1);
         else
             added_locs = pt(p).ieeg.file(change(c).files(2)).locs(added_idx,:);
+            added_depth_locs = pt(p).ieeg.file(change(c).files(2)).locs(added_depth_idx,:);
+            added_subdural_locs = pt(p).ieeg.file(change(c).files(2)).locs(added_subdural_idx,:);
             unchanged_locs = pt(p).ieeg.file(change(c).files(2)).locs(unchanged_idx,:);
 
 
             %% For each unchanged electrode, get identity of and distance from nearest added electrode
             dist = distance_from_closest_added(unchanged_locs,added_locs);
+            dist_depth = distance_from_closest_added(unchanged_locs,added_depth_locs);
+            dist_subdural = distance_from_closest_added(unchanged_locs,added_subdural_locs);
 
         end
     end
@@ -281,9 +300,15 @@ out.un_cos = all_un_cos;
 out.change = change;
 out.unchanged_labels = unchanged_labels;
 out.added_labels = added_labels;
+out.added_depth_labels = added_depth_labels;
+out.added_subdural_labels = added_subdural_labels;
 out.dist = dist;
+out.dist_subdural = dist_subdural;
+out.dist_depth = dist_depth;
 out.unchanged_locs = unchanged_locs;
 out.added_locs = added_locs;
+out.added_depth_locs = added_depth_locs;
+out.added_subdural_locs = added_subdural_locs;
 out.change_block = change_block;
 out.findices = findices;
 out.bindices = bindices;

@@ -37,7 +37,7 @@ else
     for i = 1:length(whichPts)
         p = whichPts(i);
         fprintf('%d of %d\n',i,length(whichPts));
-        out(i) = get_gdf_details(p);
+       out(i) = get_gdf_details(p);
     end
     save([main_spike_results,'out'],'out');
 end
