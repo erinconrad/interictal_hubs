@@ -106,8 +106,11 @@ for im = 1:n_metrics
             sur_times(im,is,i,:,:) = ([start(1),pre(1),post(1),ending(1);...
                 start(end),pre(end),post(end),ending(end)])';
             
+            %% Network Neuroscience review analysis
+            % For main surround, look at time between early and late
+            % Implant 1 and early and late implant 2
             if is == main_surround
-                early_late_dur(i,:) = [pre(1)-start(1),ending(1) - post(1)]*block_dur/24;
+                early_late_dur(i,:) = [pre(1)-start(1),ending(1) - post(1)]*block_dur/24; % block dur in hours, divide by 24 to get days
             end
             
             % Get mean rates (across time periods) in these times
@@ -528,6 +531,8 @@ writetable(rho_ns_T,[main_spike_results,'Supplemental Table 2.xlsx'],'Range','D2
 %}
 
 %% For revision at Network Neuroscience, see how early-to-late change correlates with duration between early and late
+% Do patients with a longer time between early and late (curr_dur) have a
+% higher relative rate change?
 im = main_metric;
 is = main_surround;
 curr_rates = squeeze(all_rates(im,is,:,:));
@@ -535,7 +540,9 @@ added_rates = squeeze(all_added_rates(is,:,:));
 table_for_andy = nan(size(curr_rates,1),6);
 figure
 set(gcf,'position',[100 100 1000 300])
-tiledlayout(1,3,'TileSpacing','tight','Padding','tight')
+tt=tiledlayout(1,3,'TileSpacing','tight','Padding','loose');
+ip = get(tt,'innerposition');
+set(tt,'innerposition',[ip(1) ip(2)+0.1*(ip(4)-ip(2)) ip(3) ip(2)+0.8*(ip(4)-ip(2))])
 
 nexttile
 rel_rate_change = (curr_rates(:,2)-curr_rates(:,1))./curr_rates(:,1);
@@ -545,12 +552,16 @@ plot(curr_dur,rel_rate_change,'o','linewidth',2,'color',cols(1,:),'markersize',1
 xlabel('Early-to-late time difference (days)')
 ylabel({'Relative spike rate change'})
 set(gca,'fontsize',15)
-title('Implant 1','color',cols(1,:))
+%title('Implant 1','color','w')
+text(5.4,4.0352,'Implant 1','horizontalalignment','center','fontsize',20,...
+    'color',cols(1,:),'verticalalignment','bottom')
 xl = xlim;
 yl = ylim;
 text(xl(2),yl(2),sprintf('r = %1.2f, %s',r,pretty_p_text(p)),...
     'verticalalignment','top','horizontalalignment','right','fontsize',15)
 table_for_andy(:,1:2) = [curr_dur,rel_rate_change];
+r1 = r;
+p1 = p;
 
 nexttile
 rel_rate_change = (curr_rates(:,4)-curr_rates(:,3))./curr_rates(:,3);
@@ -560,7 +571,14 @@ plot(curr_dur,rel_rate_change,'o','linewidth',2,'color',cols(2,:),'markersize',1
 xlabel('Early-to-late time difference (days)')
 %ylabel({'Relative spike rate change'})
 set(gca,'fontsize',15)
-title({'Implant 2','Original electrodes'},'color',cols(2,:))
+%title({'Implant 2','Original electrodes'},'color','w')
+%title({'Original electrodes'},'color',cols(2,:))
+%
+text(9,5.0422,'Original electrodes','horizontalalignment','center','fontsize',20,...
+    'color','k','verticalalignment','bottom')
+text(9,5.6,'Implant 2','horizontalalignment','center','fontsize',20,...
+    'color',cols(2,:),'verticalalignment','bottom')
+%}
 %{
 text(0.500002791020925,1.009774881516588,0,'Implant 2','fontsize',20,...
     'color',cols(2,:))
@@ -570,6 +588,8 @@ yl = ylim;
 text(xl(2),yl(2),sprintf('r = %1.2f, %s',r,pretty_p_text(p)),...
     'verticalalignment','top','horizontalalignment','right','fontsize',15)
 table_for_andy(:,3:4) = [curr_dur,rel_rate_change];
+ro = r;
+po = p;
 
 nexttile
 rel_rate_change = (added_rates(:,2)-added_rates(:,1))./added_rates(:,1);
@@ -579,12 +599,21 @@ plot(curr_dur,rel_rate_change,'o','linewidth',2,'color',cols(4,:),'markersize',1
 xlabel('Early-to-late time difference (days)')
 %ylabel({'Relative spike rate change'})
 set(gca,'fontsize',15)
-title({'Implant 2','Added electrodes'},'color',cols(4,:))
+%title({'Implant 2','Added electrodes'},'color','w')
+%title({'Added electrodes'},'color',cols(4,:))
+%
+text(9,1.5176,'Added electrodes','horizontalalignment','center','fontsize',20,...
+    'color','k','verticalalignment','bottom')
+text(9,1.75,'Implant 2','horizontalalignment','center','fontsize',20,...
+    'color',cols(2,:),'verticalalignment','bottom')
+%}
 xl = xlim;
 yl = ylim;
 text(xl(2),yl(2),sprintf('r = %1.2f, %s',r,pretty_p_text(p)),...
     'verticalalignment','top','horizontalalignment','right','fontsize',15)
 table_for_andy(:,5:6) = [curr_dur,rel_rate_change];
+ra = r;
+pa = p;
 
 print(gcf,[main_spike_results,'andy_fig2_extra'],'-depsc')
 
@@ -593,6 +622,13 @@ T = array2table(table_for_andy,'VariableNames',{'Implant1_early_to_late_dur',...
     'Implant2_original_relative_rate_change','Implant2_early_to_late_dur_duplicate',...
     'Implant2_added_relative_rate_change'});
 writetable(T,[main_spike_results,'andy_fig2_table.csv'])
+
+% Text
+fprintf(['\nThere was no correlation between the early-to-late duration and '...
+    'the relative spike rate change for the first implant (r = %1.2f, %s), '...
+    'the original electrodes in the second implant (r = %1.2f, %s), or the '...
+    'added electrodes in the second implant (r = %1.2f, %s).\n'],...
+    r1,pretty_p_text(p1),ro,pretty_p_text(po),ra,pretty_p_text(pa));
 %{
 pfirst = plot(([1 2].*ones(n_patients,1))',([curr_rates(:,1) curr_rates(:,2)])',...
     'color',cols(1,:),'linewidth',2);

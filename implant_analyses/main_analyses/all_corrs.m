@@ -12,7 +12,7 @@ all_surrounds = 12*[0.5,1,2,3,4,5,6,7,8,9,10];
 main_surround = 3; %*******24 hours
 main_pred = 1;
 main_resp = 1;
-nb = 1e4;  % change
+nb = 1e1;  % change
 do_save = 1;
 do_buffer = 1;
 type = 'Spearman';
@@ -241,6 +241,9 @@ for s = 1:length(all_surrounds)
                     rho_depth = corr(resp,dist_depth,'Type',type,'rows','pairwise');
                     rho_subdural = corr(resp,dist_subdural,'Type',type,'rows','pairwise');
                     all_all_r_type(s,r,i,:) = [rho_depth,rho_subdural];
+                    
+                    % get the response and the distance from nearest depth
+                    % and subdural
                     all_all_dist_resp{s,r,i,1} = [resp,dist_depth];
                     all_all_dist_resp{s,r,i,2} = [resp,dist_subdural];
                     
@@ -799,16 +802,18 @@ type_table = cell(length(all_surrounds),2,length(dthreshs));
 type_text = {'depth','subdural'};
 out_text = cell(2,1);
 
+% loop over threshold distances
 for id = 1:length(dthreshs)
     dthresh = dthreshs(id);
     for is = 1:length(all_surrounds)
-        for ir = 1:2
+        for ir = 1:2 % spike rate and node strength
             for ipatient = 2
+                
+                % get response and dist for depth and subdural-proximate
+                % electrodes
                 depth = squeeze(all_all_dist_resp{is,ir,ipatient,1});
                 subdural = squeeze(all_all_dist_resp{is,ir,ipatient,2});
-                depth_r = squeeze(all_all_r_type(is,ir,ipatient,1));
-                subdural_r = squeeze(all_all_r_type(is,ir,ipatient,2));
-
+                
                 % find those electrodes very close to added depths and subdurals,
                 % respectively
                 close_depth = depth(:,2) < dthresh;
@@ -834,7 +839,7 @@ for id = 1:length(dthreshs)
                         dthresh,type_text{2},nanmedian(depth(close_subdural,1)),nt,ne,U,simple_p_text(pval));
                    % out_text{ir} = ttext;
                 end
-                table_text = sprintf('U = %1.1f, %s',U,simple_p_text(pval));
+                table_text = sprintf('U(Nd = %d, Ns = %d) = %1.1f, %s',nt,ne,U,simple_p_text(pval));
                 type_table{is,ir,id} = table_text;
 
                 if 0
