@@ -22,8 +22,8 @@ mp = plot(times,m,'color',color,'linewidth',3);
 hold on
 
 %% Plot the patch
-upper = m + st;
-lower = m - st;
+upper = m + st(2,:);
+lower = m - st(1,:);
 in_between = [upper, fliplr(lower)];
 x2 = [times,fliplr(times)];
 

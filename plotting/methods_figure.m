@@ -73,6 +73,41 @@ all_dists = vecnorm(unchanged_locs(I(1),:) - added_locs,2,2);
 [~,closest_min_dist] = min(all_dists);
 scatter3(added_locs(closest_min_dist,1),added_locs(closest_min_dist,2),added_locs(closest_min_dist,3),csize,'bp','linewidth',2);
 
+%% Closest to added depths and added subdurals
+added_depth_locs = out(p).added_depth_locs;
+dist_depth = out(p).dist_depth;
+added_subdural_locs = out(p).added_subdural_locs;
+dist_subdural = out(p).dist_subdural;
+
+figure
+tiledlayout(1,3)
+
+% all
+nexttile
+scatter3(unchanged_locs(:,1),unchanged_locs(:,2),unchanged_locs(:,3),csize,'k','linewidth',2);
+hold on
+%text(unchanged_locs(:,1),unchanged_locs(:,2),unchanged_locs(:,3),unchanged_labels);
+scatter3(added_locs(:,1),added_locs(:,2),added_locs(:,3),csize,'rp','linewidth',2);
+[~,I] = (sort(dist));
+scatter3(unchanged_locs(I(1:3),1),unchanged_locs(I(1:3),2),unchanged_locs(I(1:3),3),csize,'b','linewidth',2);
+
+% depth
+nexttile
+scatter3(unchanged_locs(:,1),unchanged_locs(:,2),unchanged_locs(:,3),csize,'k','linewidth',2);
+hold on
+scatter3(added_depth_locs(:,1),added_depth_locs(:,2),added_depth_locs(:,3),csize,'rp','linewidth',2);
+[~,I] = (sort(dist_depth));
+scatter3(unchanged_locs(I(1:3),1),unchanged_locs(I(1:3),2),unchanged_locs(I(1:3),3),csize,'b','linewidth',2);
+
+% subdural
+nexttile
+scatter3(unchanged_locs(:,1),unchanged_locs(:,2),unchanged_locs(:,3),csize,'k','linewidth',2);
+hold on
+scatter3(added_subdural_locs(:,1),added_subdural_locs(:,2),added_subdural_locs(:,3),csize,'rp','linewidth',2);
+[~,I] = (sort(dist_subdural));
+scatter3(unchanged_locs(I(1:3),1),unchanged_locs(I(1:3),2),unchanged_locs(I(1:3),3),csize,'b','linewidth',2);
+
+
 %% Spike rate over time
 figure
 set(gcf,'position',[317 452 1124 345])

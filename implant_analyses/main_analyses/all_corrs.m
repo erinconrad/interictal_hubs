@@ -12,7 +12,7 @@ all_surrounds = 12*[0.5,1,2,3,4,5,6,7,8,9,10];
 main_surround = 3; %*******24 hours
 main_pred = 1;
 main_resp = 1;
-nb = 1e1;  % change
+nb = 1e4;  % change
 do_save = 1;
 do_buffer = 1;
 type = 'Spearman';
@@ -836,7 +836,7 @@ for id = 1:length(dthreshs)
                         ' closest added %s contacts (%1.2f) (Mann-Whitney test: U'...
                         '(N_depth_proximate = %d, N_subdural_proximate = %d) = %1.1f, %s).\n'],...
                         resp_text{ir},dthresh,type_text{1},nanmedian(depth(close_depth,1)),...
-                        dthresh,type_text{2},nanmedian(depth(close_subdural,1)),nt,ne,U,simple_p_text(pval));
+                        dthresh,type_text{2},nanmedian(subdural(close_subdural,1)),nt,ne,U,simple_p_text(pval));
                    % out_text{ir} = ttext;
                 end
                 table_text = sprintf('U(Nd = %d, Ns = %d) = %1.1f, %s',nt,ne,U,simple_p_text(pval));
